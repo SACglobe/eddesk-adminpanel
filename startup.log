@@ -1,0 +1,159 @@
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.6:3000
+- Environments: .env.local
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 1699ms
+ GET /dashboard 200 in 941ms (compile: 515ms, proxy.ts: 148ms, render: 277ms)
+ GET /login 200 in 168ms (compile: 59ms, proxy.ts: 7ms, render: 101ms)
+⚠ Cross origin request detected from 192.168.1.6 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /dashboard 200 in 189ms (compile: 5ms, proxy.ts: 161ms, render: 23ms)
+ GET /dashboard 200 in 93ms (compile: 6ms, proxy.ts: 67ms, render: 21ms)
+ GET /dashboard 200 in 87ms (compile: 5ms, proxy.ts: 65ms, render: 17ms)
+ GET /dashboard 200 in 89ms (compile: 3ms, proxy.ts: 66ms, render: 20ms)
+ GET /dashboard 200 in 109ms (compile: 4ms, proxy.ts: 67ms, render: 38ms)
+✓ Compiled in 963ms
+✓ Compiled in 109ms
+ GET /dashboard 200 in 648ms (compile: 76ms, proxy.ts: 424ms, render: 148ms)
+ GET /dashboard 200 in 561ms (compile: 7ms, proxy.ts: 511ms, render: 43ms)
+ GET /dashboard 200 in 273ms (compile: 5ms, proxy.ts: 224ms, render: 44ms)
+✓ Compiled in 107ms
+✓ Compiled in 230ms
+ GET /dashboard 200 in 936ms (compile: 70ms, proxy.ts: 724ms, render: 142ms)
+✓ Compiled in 63ms
+✓ Compiled in 75ms
+ GET /dashboard 200 in 914ms (compile: 83ms, proxy.ts: 697ms, render: 134ms)
+ GET /dashboard 200 in 155ms (compile: 6ms, proxy.ts: 107ms, render: 42ms)
+ GET /dashboard 200 in 930ms (compile: 7ms, proxy.ts: 830ms, render: 93ms)
+✓ Compiled in 97ms
+✓ Compiled in 2ms
+ GET /dashboard 200 in 820ms (compile: 99ms, proxy.ts: 558ms, render: 164ms)
+✓ Compiled in 67ms
+ GET /dashboard 200 in 955ms (compile: 78ms, proxy.ts: 747ms, render: 130ms)
+ GET /dashboard 200 in 142ms (compile: 5ms, proxy.ts: 99ms, render: 38ms)
+ GET /dashboard 200 in 147ms (compile: 6ms, proxy.ts: 98ms, render: 44ms)
+✓ Compiled in 89ms
+ GET /dashboard 200 in 1008ms (compile: 68ms, proxy.ts: 819ms, render: 120ms)
+ GET /dashboard 200 in 197ms (compile: 7ms, proxy.ts: 149ms, render: 40ms)
+ GET /dashboard 200 in 463ms (compile: 7ms, proxy.ts: 409ms, render: 47ms)
+ GET /dashboard 200 in 135ms (compile: 5ms, proxy.ts: 91ms, render: 39ms)
+✓ Compiled in 238ms
+✓ Compiled in 2ms
+ GET /dashboard 200 in 331ms (compile: 84ms, proxy.ts: 115ms, render: 133ms)
+ GET /dashboard 200 in 162ms (compile: 7ms, proxy.ts: 112ms, render: 43ms)
+✓ Compiled in 113ms
+✓ Compiled in 3ms
+ GET /dashboard 200 in 355ms (compile: 85ms, proxy.ts: 89ms, render: 181ms)
+✓ Compiled in 113ms
+✓ Compiled in 2ms
+ GET /dashboard 200 in 972ms (compile: 85ms, proxy.ts: 747ms, render: 140ms)
+✓ Compiled in 80ms
+✓ Compiled in 1ms
+ GET /dashboard 200 in 1017ms (compile: 77ms, proxy.ts: 813ms, render: 127ms)
+ GET /dashboard 200 in 717ms (compile: 7ms, proxy.ts: 663ms, render: 47ms)
+ GET /dashboard 200 in 134ms (compile: 7ms, proxy.ts: 90ms, render: 38ms)
+ GET /dashboard 200 in 636ms (compile: 6ms, proxy.ts: 590ms, render: 39ms)
+ GET /dashboard 200 in 450ms (compile: 6ms, proxy.ts: 400ms, render: 44ms)
+ GET /dashboard 200 in 158ms (compile: 9ms, proxy.ts: 95ms, render: 54ms)
+✓ Compiled in 1143ms
+ GET /dashboard 200 in 1346ms (compile: 184ms, proxy.ts: 651ms, render: 511ms)
+ GET /dashboard 200 in 313ms (compile: 11ms, proxy.ts: 201ms, render: 101ms)
+ GET /dashboard 200 in 500ms (compile: 31ms, proxy.ts: 212ms, render: 256ms)
+ GET /dashboard 200 in 408ms (compile: 12ms, proxy.ts: 97ms, render: 299ms)
+ GET /dashboard 200 in 207ms (compile: 6ms, proxy.ts: 85ms, render: 116ms)
+✓ Compiled in 86ms
+✓ Compiled in 100ms
+✓ Compiled in 79ms
+✓ Compiled in 1486ms
+ GET /dashboard 200 in 903ms (compile: 336ms, proxy.ts: 425ms, render: 142ms)
+ GET /dashboard 200 in 158ms (compile: 12ms, proxy.ts: 63ms, render: 83ms)
+ GET /dashboard 200 in 198ms (compile: 12ms, proxy.ts: 57ms, render: 130ms)
+ GET /dashboard 200 in 308ms (compile: 14ms, proxy.ts: 70ms, render: 224ms)
+ GET /dashboard 200 in 243ms (compile: 9ms, proxy.ts: 110ms, render: 123ms)
+✓ Compiled in 128ms
+ GET /dashboard 200 in 706ms (compile: 91ms, proxy.ts: 88ms, render: 527ms)
+ GET /dashboard 200 in 298ms (compile: 7ms, proxy.ts: 89ms, render: 203ms)
+ GET /dashboard 200 in 418ms (compile: 5ms, proxy.ts: 112ms, render: 301ms)
+ GET /dashboard 200 in 306ms (compile: 7ms, proxy.ts: 89ms, render: 209ms)
+✓ Compiled in 59ms
+✓ Compiled in 48ms
+✓ Compiled in 53ms
+✓ Compiled in 67ms
+⨯ Error: Could not parse module '[project]/src/domains/dashboard/hooks/useComponentData.ts'
+
+Expected ',', got '<eof>'
+    at module evaluation (.next/dev/server/chunks/ssr/[root-of-the-server]__6d37519e._.js:1494:11)
+    at module evaluation (src/domains/dashboard/components/editors/HeroEditor.tsx:5:1)
+    at module evaluation (src/domains/dashboard/components/EditorHost.tsx:5:1)
+    at module evaluation (src/app/dashboard/DashboardClient.tsx:9:1)
+  3 | import { useState } from "react";
+  4 | import BaseEditor from "./BaseEditor";
+> 5 | import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+    | ^
+  6 | import type { TemplateComponent, TemplateScreen } from "@/domains/auth/types";
+  7 |
+  8 | interface HeroEditorProps { {
+  code: 'MODULE_UNPARSABLE',
+  digest: '1445012371'
+}
+✓ Compiled in 1ms
+ GET /dashboard 500 in 1557ms (compile: 152ms, proxy.ts: 230ms, render: 1175ms)
+✓ Compiled in 72ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload when ./src/domains/dashboard/hooks/useComponentData.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard 200 in 643ms (compile: 99ms, proxy.ts: 133ms, render: 411ms)
+ GET /dashboard 200 in 357ms (compile: 6ms, proxy.ts: 229ms, render: 122ms)
+ GET /dashboard 200 in 479ms (compile: 7ms, proxy.ts: 76ms, render: 396ms)
+ GET /dashboard 200 in 382ms (compile: 23ms, proxy.ts: 168ms, render: 191ms)
+ GET /dashboard 200 in 1015ms (compile: 98ms, proxy.ts: 191ms, render: 725ms)
+✓ Compiled in 79ms
+✓ Compiled in 45ms
+ GET /dashboard 200 in 469ms (compile: 81ms, proxy.ts: 94ms, render: 293ms)
+✓ Compiled in 113ms
+✓ Compiled in 41ms
+✓ Compiled in 101ms
+ GET /dashboard 200 in 829ms (compile: 84ms, proxy.ts: 474ms, render: 272ms)
+✓ Compiled in 50ms
+✓ Compiled in 100ms
+Error upserting to herocontent: {
+  code: 'PGRST204',
+  details: null,
+  hint: null,
+  message: "Could not find the 'updatedat' column of 'herocontent' in the schema cache"
+}
+ POST /dashboard 200 in 1354ms (compile: 111ms, proxy.ts: 1012ms, render: 232ms)
+✓ Compiled in 93ms
+✓ Compiled in 112ms
+✓ Compiled in 161ms
+✓ Compiled in 61ms
+ GET /dashboard 200 in 1487ms (compile: 129ms, proxy.ts: 594ms, render: 765ms)
+ GET /dashboard 200 in 451ms (compile: 5ms, proxy.ts: 102ms, render: 344ms)
+✓ Compiled in 218ms
+ GET /dashboard 200 in 782ms (compile: 117ms, proxy.ts: 349ms, render: 315ms)
+✓ Compiled in 180ms
+✓ Compiled in 1ms
+ GET /dashboard 200 in 521ms (compile: 114ms, proxy.ts: 100ms, render: 307ms)
+ GET /dashboard 200 in 286ms (compile: 6ms, proxy.ts: 85ms, render: 196ms)
+✓ Compiled in 170ms
+✓ Compiled in 6ms
+✓ Compiled in 105ms
+✓ Compiled in 19ms
+ GET /dashboard 200 in 580ms (compile: 108ms, proxy.ts: 108ms, render: 364ms)
+Error upserting to herocontent: {
+  code: 'PGRST204',
+  details: null,
+  hint: null,
+  message: "Could not find the 'updatedat' column of 'herocontent' in the schema cache"
+}
+ POST /dashboard 200 in 178ms (compile: 7ms, proxy.ts: 89ms, render: 83ms)
+✓ Compiled in 75ms
+✓ Compiled in 217ms
+✓ Compiled in 65ms
+✓ Compiled in 169ms
+✓ Compiled in 2ms
+ GET /dashboard 200 in 946ms (compile: 144ms, proxy.ts: 371ms, render: 431ms)
+ POST /dashboard 200 in 784ms (compile: 5ms, proxy.ts: 506ms, render: 273ms)
