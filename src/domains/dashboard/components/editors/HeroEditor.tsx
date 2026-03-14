@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import BaseEditor from "./BaseEditor";
 import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { uploadFile } from "@/lib/supabase/storage";
 import type { TemplateComponent, TemplateScreen } from "@/domains/auth/types";
 
 interface HeroEditorProps {
@@ -31,6 +32,8 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens }:
 
     const [editingSlide, setEditingSlide] = useState<any>(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     // Simple mobile detection for layout replacement
     useEffect(() => {
@@ -90,8 +93,48 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens }:
                             ) : "No Media"}
                         </div>
                         <div className="space-y-4">
+                            <div className="space-y-1.5 text-center">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Upload Media</label>
+                                <div className="mt-2">
+                                    <input
+                                        type="file"
+                                        id="mobile-media-upload"
+                                        className="hidden"
+                                        accept="image/*,video/*"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setIsUploading(true);
+                                            setUploadError(null);
+                                            try {
+                                                const url = await uploadFile(file, schoolKey, "banners");
+                                                setEditingSlide({ ...editingSlide, mediaurl: url, mediatype: file.type.startsWith('video') ? 'video' : 'image' });
+                                            } catch (err: any) {
+                                                setUploadError(err.message);
+                                            } finally {
+                                                setIsUploading(false);
+                                            }
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="mobile-media-upload"
+                                        className={`w-full py-4 px-6 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${isUploading ? 'bg-gray-50 border-gray-200' : 'bg-red-50/20 border-red-100 hover:border-red-200'}`}
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                            {isUploading ? (
+                                                <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                            )}
+                                        </div>
+                                        <span className="text-[12px] font-black text-red-500 uppercase tracking-wider">{isUploading ? 'Uploading...' : 'Choose File'}</span>
+                                    </label>
+                                    {uploadError && <p className="mt-2 text-[10px] text-red-500 font-bold">{uploadError}</p>}
+                                </div>
+                            </div>
+
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Media URL</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Or Paste URL</label>
                                 <input
                                     type="text"
                                     value={editingSlide.mediaurl}
@@ -446,42 +489,79 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens }:
                                     </div>
 
                                     {/* Media Section */}
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Media Type</label>
-                                                <div className="flex p-1.5 bg-gray-50 rounded-[18px] gap-1">
-                                                    {(['image', 'video'] as const).map(type => (
-                                                        <button
-                                                            key={type}
-                                                            onClick={() => setEditingSlide({ ...editingSlide, mediatype: type })}
-                                                            className={`flex-1 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${editingSlide.mediatype === type ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Upload Media</label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            id="desktop-media-upload"
+                                                            className="hidden"
+                                                            accept="image/*,video/*"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (!file) return;
+                                                                setIsUploading(true);
+                                                                setUploadError(null);
+                                                                try {
+                                                                    const url = await uploadFile(file, schoolKey, "banners");
+                                                                    setEditingSlide({ ...editingSlide, mediaurl: url, mediatype: file.type.startsWith('video') ? 'video' : 'image' });
+                                                                } catch (err: any) {
+                                                                    setUploadError(err.message);
+                                                                } finally {
+                                                                    setIsUploading(false);
+                                                                }
+                                                            }}
+                                                        />
+                                                        <label
+                                                            htmlFor="desktop-media-upload"
+                                                            className={`w-full py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-center gap-4 transition-all cursor-pointer ${isUploading ? 'bg-gray-50 border-gray-200' : 'bg-red-50/20 border-red-100 hover:border-red-200'}`}
                                                         >
-                                                            {type}
-                                                        </button>
-                                                    ))}
+                                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                                                {isUploading ? (
+                                                                    <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                                                ) : (
+                                                                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-left">
+                                                                <p className="text-[14px] font-black text-red-500 uppercase tracking-tightleading-none">{isUploading ? 'Uploading...' : 'Choose Media File'}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold mt-0.5">Images or Videos</p>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                    {uploadError && <p className="text-[10px] text-red-500 font-bold pl-2">{uploadError}</p>}
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Media Type</label>
+                                                        <div className="flex p-1.5 bg-gray-50 rounded-[18px] gap-1 h-[58px]">
+                                                            {(['image', 'video'] as const).map(type => (
+                                                                <button
+                                                                    key={type}
+                                                                    type="button"
+                                                                    onClick={() => setEditingSlide({ ...editingSlide, mediatype: type })}
+                                                                    className={`flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${editingSlide.mediatype === type ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                                >
+                                                                    {type}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Display Order</label>
+                                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Or Paste Direct URL</label>
                                                 <input
-                                                    type="number"
-                                                    value={editingSlide.displayorder}
-                                                    onChange={e => setEditingSlide({ ...editingSlide, displayorder: parseInt(e.target.value) || 0 })}
-                                                    className="w-full px-5 py-3.5 bg-gray-50 border-2 border-transparent rounded-[18px] focus:bg-white focus:border-[#F54927]/20 transition-all text-[15px] font-black outline-none"
+                                                    type="text"
+                                                    value={editingSlide.mediaurl}
+                                                    onChange={e => setEditingSlide({ ...editingSlide, mediaurl: e.target.value })}
+                                                    className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[18px] focus:bg-white focus:border-red-100 transition-all text-[14px] font-bold outline-none"
+                                                    placeholder="https://..."
                                                 />
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Media URL</label>
-                                            <input
-                                                type="text"
-                                                value={editingSlide.mediaurl}
-                                                onChange={e => setEditingSlide({ ...editingSlide, mediaurl: e.target.value })}
-                                                className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[18px] focus:bg-white focus:border-[#F54927]/20 transition-all text-[14px] font-bold outline-none"
-                                            />
-                                        </div>
-                                    </div>
 
                                     {/* Interaction */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
