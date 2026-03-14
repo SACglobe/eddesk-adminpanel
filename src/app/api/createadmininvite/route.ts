@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req: Request) {
+    let supabaseAdmin;
+    try {
+        supabaseAdmin = getSupabaseAdmin();
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
     let authuserid: string | null = null;
 
     try {
