@@ -1,11 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { Database } from "./database.types";
 
-let client: any;
-
-export function createClient() {
-    if (client) return client;
-
-    client = createBrowserClient(
+export function createClient<T = Database>() {
+    return createBrowserClient<T>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
@@ -16,7 +13,5 @@ export function createClient() {
             },
         }
     );
-
-    return client;
 }
 

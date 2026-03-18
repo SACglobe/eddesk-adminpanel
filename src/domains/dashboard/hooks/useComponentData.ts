@@ -10,6 +10,7 @@ interface UseComponentDataProps {
     initialRecords: any[];
     onSuccess?: () => void;
     orderBy?: string; // Optional: column to order by, defaults to displayorder
+    filters?: Record<string, any>; // Optional: additional filters to apply
 }
 
 export function useComponentData({
@@ -17,7 +18,8 @@ export function useComponentData({
     schoolKey,
     initialRecords,
     onSuccess,
-    orderBy = "displayorder"
+    orderBy = "displayorder",
+    filters
 }: UseComponentDataProps) {
     const [records, setRecords] = useState<any[]>(initialRecords);
     const [isSaving, setIsSaving] = useState(false);
@@ -39,12 +41,23 @@ export function useComponentData({
 
         try {
             let query = supabase
-                .from(tableName)
+                .from(tableName as any)
                 .select("*")
                 .eq("schoolkey", schoolKey);
 
+            // Apply additional filters
+            if (filters) {
+                let filteredQuery = query as any;
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null) {
+                        filteredQuery = filteredQuery.eq(key, value);
+                    }
+                });
+                query = filteredQuery;
+            }
+
             if (orderBy) {
-                query = query.order(orderBy, { ascending: true });
+                query = query.order(orderBy as any, { ascending: true });
             }
 
             const { data, error: fetchError } = await query;
@@ -57,7 +70,7 @@ export function useComponentData({
         } finally {
             setIsLoading(false);
         }
-    }, [tableName, schoolKey, orderBy]);
+    }, [tableName, schoolKey, orderBy, filters]);
 
     // Auto-fetch if initialRecords is empty or on mount
     useEffect(() => {
@@ -76,9 +89,9 @@ export function useComponentData({
         try {
             const result = await upsertComponentData(tableName, data, schoolKey);
 
-            if (result.success) {
+            if (result.success && result.data) {
                 setRecords(prev => {
-                    const index = prev.findIndex(r => r.key === result.data.key);
+                    const index = prev.findIndex(r => r.key === (result.data as any).key);
                     if (index >= 0) {
                         const newRecords = [...prev];
                         newRecords[index] = result.data;

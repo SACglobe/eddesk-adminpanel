@@ -1,3 +1,5 @@
+import { TableRow } from "@/domains/auth/types";
+
 export interface AdminInviteParams {
     pemail: string;
     pfullname: string;
@@ -6,7 +8,4 @@ export interface AdminInviteParams {
     pschoolkey: string; // UUID
 }
 
-export interface SchoolOption {
-    key: string;
-    name: string;
-}
+export type SchoolOption = Pick<TableRow<'schools'>, 'key' | 'name'>;

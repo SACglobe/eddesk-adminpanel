@@ -32,7 +32,7 @@ export async function upsertComponentData(
 
     // 3. Execution
     const { data: result, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .upsert(payload, { onConflict: 'key' })
         .select()
         .single();
@@ -64,7 +64,7 @@ export async function deleteComponentData(
 
     // 2. Execution with schoolKey filter for safety
     const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .delete()
         .match({ key: recordKey, schoolkey: schoolKey });
 
@@ -96,7 +96,7 @@ export async function updateComponentOrder(
     // 2. Perform updates in parallel (or use a stored procedure for atomicity)
     const promises = items.map(item =>
         supabase
-            .from(tableName)
+            .from(tableName as any)
             .update({ displayorder: item.displayorder })
             .match({ key: item.key, schoolkey: schoolKey })
     );

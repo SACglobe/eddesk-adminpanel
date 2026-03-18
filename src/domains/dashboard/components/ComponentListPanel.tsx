@@ -1,17 +1,19 @@
 "use client";
 
-import { TemplateScreen } from "@/domains/auth/types";
+import { TemplateScreen, TemplateComponent } from "@/domains/auth/types";
 
 interface ComponentListPanelProps {
     selectedScreen: TemplateScreen | null;
     selectedComponentKey: string | null;
     onSelectComponent: (key: string) => void;
+    componentVariants?: Record<string, string>;
 }
 
 export default function ComponentListPanel({
     selectedScreen,
     selectedComponentKey,
     onSelectComponent,
+    componentVariants = {},
 }: ComponentListPanelProps) {
     if (!selectedScreen) {
         return (
@@ -27,9 +29,32 @@ export default function ComponentListPanel({
     }
 
     const components = selectedScreen.components ?? [];
-    const sortedComponents = [...components].sort(
-        (a, b) => (a.displayorder ?? 0) - (b.displayorder ?? 0)
-    );
+    
+    // Group components
+    const groups: Map<string, { mode: 'exclusive' | 'merged', items: TemplateComponent[], order: number }> = new Map();
+    const singles: TemplateComponent[] = [];
+
+    components.forEach(comp => {
+        const groupName = comp.config?.group;
+        const groupMode = comp.config?.groupmode;
+        if (groupName && groupMode) {
+            if (!groups.has(groupName)) {
+                groups.set(groupName, { mode: groupMode, items: [], order: comp.displayorder ?? 0 });
+            }
+            groups.get(groupName)!.items.push(comp);
+            // Use the lowest displayorder for the group
+            if ((comp.displayorder ?? 0) < groups.get(groupName)!.order) {
+                groups.get(groupName)!.order = comp.displayorder ?? 0;
+            }
+        } else {
+            singles.push(comp);
+        }
+    });
+
+    const displayItems: ({ type: 'single', item: TemplateComponent } | { type: 'group', name: string, mode: 'exclusive' | 'merged', items: TemplateComponent[], order: number })[] = [
+        ...singles.map(s => ({ type: 'single' as const, item: s, order: s.displayorder ?? 0 })),
+        ...Array.from(groups.entries()).map(([name, data]) => ({ type: 'group' as const, name, ...data }))
+    ].sort((a, b) => a.order - b.order);
 
     return (
         <div className="w-full sm:w-60 h-full flex flex-col bg-white border-r border-[#f1f1f1] flex-shrink-0 z-10 overflow-y-auto pt-2 shadow-sm">
@@ -54,32 +79,84 @@ export default function ComponentListPanel({
                     <h3 className="px-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
                         Components
                         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded-full font-bold">
-                            {components.length}
+                            {displayItems.length}
                         </span>
                     </h3>
 
                     <div className="space-y-0.5">
-                        {sortedComponents.length > 0 ? (
-                            sortedComponents.map((component) => {
-                                const isActive = component.key === selectedComponentKey;
-                                return (
-                                    <button
-                                        key={component.key}
-                                        onClick={() => onSelectComponent(component.key)}
-                                        className={`
-                      w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md transition-all duration-150 text-left group
-                      ${isActive
-                                                ? "bg-gray-50 text-[#F54927] font-bold"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                            }
-                    `}
-                                    >
-                                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#F54927] shadow-[0_0_8px_rgba(245,73,39,0.4)]" : "bg-gray-300 group-hover:bg-gray-400"}`} />
-                                        <span className="text-[13px] font-medium truncate">
-                                            {component.componentregistry?.componentname ?? component.componentcode}
-                                        </span>
-                                    </button>
-                                );
+                        {displayItems.length > 0 ? (
+                            displayItems.map((entry) => {
+                                if (entry.type === 'single') {
+                                    const component = entry.item;
+                                    const isActive = component.key === selectedComponentKey;
+                                    return (
+                                        <button
+                                            key={component.key}
+                                            onClick={() => onSelectComponent(component.key)}
+                                            className={`
+                                                w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md transition-all duration-150 text-left group
+                                                ${isActive
+                                                    ? "bg-gray-50 text-[#F54927] font-bold"
+                                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                                }
+                                            `}
+                                        >
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#F54927] shadow-[0_0_8px_rgba(245,73,39,0.4)]" : "bg-gray-300 group-hover:bg-gray-400"}`} />
+                                            <span className="text-[13px] font-medium truncate">
+                                                {component.componentregistry?.componentname ?? component.componentcode}
+                                            </span>
+                                        </button>
+                                    );
+                                } else {
+                                    // Group
+                                    const groupKey = `group:${entry.mode}:${entry.name}`;
+                                    const items = entry.items;
+                                    
+                                    // Highlight if the group itself is selected OR if one of its children is selected
+                                    const isActive = selectedComponentKey === groupKey || items.some(i => i.key === selectedComponentKey);
+                                    
+                                    let displayName = entry.name;
+                                    let variantLabel = "";
+
+                                    if (entry.mode === 'exclusive') {
+                                        // Use the component name from one of the members, or capitalize group name
+                                        displayName = items[0].componentregistry?.componentname ?? entry.name;
+                                        const activeVariant = componentVariants[entry.name];
+                                        if (activeVariant) {
+                                            variantLabel = activeVariant.charAt(0).toUpperCase() + activeVariant.slice(1);
+                                        }
+                                    } else {
+                                        // Merged: Use the component name from first item or display name
+                                        displayName = items[0].componentregistry?.componentname ?? entry.name;
+                                        variantLabel = "Merged";
+                                    }
+
+                                    return (
+                                        <button
+                                            key={groupKey}
+                                            onClick={() => onSelectComponent(groupKey)}
+                                            className={`
+                                                w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-all duration-150 text-left group
+                                                ${isActive
+                                                    ? "bg-gray-50 text-[#F54927] font-bold"
+                                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex items-center gap-2.5 truncate">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#F54927] shadow-[0_0_8px_rgba(245,73,39,0.4)]" : "bg-gray-400 group-hover:bg-gray-500"}`} />
+                                                <span className="text-[13px] font-medium truncate capitalize">
+                                                    {displayName}
+                                                </span>
+                                            </div>
+                                            {variantLabel && (
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter ${isActive ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-400"}`}>
+                                                    {variantLabel}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                }
                             })
                         ) : (
                             <div className="py-4 px-2">

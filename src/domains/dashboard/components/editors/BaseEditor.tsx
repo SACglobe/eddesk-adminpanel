@@ -11,6 +11,7 @@ interface BaseEditorProps {
     onSave?: () => void;
     onCancel?: () => void;
     error?: string | null;
+    headerActions?: ReactNode;
 }
 
 export default function BaseEditor({
@@ -21,20 +22,28 @@ export default function BaseEditor({
     isSaving,
     onSave,
     onCancel,
-    error
+    error,
+    headerActions
 }: BaseEditorProps) {
     return (
         <div className="flex flex-col h-full bg-white relative animate-in fade-in duration-300">
             {/* Header Area */}
             <div className="p-6 md:p-8 border-b border-gray-50 bg-[#fafafa]/30">
-                <div className="flex items-center gap-4 mb-3">
-                    <div className="w-10 h-10 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center shadow-sm border border-red-100/50">
-                        {icon}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center shadow-sm border border-red-100/50">
+                            {icon}
+                        </div>
+                        <div>
+                            <h2 className="text-[17px] font-black text-gray-900 tracking-tight">{title} Editor</h2>
+                            <p className="text-[12px] text-gray-500 font-medium">{description}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-[17px] font-black text-gray-900 tracking-tight">{title} Editor</h2>
-                        <p className="text-[12px] text-gray-500 font-medium">{description}</p>
-                    </div>
+                    {headerActions && (
+                        <div className="flex items-center gap-3">
+                            {headerActions}
+                        </div>
+                    )}
                 </div>
 
                 {error && (

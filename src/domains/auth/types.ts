@@ -1,43 +1,45 @@
+import { Database } from "@/lib/supabase/database.types";
+
 export type AuthUser = {
     id: string;
     email: string;
-};
+} | null;
+
+export type TableRow<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
 
 // ComponentRegistry defines what data table a component pulls from
-export type ComponentRegistry = {
-    key: string;
-    componentcode: string;
-    componentname: string;
-    tablename: string;
-    [key: string]: unknown;
-};
+export type ComponentRegistry = TableRow<'componentregistry'>;
 
 // A single component assigned to a screen
-export type TemplateComponent = {
-    key: string;
-    componentcode: string;
-    displayorder?: number;
+export type TemplateComponent = TableRow<'templatecomponents'> & {
+    componentcode?: string; // Often joined from registry
     componentregistry: ComponentRegistry | null;
-    [key: string]: unknown;
+    // The RPC returns config already parsed if it's JSONB, but let's define the expected structure
+    config: {
+        group?: string;
+        groupmode?: 'exclusive' | 'merged';
+        variant?: string;
+        itemcount?: string | number;
+        datasource?: string;
+        selectionmethod?: 'auto' | 'manual';
+        [key: string]: unknown;
+    } | null;
 };
 
 // A screen (page) in the admin panel, with its nested components
-export type TemplateScreen = {
-    key: string;
-    screenslug: string;
-    screenname?: string;
-    route?: string;
-    displayorder?: number;
+export type TemplateScreen = TableRow<'templatescreens'> & {
+    screenname?: string; // Often joined or aliased
     components: TemplateComponent[] | null;
-    [key: string]: unknown;
 };
 
 // Full response from get_admin_initial_data RPC
 export type AdminInitialData = {
-    adminusers: Record<string, unknown>;
-    schools: Record<string, unknown>;
-    subscriptions: Record<string, unknown> | null;
-    plans: Record<string, unknown> | null;
-    templates: Record<string, unknown>;
+    adminusers: TableRow<'adminusers'>;
+    schools: TableRow<'schools'> & {
+        componentvariants: Record<string, string>;
+    };
+    subscriptions: TableRow<'subscriptions'> | null;
+    plans: TableRow<'plans'> | null;
+    templates: TableRow<'templates'>;
     templatescreens: TemplateScreen[];
 };

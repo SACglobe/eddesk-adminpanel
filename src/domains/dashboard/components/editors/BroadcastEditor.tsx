@@ -12,7 +12,7 @@ interface BroadcastEditorProps {
 }
 
 export default function BroadcastEditor({ component, screen, schoolKey }: BroadcastEditorProps) {
-    const tableName = component.componentregistry?.tablename || "broadcastcontent";
+    const tableName = (component.componentregistry as any)?.tablename || "broadcastcontent";
     const initialItems = (component as any).content || [];
 
     const {

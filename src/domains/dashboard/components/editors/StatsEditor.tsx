@@ -12,7 +12,7 @@ interface StatsEditorProps {
 }
 
 export default function StatsEditor({ component, screen, schoolKey }: StatsEditorProps) {
-    const tableName = component.componentregistry?.tablename || "schoolstats";
+    const tableName = (component.componentregistry as any)?.tablename || "schoolstats";
     const initialItems = (component as any).content || [];
 
     const {

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
-import type { AdminInitialData, TemplateScreen } from "@/domains/auth/types";
+import type { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
 
 export default async function DashboardPage() {
     const supabase = await createClient();
@@ -43,20 +43,28 @@ export default async function DashboardPage() {
 
     const typedData = data as AdminInitialData;
 
-    // 3. Deduplicate screens (Server-side optimization)
+    // 3. Deduplicate 
+    // We deduplicate screens by slug to avoid redundant sidebar entries, 
+    // but WE MUST KEEP all components to support variants and merged groups.
     const uniqueScreensMap = new Map<string, TemplateScreen>();
     typedData.templatescreens?.forEach(screen => {
         if (!uniqueScreensMap.has(screen.screenslug)) {
+            // Ensure components have unique keys if the RPC somehow duplicated them
             if (screen.components) {
-                const uniqueComponentsMap = new Map<string, any>();
-                screen.components.forEach(comp => {
-                    if (!uniqueComponentsMap.has(comp.componentcode)) {
-                        uniqueComponentsMap.set(comp.componentcode, comp);
-                    }
-                });
-                screen.components = Array.from(uniqueComponentsMap.values());
+                const uniqueComponents = new Map<string, TemplateComponent>();
+                screen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                screen.components = Array.from(uniqueComponents.values());
             }
             uniqueScreensMap.set(screen.screenslug, screen);
+        } else {
+            // If we found the same screen slug again, merge its components into the existing one
+            const existingScreen = uniqueScreensMap.get(screen.screenslug)!;
+            if (screen.components && existingScreen.components) {
+                const uniqueComponents = new Map<string, TemplateComponent>();
+                existingScreen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                screen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                existingScreen.components = Array.from(uniqueComponents.values());
+            }
         }
     });
     typedData.templatescreens = Array.from(uniqueScreensMap.values());

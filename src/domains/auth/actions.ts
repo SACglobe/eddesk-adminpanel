@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/lib/supabase/database.types";
 
 /**
  * Server Action to activate an invited admin account by setting their password
@@ -9,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function activateAccountAction(password: string) {
     try {
         console.log("--- Starting activateAccountAction ---");
-        const supabase = await createClient();
+        const supabase = await createClient<Database>();
 
         // Check if user is authenticated first
         const { data: { user }, error: userError } = await supabase.auth.getUser();

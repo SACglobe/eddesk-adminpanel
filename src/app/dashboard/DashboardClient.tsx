@@ -66,7 +66,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             }
 
             screen.components?.forEach(comp => {
-                const compName = (comp.componentregistry?.componentname ?? comp.componentcode).toLowerCase();
+                const compName = (comp.componentregistry?.componentname ?? comp.componentcode ?? "").toLowerCase();
                 if (compName.includes(query)) {
                     if (!results.some(r => r.type === 'component' && r.screen.screenslug === screen.screenslug && r.component?.componentcode === comp.componentcode)) {
                         results.push({ type: 'component', screen, component: comp });
@@ -101,10 +101,27 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         return adminData.templatescreens?.find(s => s.key === selectedScreenKey) || null;
     }, [selectedScreenKey, adminData]);
 
-    const selectedComponent = useMemo(() => {
+    const activeComponentData = useMemo(() => {
         if (!selectedComponentKey || !selectedScreen) return null;
-        return selectedScreen.components?.find(c => c.key === selectedComponentKey) || null;
-    }, [selectedComponentKey, selectedScreen]);
+
+        if (selectedComponentKey.startsWith("group:")) {
+            const [, mode, groupName] = selectedComponentKey.split(":");
+            const groupComponents = selectedScreen.components?.filter(c => c.config?.group === groupName) ?? [];
+
+            if (mode === 'exclusive') {
+                const activeVariant = adminData.schools.componentvariants[groupName];
+                const activeComp = groupComponents.find(c => c.config?.variant === activeVariant) || groupComponents[0];
+                return { components: activeComp ? [activeComp] : [], isGroup: true, groupMode: 'exclusive' as const, groupName };
+            } else {
+                return { components: groupComponents, isGroup: true, groupMode: 'merged' as const, groupName };
+            }
+        }
+
+        const component = selectedScreen.components?.find(c => c.key === selectedComponentKey);
+        return component ? { components: [component], isGroup: false } : null;
+    }, [selectedComponentKey, selectedScreen, adminData.schools.componentvariants]);
+
+    const selectedComponent = activeComponentData?.components[0] || null;
 
     const generalItemSelected = useMemo(() => {
         if (!selectedScreenKey) return null;
@@ -155,7 +172,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         window.location.href = "/login";
     }
 
-    const school = adminData?.schools as Record<string, string> | undefined;
+    const school = adminData?.schools;
 
     // Handle screen selection
     const handleSelectScreen = (key: string) => {
@@ -269,8 +286,8 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                         screens={adminData?.templatescreens ?? []}
                         selectedScreenKey={selectedScreenKey}
                         onSelectScreen={handleSelectScreen}
-                        schoolName={school?.name as string}
-                        schoolDomain={school?.customdomain as string ?? `${school?.slug}.eddesk.com`}
+                        schoolName={school?.name ?? ""}
+                        schoolDomain={school?.customdomain ?? `${school?.slug ?? ""}.eddesk.com`}
                         adminData={adminData}
                         onLogout={handleLogout}
                     />
@@ -286,6 +303,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                     selectedScreen={selectedScreen}
                                     selectedComponentKey={selectedComponentKey}
                                     onSelectComponent={setSelectedComponentKey}
+                                    componentVariants={adminData.schools.componentvariants}
                                 />
                             </div>
                         )}
@@ -293,12 +311,14 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                         <div className="h-full flex-1 min-w-0 flex">
                             <EditorHost
                                 selectedComponent={selectedComponent}
+                                activeComponentData={activeComponentData}
                                 selectedScreen={selectedScreen}
                                 generalItem={generalItemSelected}
-                                schoolKey={school?.key as string}
+                                schoolKey={school?.key ?? ""}
                                 onBack={() => setIsMobileMenuOpen(true)}
                                 onSearch={() => setIsSearchOpen(true)}
                                 allScreens={adminData?.templatescreens ?? []}
+                                allowedHeroMediaType={adminData?.schools?.componentvariants?.hero as 'image' | 'video' | 'both' | undefined}
                             />
                         </div>
                     </div>

@@ -8,15 +8,38 @@ import BroadcastEditor from "./editors/BroadcastEditor";
 
 interface EditorHostProps {
     selectedComponent: TemplateComponent | null;
+    activeComponentData?: {
+        components: TemplateComponent[];
+        isGroup: boolean;
+        groupMode?: 'exclusive' | 'merged';
+        groupName?: string;
+    } | null;
     selectedScreen?: TemplateScreen | null;
     generalItem?: { key: string; label: string; icon: React.ReactNode } | null;
     schoolKey?: string;
     onBack?: () => void;
     onSearch?: () => void;
     allScreens?: TemplateScreen[];
+    allowedHeroMediaType?: 'image' | 'video' | 'both';
 }
 
-export default function EditorHost({ selectedComponent, selectedScreen, generalItem, schoolKey, onBack, onSearch, allScreens }: EditorHostProps) {
+export default function EditorHost({
+    selectedComponent,
+    activeComponentData,
+    selectedScreen,
+    generalItem,
+    schoolKey,
+    onBack,
+    onSearch,
+    allScreens,
+    allowedHeroMediaType
+}: EditorHostProps) {
+    const isGroup = activeComponentData?.isGroup;
+    const groupName = activeComponentData?.groupName;
+    const groupMode = activeComponentData?.groupMode;
+
+    const mainTitle = isGroup ? groupName : (selectedComponent?.componentregistry?.componentname ?? selectedComponent?.componentcode);
+
     return (
         <div className="flex-1 bg-white flex flex-col min-w-0 transition-all duration-300">
             {/* Sub-header Bar (Supabase Table Look) */}
@@ -40,11 +63,13 @@ export default function EditorHost({ selectedComponent, selectedScreen, generalI
                             <span className="text-gray-900 font-bold truncate max-w-[120px] lg:max-w-none">{generalItem.label}</span>
                         </div>
                     )}
-                    {!generalItem && selectedScreen && selectedComponent && (
+                    {!generalItem && selectedScreen && (selectedComponent || isGroup) && (
                         <div className="flex items-center gap-1.5 lg:gap-2 text-[12px] lg:text-[13px] font-medium text-gray-500 tracking-tight">
                             <span className="capitalize hover:text-gray-900 transition-colors cursor-default truncate max-w-[100px] lg:max-w-none">{selectedScreen.screenname ?? selectedScreen.screenslug}</span>
                             <span className="text-gray-300 font-light">/</span>
-                            <span className="text-gray-900 font-bold truncate max-w-[120px] lg:max-w-none">{selectedComponent.componentregistry?.componentname ?? selectedComponent.componentcode}</span>
+                            <span className="text-gray-900 font-bold truncate max-w-[120px] lg:max-w-none capitalize">
+                                {mainTitle}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -99,60 +124,69 @@ export default function EditorHost({ selectedComponent, selectedScreen, generalI
                             </div>
                         </div>
                     </div>
-                ) : selectedComponent ? (
+                ) : (selectedComponent || isGroup) ? (
                     <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 px-4 sm:px-0">
-                            {String(selectedComponent.componentregistry?.componentname ?? selectedComponent.componentcode)}
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 px-4 sm:px-0 capitalize">
+                            {mainTitle}
                         </h1>
                         <p className="text-[13px] sm:text-[14px] text-gray-500 mb-6 sm:mb-10 px-4 sm:px-0">
-                            Manage and configuration for the {String(selectedComponent.componentregistry?.componentname ?? selectedComponent.componentcode)} module.
+                            Manage and configuration for the {mainTitle} module.
                         </p>
 
-                        <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 md:mx-0">
-                            <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 md:px-6 py-3">
-                                <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
-                                    Component Properties
-                                </h3>
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                {(() => {
-                                    if (!schoolKey) return null;
+                        <div className="space-y-6">
+                            {(activeComponentData?.components ?? (selectedComponent ? [selectedComponent] : [])).map((comp, idx) => (
+                                <div key={comp.key} className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 md:mx-0">
+                                    <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 md:px-6 py-3 flex items-center justify-between">
+                                        <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
+                                            {comp.componentregistry?.componentname ?? comp.componentcode} Properties
+                                        </h3>
+                                        {groupMode === 'merged' && (
+                                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">
+                                                Part {idx + 1}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 overflow-hidden">
+                                        {(() => {
+                                            if (!schoolKey) return null;
 
-                                    const code = selectedComponent.componentcode.toLowerCase();
-                                    if (code === "hero") {
-                                        return <HeroEditor component={selectedComponent} screen={selectedScreen!} schoolKey={schoolKey} allScreens={allScreens || []} />;
-                                    }
-                                    if (code === "schoolstats") {
-                                        return <StatsEditor component={selectedComponent} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                    }
-                                    if (code === "broadcast") {
-                                        return <BroadcastEditor component={selectedComponent} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                    }
+                                            const code = comp.componentcode?.toLowerCase();
+                                            if (!code) return null;
+                                            if (code === "hero") {
+                                                return <HeroEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
+                                            }
+                                            if (code === "schoolstats") {
+                                                return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "broadcast") {
+                                                return <BroadcastEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
 
-                                    return (
-                                        <div className="px-4 md:px-6 py-8 flex flex-col items-center justify-center text-center">
-                                            <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                                                </svg>
-                                            </div>
-                                            <h2 className="text-lg font-bold text-gray-900">
-                                                {String(selectedComponent.componentregistry?.componentname ?? selectedComponent.componentcode)} Editor
-                                            </h2>
-                                            <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
-                                                Connected to <code className="bg-gray-100 text-[#F54927] px-1.5 py-0.5 rounded font-mono text-xs">{String(selectedComponent.componentregistry?.tablename)}</code>.
-                                                The editor form for this component will appear here.
-                                            </p>
+                                            return (
+                                                <div className="px-4 md:px-6 py-8 flex flex-col items-center justify-center text-center">
+                                                    <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                                        </svg>
+                                                    </div>
+                                                    <h2 className="text-lg font-bold text-gray-900">
+                                                        {comp.componentregistry?.componentname ?? comp.componentcode} Editor
+                                                    </h2>
+                                                    <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
+                                                        The editor form for this component will appear here.
+                                                    </p>
 
-                                            <div className="mt-8 flex gap-3">
-                                                <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
-                                                    Implement editor
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
+                                                    <div className="mt-8 flex gap-3">
+                                                        <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
+                                                            Implement editor
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 ) : (

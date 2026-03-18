@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { AdminInviteParams, SchoolOption } from "./types";
+import { Database } from "@/lib/supabase/database.types";
 
 export async function getSchools(): Promise<SchoolOption[]> {
-    const supabase = createClient();
+    const supabase = createClient<Database>();
     const { data, error } = await supabase
         .from("schools")
         .select("key, name")
@@ -14,7 +15,7 @@ export async function getSchools(): Promise<SchoolOption[]> {
         return [];
     }
 
-    return data as SchoolOption[];
+    return (data as SchoolOption[]) || [];
 }
 
 export async function createAdminInvite(params: AdminInviteParams) {
