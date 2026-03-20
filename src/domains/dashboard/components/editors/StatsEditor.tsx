@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import BaseEditor from "./BaseEditor";
 import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
 import type { TemplateComponent, TemplateScreen } from "@/domains/auth/types";
@@ -15,6 +15,15 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
     const tableName = (component.componentregistry as any)?.tablename || "schoolstats";
     const initialItems = (component as any).content || [];
 
+    const config = component.config as any;
+    const itemCount = config?.itemcount ? parseInt(config.itemcount) : null;
+    const isFixedMode = itemCount !== null;
+
+    const filters = useMemo(() => ({
+        ...(config?.filters || {}),
+        screenslug: screen.screenslug
+    }), [config?.filters, screen.screenslug]);
+
     const {
         records: stats,
         isSaving,
@@ -25,20 +34,32 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
     } = useComponentData({
         tableName,
         schoolKey,
+        filters,
         initialRecords: initialItems
     });
 
+    // Fixed slots logic
+    const slots = useMemo(() => {
+        if (!isFixedMode) return stats;
+        const result = [...stats];
+        while (result.length < itemCount) {
+            result.push(null);
+        }
+        return result.slice(0, itemCount);
+    }, [stats, isFixedMode, itemCount]);
+
     const [editingStat, setEditingStat] = useState<any>(null);
 
-    const handleAddNew = () => {
+    const handleAddNew = (displayOrder?: number) => {
         setEditingStat({
             key: crypto.randomUUID(),
-            screenslug: screen.screenslug,
+            schoolkey: schoolKey,
+            ...filters,
             label: "New Stat",
             value: "0",
             suffix: "+",
             icon: "star",
-            displayorder: stats.length + 1,
+            displayorder: displayOrder ?? stats.length + 1,
             isactive: true
         });
     };
@@ -56,73 +77,95 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
         >
             <div className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stats.map((stat: any) => (
-                        <div
-                            key={stat.key}
-                            className="group p-6 bg-white border border-gray-100 rounded-2xl hover:border-red-100 hover:shadow-xl hover:shadow-red-500/5 transition-all cursor-pointer relative"
-                            onClick={() => setEditingStat(stat)}
-                        >
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    {slots.map((stat: any, index: number) => {
+                        if (!stat) {
+                            return (
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const index = stats.indexOf(stat);
-                                        if (index > 0) {
-                                            const newOrder = [...stats];
-                                            [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-                                            reorderRecords(newOrder);
-                                        }
-                                    }}
-                                    disabled={stats.indexOf(stat) === 0}
-                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927] disabled:opacity-30"
+                                    key={`empty-${index}`}
+                                    onClick={() => handleAddNew(index + 1)}
+                                    className="p-6 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/30 transition-all active:scale-[0.98] min-h-[120px]"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                     </svg>
+                                    <div className="text-center">
+                                        <p className="text-[13px] font-black tracking-tight">Slot {index + 1}</p>
+                                        <p className="text-[11px] font-medium text-gray-400">Add statistic</p>
+                                    </div>
                                 </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const index = stats.indexOf(stat);
-                                        if (index < stats.length - 1) {
-                                            const newOrder = [...stats];
-                                            [newOrder[index + 1], newOrder[index]] = [newOrder[index], newOrder[index + 1]];
-                                            reorderRecords(newOrder);
-                                        }
-                                    }}
-                                    disabled={stats.indexOf(stat) === stats.length - 1}
-                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927] disabled:opacity-30"
-                                >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setEditingStat(stat); }}
-                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927]"
-                                >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-[24px] font-black text-gray-900 tracking-tight">{stat.value}</span>
-                                <span className="text-[14px] font-bold text-[#F54927]">{stat.suffix}</span>
-                            </div>
-                            <p className="text-[13px] font-bold text-gray-500 mt-1 uppercase tracking-wide">{stat.label}</p>
-                        </div>
-                    ))}
+                            );
+                        }
 
-                    <button
-                        onClick={handleAddNew}
-                        className="p-6 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/30 transition-all active:scale-[0.98]"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span className="text-[13px] font-black tracking-tight">Add New Stat</span>
-                    </button>
+                        return (
+                            <div
+                                key={stat.key}
+                                className="group p-6 bg-white border border-gray-100 rounded-2xl hover:border-red-100 hover:shadow-xl hover:shadow-red-500/5 transition-all cursor-pointer relative"
+                                onClick={() => setEditingStat(stat)}
+                            >
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const index = stats.indexOf(stat);
+                                            if (index > 0) {
+                                                const newOrder = [...stats];
+                                                [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+                                                reorderRecords(newOrder);
+                                            }
+                                        }}
+                                        disabled={stats.indexOf(stat) === 0}
+                                        className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927] disabled:opacity-30"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const index = stats.indexOf(stat);
+                                            if (index < stats.length - 1) {
+                                                const newOrder = [...stats];
+                                                [newOrder[index + 1], newOrder[index]] = [newOrder[index], newOrder[index + 1]];
+                                                reorderRecords(newOrder);
+                                            }
+                                        }}
+                                        disabled={stats.indexOf(stat) === stats.length - 1}
+                                        className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927] disabled:opacity-30"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setEditingStat(stat); }}
+                                        className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927]"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[24px] font-black text-gray-900 tracking-tight">{stat.value}</span>
+                                    <span className="text-[14px] font-bold text-[#F54927]">{stat.suffix}</span>
+                                </div>
+                                <p className="text-[13px] font-bold text-gray-500 mt-1 uppercase tracking-wide">{stat.label}</p>
+                            </div>
+                        );
+                    })}
+
+                    {!isFixedMode && (
+                        <button
+                            onClick={() => handleAddNew()}
+                            className="p-6 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/30 transition-all active:scale-[0.98]"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span className="text-[13px] font-black tracking-tight">Add New Stat</span>
+                        </button>
+                    )}
                 </div>
 
                 {editingStat && (

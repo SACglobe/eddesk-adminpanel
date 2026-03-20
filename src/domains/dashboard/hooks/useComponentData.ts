@@ -26,10 +26,18 @@ export function useComponentData({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Filtered records by schoolKey
+    // Filtered records by schoolKey and any additional filters (client-side to keep in sync with server-side query)
     const filteredRecords = useMemo(() => {
-        return records.filter(r => r.schoolkey === schoolKey);
-    }, [records, schoolKey]);
+        return records.filter(r => {
+            if (r.schoolkey !== schoolKey) return false;
+            if (filters) {
+                for (const [key, value] of Object.entries(filters)) {
+                    if (value !== undefined && value !== null && r[key] !== value) return false;
+                }
+            }
+            return true;
+        });
+    }, [records, schoolKey, filters]);
 
     /**
      * Fetch records from the table
@@ -61,8 +69,9 @@ export function useComponentData({
             }
 
             const { data, error: fetchError } = await query;
-
             if (fetchError) throw fetchError;
+            
+            console.log(`[useComponentData] Fetching from ${tableName}. Filters:`, filters, "Result count:", data?.length || 0);
             setRecords(data || []);
         } catch (err: any) {
             console.error(`Error fetching from ${tableName}:`, err);
@@ -72,12 +81,14 @@ export function useComponentData({
         }
     }, [tableName, schoolKey, orderBy, filters]);
 
-    // Auto-fetch if initialRecords is empty or on mount
+    // Auto-fetch if filters are provided or initialRecords is empty
     useEffect(() => {
-        if (initialRecords.length === 0) {
+        // We always fetch on mount if filters are provided to ensure correct data
+        // Or if initialRecords is empty
+        if (filters || initialRecords.length === 0) {
             fetchRecords();
         }
-    }, [fetchRecords, initialRecords.length]);
+    }, [fetchRecords]); // fetchRecords already depends on filters, initialRecords length not needed here
 
     /**
      * Save/Update a record
