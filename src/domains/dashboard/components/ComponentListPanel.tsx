@@ -1,6 +1,7 @@
 "use client";
 
 import { TemplateScreen, TemplateComponent } from "@/domains/auth/types";
+import { getEnrichedConfig } from "../utils/componentUtils";
 
 interface ComponentListPanelProps {
     selectedScreen: TemplateScreen | null;
@@ -34,14 +35,19 @@ export default function ComponentListPanel({
     const groups: Map<string, { mode: 'exclusive' | 'merged', items: TemplateComponent[], order: number }> = new Map();
     const singles: TemplateComponent[] = [];
 
-    components.forEach(comp => {
-        const groupName = comp.config?.group;
-        const groupMode = comp.config?.groupmode;
+    components.forEach((comp: TemplateComponent) => {
+        const config = getEnrichedConfig(comp);
+        const groupName = config.group;
+        const groupMode = config.groupmode;
+
         if (groupName && groupMode) {
             if (!groups.has(groupName)) {
                 groups.set(groupName, { mode: groupMode, items: [], order: comp.displayorder ?? 0 });
             }
-            groups.get(groupName)!.items.push(comp);
+            // Ensure the component has the enriched config for internal logic
+            const enrichedComp = { ...comp, config };
+            groups.get(groupName)!.items.push(enrichedComp);
+            
             // Use the lowest displayorder for the group
             if ((comp.displayorder ?? 0) < groups.get(groupName)!.order) {
                 groups.get(groupName)!.order = comp.displayorder ?? 0;
@@ -124,6 +130,8 @@ export default function ComponentListPanel({
                                         const activeVariant = componentVariants[entry.name];
                                         if (activeVariant) {
                                             variantLabel = activeVariant.charAt(0).toUpperCase() + activeVariant.slice(1);
+                                        } else {
+                                            variantLabel = "No Variant";
                                         }
                                     } else {
                                         // Merged: Use the component name from first item or display name

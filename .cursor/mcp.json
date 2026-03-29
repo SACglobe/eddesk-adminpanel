@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "supabase-readonly": {
+      "type": "sse",
+      "url": "https://mcp.supabase.com/mcp?project_ref=adjxsdihvjwntavpymhg&read_only=true"
+    }
+  }
+}

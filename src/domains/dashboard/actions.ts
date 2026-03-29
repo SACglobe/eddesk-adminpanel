@@ -24,11 +24,25 @@ export async function upsertComponentData(
     // 2. School ownership check (Secondary safety gate)
     // In a real app, we would query the adminusers table to ensure this user has access to this schoolKey.
     // For now, we enforce that the data being saved MUST match the provided schoolKey.
-    const payload = {
+    const payload: any = {
         ...data,
         schoolkey: schoolKey,
-        updatedat: new Date().toISOString(),
     };
+
+    // Only inject updatedat for tables that actually have this column
+    const tablesWithUpdatedAt = [
+        "schools",
+        "herocontent",
+        "broadcastcontent",
+        "schoolidentity",
+        "adminusers",
+        "subscriptions",
+        "componentplacement"
+    ];
+    
+    if (tablesWithUpdatedAt.includes(tableName)) {
+        payload.updatedat = new Date().toISOString();
+    }
 
     // 3. Execution
     const { data: result, error } = await supabase
@@ -110,4 +124,36 @@ export async function updateComponentOrder(
 
     revalidatePath("/dashboard");
     return { success: true };
+}
+
+/**
+ * Update Template Component Configuration
+ * Used for saving selector items, variants, etc.
+ */
+export async function updateComponentConfig(
+    componentKey: string,
+    config: any
+) {
+    const supabase = await createClient();
+
+    // 1. Session check
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Unauthorized");
+
+    // 2. Execution
+    const { data: result, error } = await supabase
+        .from('templatecomponents')
+        .update({ config })
+        .eq('key', componentKey)
+        .select()
+        .single();
+
+    if (error) {
+        console.error(`Error updating component config:`, error);
+        return { success: false, error: error.message };
+    }
+
+    // 3. Cache bust
+    revalidatePath("/dashboard");
+    return { success: true, data: result };
 }

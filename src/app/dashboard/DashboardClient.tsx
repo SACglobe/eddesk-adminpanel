@@ -3,11 +3,12 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/domains/auth/queries";
-import type { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
+import { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
 import NavigationRail, { GetIcon, GENERAL_ITEMS } from "@/domains/dashboard/components/NavigationRail";
 import ComponentListPanel from "@/domains/dashboard/components/ComponentListPanel";
 import EditorHost from "@/domains/dashboard/components/EditorHost";
 import BrandLogo from "@/components/BrandLogo";
+import { getEnrichedConfig } from "@/domains/dashboard/utils/componentUtils";
 
 interface DashboardClientProps {
     initialData: AdminInitialData;
@@ -45,7 +46,14 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
             if (defaultScreen.components && defaultScreen.components.length > 0) {
                 const sortedComps = [...defaultScreen.components].sort((a, b) => (a.displayorder ?? 0) - (b.displayorder ?? 0));
-                setSelectedComponentKey(sortedComps[0].key);
+                const firstComp = sortedComps[0];
+                const config = getEnrichedConfig(firstComp);
+                
+                if (config.group && config.groupmode) {
+                    setSelectedComponentKey(`group:${config.groupmode}:${config.group}`);
+                } else {
+                    setSelectedComponentKey(firstComp.key);
+                }
             }
         }
     }, [adminData, selectedScreenKey]);
@@ -65,7 +73,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                 results.push({ type: 'screen', screen });
             }
 
-            screen.components?.forEach(comp => {
+            screen.components?.forEach((comp: TemplateComponent) => {
                 const compName = (comp.componentregistry?.componentname ?? comp.componentcode ?? "").toLowerCase();
                 if (compName.includes(query)) {
                     if (!results.some(r => r.type === 'component' && r.screen.screenslug === screen.screenslug && r.component?.componentcode === comp.componentcode)) {
@@ -106,18 +114,43 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         if (selectedComponentKey.startsWith("group:")) {
             const [, mode, groupName] = selectedComponentKey.split(":");
-            const groupComponents = selectedScreen.components?.filter(c => c.config?.group === groupName) ?? [];
+            const groupComponents = selectedScreen.components?.filter((c: TemplateComponent) => {
+                const config = getEnrichedConfig(c);
+                return config.group === groupName;
+            }) ?? [];
 
             if (mode === 'exclusive') {
-                const activeVariant = adminData.schools.componentvariants[groupName];
-                const activeComp = groupComponents.find(c => c.config?.variant === activeVariant) || groupComponents[0];
-                return { components: activeComp ? [activeComp] : [], isGroup: true, groupMode: 'exclusive' as const, groupName };
+                const variants = adminData.schools.componentvariants || {};
+                const activeVariant = variants[groupName];
+                
+                if (!activeVariant) {
+                    console.warn(`[Grouping] Exclusive variant not found for group "${groupName}". Falling back to first component.`);
+                }
+
+                const activeComp = groupComponents.find((c: TemplateComponent) => {
+                    const config = getEnrichedConfig(c);
+                    return config.variant === activeVariant;
+                }) || groupComponents[0];
+
+                return { 
+                    components: activeComp ? [activeComp] : [], 
+                    allComponents: groupComponents, // Pass the full set for context
+                    isGroup: true, 
+                    groupMode: 'exclusive' as const, 
+                    groupName 
+                };
             } else {
-                return { components: groupComponents, isGroup: true, groupMode: 'merged' as const, groupName };
+                return { 
+                    components: groupComponents, 
+                    allComponents: groupComponents, // Consistently available
+                    isGroup: true, 
+                    groupMode: 'merged' as const, 
+                    groupName 
+                };
             }
         }
 
-        const component = selectedScreen.components?.find(c => c.key === selectedComponentKey);
+        const component = selectedScreen.components?.find((c: TemplateComponent) => c.key === selectedComponentKey);
         return component ? { components: [component], isGroup: false } : null;
     }, [selectedComponentKey, selectedScreen, adminData.schools.componentvariants]);
 
@@ -186,7 +219,14 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             const screen = adminData?.templatescreens?.find(s => s.key === key);
             if (screen && screen.components && screen.components.length > 0) {
                 const sortedComps = [...screen.components].sort((a, b) => (a.displayorder ?? 0) - (b.displayorder ?? 0));
-                setSelectedComponentKey(sortedComps[0].key);
+                const firstComp = sortedComps[0];
+                const config = getEnrichedConfig(firstComp);
+                
+                if (config.group && config.groupmode) {
+                    setSelectedComponentKey(`group:${config.groupmode}:${config.group}`);
+                } else {
+                    setSelectedComponentKey(firstComp.key);
+                }
             } else {
                 setSelectedComponentKey(null);
             }
@@ -523,7 +563,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-3 space-y-1.5 no-scrollbar">
-                            {selectedScreen.components?.sort((a, b) => (a.displayorder ?? 0) - (b.displayorder ?? 0)).map(comp => {
+                            {selectedScreen.components?.sort((a: TemplateComponent, b: TemplateComponent) => (a.displayorder ?? 0) - (b.displayorder ?? 0)).map((comp: TemplateComponent) => {
                                 const isSelected = selectedComponentKey === comp.key;
                                 return (
                                     <button

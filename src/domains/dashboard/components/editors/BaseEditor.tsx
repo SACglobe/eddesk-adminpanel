@@ -12,6 +12,10 @@ interface BaseEditorProps {
     onCancel?: () => void;
     error?: string | null;
     headerActions?: ReactNode;
+    isEditable?: boolean;
+    parentScreenName?: string | null;
+    selectionMethod?: 'auto' | 'manual' | null;
+    emptySlotsCount?: number;
 }
 
 export default function BaseEditor({
@@ -23,7 +27,11 @@ export default function BaseEditor({
     onSave,
     onCancel,
     error,
-    headerActions
+    headerActions,
+    isEditable = true,
+    parentScreenName,
+    selectionMethod,
+    emptySlotsCount
 }: BaseEditorProps) {
     return (
         <div className="flex flex-col h-full bg-white relative animate-in fade-in duration-300">
@@ -52,6 +60,49 @@ export default function BaseEditor({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-[12px] font-bold">{error}</span>
+                    </div>
+                )}
+
+                {!isEditable && (
+                    <div className="mt-5 p-4 bg-blue-50/50 border border-blue-100 rounded-[20px] flex items-start gap-4 animate-in slide-in-from-top-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <p className="text-[13px] font-black text-blue-900 tracking-tight leading-tight">Editing Restricted</p>
+                            <p className="text-[12px] text-blue-700/80 font-medium leading-relaxed">
+                                This is a presentation slot for the Home Screen. You can manage the source entries and category filters on the <span className="font-black text-blue-900 underline underline-offset-2 decoration-2 decoration-blue-200">"{parentScreenName || 'Source'}"</span> screen.
+                            </p>
+                            <div className="pt-1.5 flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-[9px] font-black uppercase tracking-wider text-blue-600">
+                                    {selectionMethod === 'manual' ? 'Manual Selection' : 'Automatic Content'}
+                                </span>
+                                <span className="text-[10px] text-blue-500 font-bold italic">
+                                    {selectionMethod === 'manual' 
+                                        ? "• You choose which items to show here"
+                                        : "• Shows latest entries from source automatically"
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {!isEditable && selectionMethod !== 'manual' && emptySlotsCount !== undefined && emptySlotsCount > 0 && (
+                    <div className="mt-3 p-4 bg-amber-50/50 border border-amber-100 rounded-[20px] flex items-start gap-4 animate-in slide-in-from-top-2">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <p className="text-[13px] font-black text-amber-900 tracking-tight leading-tight">Missing Content Data</p>
+                            <p className="text-[12px] text-amber-800/80 font-medium leading-relaxed">
+                                There {emptySlotsCount === 1 ? 'is' : 'are'} {emptySlotsCount} empty slot{emptySlotsCount !== 1 ? 's' : ''} with no data. Please add more entries on the <span className="font-black">"{parentScreenName || 'Source'}"</span> screen to fill {emptySlotsCount === 1 ? 'this space' : 'these spaces'}.
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>

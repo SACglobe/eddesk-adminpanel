@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import BaseEditor from "./BaseEditor";
 import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
-import type { TemplateComponent, TemplateScreen } from "@/domains/auth/types";
+import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
+import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
 
 interface BroadcastEditorProps {
     component: TemplateComponent;
@@ -57,15 +58,67 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
         orderBy: "priority"
     });
 
+    const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const placements = useMemo(() => {
+        return (component.contentplacements || [])
+            .filter((p: ComponentPlacement) => p.isactive !== false)
+            .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0));
+    }, [component.contentplacements]);
+
     // Fixed slots logic
     const slots = useMemo(() => {
-        if (!isFixedMode) return broadcasts;
-        const result = [...broadcasts];
-        while (result.length < itemCount) {
-            result.push(null);
+        if (!isFixedMode && component.iseditable) return broadcasts;
+        
+        const count = itemCount || broadcasts.length || 4;
+        const result = [];
+        for (let i = 0; i < count; i++) {
+            const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
+            const broadcast = placement ? broadcasts.find((b: any) => b.key === placement.contentkey) : (isFixedMode && broadcasts[i] ? broadcasts[i] : null);
+            result.push(broadcast || { isSkeleton: true, displayorder: i + 1 });
         }
-        return result.slice(0, itemCount);
-    }, [broadcasts, isFixedMode, itemCount]);
+        return result;
+    }, [broadcasts, isFixedMode, itemCount, placements, component.iseditable]);
+
+    const handleSelectRecord = async (recordKey: string) => {
+        if (pickingForIndex === null) return;
+        setIsUpdating(true);
+        try {
+            const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
+            
+            await upsertComponentData('componentplacement', {
+                key: existingPlacement?.key || undefined,
+                schoolkey: schoolKey,
+                templatecomponentkey: component.key,
+                componentcode: component.componentcode || 'broadcast',
+                contenttable: tableName,
+                contentkey: recordKey,
+                displayorder: pickingForIndex + 1,
+                isactive: true
+            }, schoolKey);
+            
+            setPickingForIndex(null);
+        } catch (err) {
+            console.error("Failed to update placement:", err);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleClearSlot = async (index: number) => {
+        const placement = placements.find((p: ComponentPlacement) => p.displayorder === index + 1);
+        if (!placement) return;
+
+        setIsUpdating(true);
+        try {
+            await deleteComponentData('componentplacement', placement.key, schoolKey);
+        } catch (err) {
+            console.error("Failed to delete placement:", err);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     const [editingBroadcast, setEditingBroadcast] = useState<any>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -115,16 +168,19 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                 </svg>
             }
             error={error}
+            isEditable={component.iseditable}
+            parentScreenName={component.parentscreenname}
+            selectionMethod={config?.selectionmethod}
         >
             {/* Grid of Broadcasts */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {slots.map((broadcast: any, index: number) => {
-                    if (!broadcast) {
+                    if (broadcast.isSkeleton) {
                         return (
                             <button
                                 key={`empty-${index}`}
                                 type="button"
-                                onClick={handleAddNew}
+                                onClick={() => component.iseditable ? handleAddNew() : setPickingForIndex(index)}
                                 className="p-6 border-2 border-dashed border-gray-100 rounded-[20px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all active:scale-[0.98] group min-h-[160px]"
                             >
                                 <div className="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
@@ -133,8 +189,8 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                                     </svg>
                                 </div>
                                 <div className="text-center">
-                                    <p className="text-[13px] font-black tracking-tight">Empty Slot</p>
-                                    <p className="text-[11px] font-medium text-gray-400">Click to add broadcast</p>
+                                    <p className="text-[13px] font-black tracking-tight">Slot {index + 1}</p>
+                                    <p className="text-[11px] font-medium text-gray-400">{component.iseditable ? "Click to add broadcast" : "Select broadcast"}</p>
                                 </div>
                             </button>
                         );
@@ -146,7 +202,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                     return (
                         <div
                             key={broadcast.key}
-                            onClick={() => setEditingBroadcast(broadcast)}
+                            onClick={() => component.iseditable ? setEditingBroadcast(broadcast) : setPickingForIndex(index)}
                             className={`group bg-white border border-gray-100 rounded-[20px] hover:border-red-100 hover:shadow-2xl hover:shadow-red-500/10 transition-all cursor-pointer relative flex flex-col overflow-hidden ${isInactive || isExpired ? "opacity-60" : ""}`}
                         >
                             <div className={`h-1.5 w-full bg-gradient-to-r ${p.preview} flex-shrink-0`} />
@@ -158,7 +214,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                                     {!isExpired && !isInactive && broadcast.isactive && <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">Live</span>}
                                 </div>
                                 <h4 className="text-[14px] font-black text-gray-900 group-hover:text-[#F54927] tracking-tight leading-snug transition-colors line-clamp-2">
-                                    {broadcast.title || "Untitled"}
+                                    {broadcast.title || "No Title"}
                                 </h4>
                                 <p className="text-[11px] text-gray-400 font-medium line-clamp-3 leading-relaxed">
                                     {broadcast.message}
@@ -173,15 +229,34 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                                 </div>
                             )}
                             <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all">
-                                <button
-                                    type="button"
-                                    onClick={e => { e.stopPropagation(); setEditingBroadcast(broadcast); }}
-                                    className="p-2 bg-white rounded-xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
-                                >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                </button>
+                                {component.iseditable ? (
+                                    <button
+                                        type="button"
+                                        onClick={e => { e.stopPropagation(); setEditingBroadcast(broadcast); }}
+                                        className="p-2 bg-white rounded-xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={e => { e.stopPropagation(); setPickingForIndex(index); }}
+                                            className="p-2 bg-white rounded-xl text-gray-400 hover:text-blue-500 shadow-lg border border-gray-100 transition-all"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={e => { e.stopPropagation(); handleClearSlot(index); }}
+                                            className="p-2 bg-white rounded-xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );
@@ -261,12 +336,12 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                                             <div className="flex-1 overflow-hidden px-4">
                                                 <div className="whitespace-nowrap animate-[marquee_12s_linear_infinite] inline-block">
                                                     {(editingBroadcast.title || editingBroadcast.message)
-                                                        ? <><span className="text-[14px] font-black text-gray-900">{editingBroadcast.title || "Announcement"}:</span>{" "}<span className="text-[14px] font-normal text-gray-600">{editingBroadcast.message || "No message content..."}</span></>
+                                                        ? <><span className="text-[14px] font-black text-gray-900">{editingBroadcast.title || "No Title"}:</span>{" "}<span className="text-[14px] font-normal text-gray-600">{editingBroadcast.message || "No Message"}</span></>
                                                         : <span className="text-[14px] italic font-normal text-gray-400">Your message will scroll here...</span>
                                                     }
                                                     &nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;
                                                     {(editingBroadcast.title || editingBroadcast.message)
-                                                        ? <><span className="text-[14px] font-black text-gray-900">{editingBroadcast.title || "Announcement"}:</span>{" "}<span className="text-[14px] font-normal text-gray-600">{editingBroadcast.message || "No message content..."}</span></>
+                                                        ? <><span className="text-[14px] font-black text-gray-900">{editingBroadcast.title || "No Title"}:</span>{" "}<span className="text-[14px] font-normal text-gray-600">{editingBroadcast.message || "No Message"}</span></>
                                                         : <span className="text-[14px] italic font-normal text-gray-400">Your message will scroll here...</span>
                                                     }
                                                 </div>
@@ -425,6 +500,45 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                     </div>
                 </div>
             )}
+                {/* Selection Dialog */}
+                {pickingForIndex !== null && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm shadow-2xl">
+                        <div className="absolute inset-0" onClick={() => setPickingForIndex(null)} />
+                        <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">Select Broadcast for Slot {pickingForIndex + 1}</h3>
+                                <button onClick={() => setPickingForIndex(null)} className="w-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-6 space-y-3 no-scrollbar">
+                                {broadcasts.length === 0 ? (
+                                    <div className="text-center py-10 text-gray-400 font-bold">No broadcasts found in the source.</div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {broadcasts.map((rec: any) => (
+                                            <button
+                                                key={rec.key}
+                                                onClick={() => handleSelectRecord(rec.key)}
+                                                className={`w-full flex items-center gap-4 p-4 rounded-3xl border-2 text-left transition-all ${placements.some((p: ComponentPlacement) => p.contentkey === rec.key) ? "border-red-500 bg-red-50/10" : "border-gray-50 hover:border-red-200 bg-white"}`}
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-[14px] font-black text-gray-900 truncate">{rec.title}</h4>
+                                                    <p className="text-[12px] text-gray-400 line-clamp-1">{rec.message}</p>
+                                                </div>
+                                                {placements.some((p: ComponentPlacement) => p.contentkey === rec.key) && (
+                                                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
         </BaseEditor>
     );
 }

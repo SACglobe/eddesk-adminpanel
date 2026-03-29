@@ -5,6 +5,15 @@ import React from "react";
 import HeroEditor from "./editors/HeroEditor";
 import StatsEditor from "./editors/StatsEditor";
 import BroadcastEditor from "./editors/BroadcastEditor";
+import ContactDetailsEditor from "./editors/ContactDetailsEditor";
+import AcademicResultsEditor from "./editors/AcademicResultsEditor";
+import AchievementsEditor from "./editors/AchievementsEditor";
+import GalleryEditor from "./editors/GalleryEditor";
+import EventsEditor from "./editors/EventsEditor";
+import FacultyEditor from "./editors/FacultyEditor";
+import TestimonialEditor from "./editors/TestimonialEditor";
+import LeadershipEditor from "./editors/LeadershipEditor";
+import InfrastructureEditor from "./editors/InfrastructureEditor";
 
 interface EditorHostProps {
     selectedComponent: TemplateComponent | null;
@@ -152,14 +161,71 @@ export default function EditorHost({
 
                                             const code = comp.componentcode?.toLowerCase();
                                             if (!code) return null;
+
+                                            // Determine if the component natively ignores config (singletons)
+                                            const isSingleton = ['contactdetails'].includes(code);
+
+                                            // A config is missing if it doesn't exist, is totally empty, or contains entirely null operational values (and isn't a singleton)
+                                            const isConfigMissing = !isSingleton && (!comp.config || Object.keys(comp.config).length === 0 || (
+                                                comp.config.variant === null && 
+                                                comp.config.itemcount === null && 
+                                                comp.config.selectionmethod === null
+                                            ));
+
+                                            if (isConfigMissing) {
+                                                return (
+                                                    <div className="p-8 md:p-16 text-center flex flex-col items-center justify-center bg-white border-t border-gray-50">
+                                                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-5 animate-pulse">
+                                                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                            </svg>
+                                                        </div>
+                                                        <h2 className="text-[18px] font-black text-gray-900 mb-2 tracking-tight">Configuration Missing</h2>
+                                                        <p className="text-[14px] font-medium text-gray-500 max-w-sm mx-auto leading-relaxed">
+                                                            This component does not have a valid configuration block assigned in the template. Please assign configuration parameters (like item counts and layout) to enable the editor.
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+
                                             if (code === "hero") {
-                                                return <HeroEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
+                                                return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
                                             }
                                             if (code === "schoolstats") {
                                                 return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                             }
                                             if (code === "broadcast") {
                                                 return <BroadcastEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "academicresults") {
+                                                return <AcademicResultsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "schoolachievements") {
+                                                return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "gallery") {
+                                                return <GalleryEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "achievements" || code === "schoolachievements") {
+                                                return <AchievementsEditor component={comp} screen={screen} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "contactdetails") {
+                                                return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "events") {
+                                                return <EventsEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "faculty") {
+                                                return <FacultyEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "testimonial") {
+                                                return <TestimonialEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "leadership") {
+                                                return <LeadershipEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "infrastructure") {
+                                                return <InfrastructureEditor component={comp} schoolKey={schoolKey} />;
                                             }
 
                                             return (

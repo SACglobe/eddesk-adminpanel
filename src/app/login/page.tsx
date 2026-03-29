@@ -17,6 +17,7 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [hasSession, setHasSession] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         const supabase = createClient();
@@ -172,7 +173,7 @@ export default function LoginPage() {
                                 </label>
                                 <input
                                     id="new-password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
@@ -188,7 +189,7 @@ export default function LoginPage() {
                                 </label>
                                 <input
                                     id="confirm-password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -223,7 +224,7 @@ export default function LoginPage() {
                                 </label>
                                 <input
                                     id="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     autoComplete="current-password"
                                     required
                                     value={password}
@@ -234,6 +235,20 @@ export default function LoginPage() {
                             </div>
                         </>
                     )}
+
+                    {/* Show Password Toggle */}
+                    <div className="flex items-center">
+                        <input
+                            id="show-password"
+                            type="checkbox"
+                            checked={showPassword}
+                            onChange={(e) => setShowPassword(e.target.checked)}
+                            className="h-4 w-4 text-[#F54927] focus:ring-[#F54927] border-gray-300 rounded cursor-pointer accent-[#F54927]"
+                        />
+                        <label htmlFor="show-password" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+                            Show password
+                        </label>
+                    </div>
 
                     {/* Error */}
                     {error && (

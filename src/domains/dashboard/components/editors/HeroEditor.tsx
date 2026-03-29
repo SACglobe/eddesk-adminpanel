@@ -5,28 +5,32 @@ import BaseEditor from "./BaseEditor";
 import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
 import { uploadFile } from "@/lib/supabase/storage";
 import { createClient } from "@/lib/supabase/client";
-import type { TemplateComponent, TemplateScreen } from "@/domains/auth/types";
+import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
+import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
 
 interface HeroEditorProps {
     component: TemplateComponent;
     screen: TemplateScreen;
     schoolKey: string;
     allScreens: TemplateScreen[];
+    activeComponentData?: any;
     allowedMediaType?: 'image' | 'video' | 'both';
 }
 
-export default function HeroEditor({ component, screen, schoolKey, allScreens, allowedMediaType }: HeroEditorProps) {
+export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType }: HeroEditorProps) {
     const supabase = createClient();
     const tableName = (component.componentregistry as any)?.tablename || "herocontent";
     const initialItems = (component as any).content || [];
 
     const config = component.config as any;
+    const isEditable = component.iseditable;
 
     // Determine the effective contenttype for this component:
     // Priority: config.filters.contenttype > config.variant > allowedMediaType > 'image'
     const effectiveContentType: string = (() => {
         if (config?.filters?.contenttype) return config.filters.contenttype;
         if (config?.variant === 'video') return 'video';
+        if (config?.variant === 'image') return 'image';
         if (allowedMediaType === 'video') return 'video';
         return 'image';
     })();
@@ -130,20 +134,38 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
     const itemCount = isVideoVariant ? 1 : (config?.itemcount ? parseInt(config.itemcount) : null);
     const isFixedMode = itemCount !== null;
 
-    // Map slides to slots for fixed mode
+    // 2. State for Manual Selection
+    const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
+
+    const placements = useMemo(() => {
+        return (component.contentplacements || [])
+            .filter((p: ComponentPlacement) => p.isactive !== false)
+            .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0));
+    }, [component.contentplacements]);
+
+    // Map slides to slots
     const slots = useMemo(() => {
-        if (!isFixedMode) return normalizedSlides;
+        if (!isFixedMode && config?.selectionmethod !== 'manual') return normalizedSlides;
         
-        // Sort slides to ensure consistent index-based mapping
-        const sortedSlides = [...normalizedSlides].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
-        
-        const fixedSlots = [];
-        for (let i = 0; i < itemCount; i++) {
-            const existing = sortedSlides[i];
-            fixedSlots.push(existing || { isSkeleton: true, displayorder: i + 1 });
+        const result = [];
+        const count = itemCount || 0;
+
+        if (config?.selectionmethod === 'manual') {
+            for (let i = 0; i < count; i++) {
+                const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
+                const record = placement ? normalizedSlides.find((s: any) => s.key === placement.contentkey) : null;
+                result.push(record || { isSkeleton: true, displayorder: i + 1, isSlot: true });
+            }
+        } else {
+            // Auto mode or Fixed Auto
+            const sortedSlides = [...normalizedSlides].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
+            for (let i = 0; i < count; i++) {
+                const existing = sortedSlides[i];
+                result.push(existing || { isSkeleton: true, displayorder: i + 1 });
+            }
         }
-        return fixedSlots;
-    }, [normalizedSlides, isFixedMode, itemCount]);
+        return result;
+    }, [normalizedSlides, isFixedMode, itemCount, config?.selectionmethod, placements]);
 
     const handleAddNew = (displayOrder?: number) => {
         // Reset any pending file state before opening a new slide
@@ -176,6 +198,45 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
         setPendingPreviewUrl(null);
         setUploadError(null);
         setEditingSlide(null);
+    };
+
+    const handleSelectRecord = async (recordKey: string) => {
+        if (pickingForIndex === null) return;
+        setIsUpdatingSetting(true);
+        try {
+            const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
+            
+            await upsertComponentData('componentplacement', {
+                key: existingPlacement?.key || undefined,
+                schoolkey: schoolKey,
+                templatecomponentkey: component.key,
+                componentcode: component.componentcode || 'hero',
+                contenttable: tableName,
+                contentkey: recordKey,
+                displayorder: pickingForIndex + 1,
+                isactive: true
+            }, schoolKey);
+            
+            setPickingForIndex(null);
+        } catch (err) {
+            console.error("Failed to update placement:", err);
+        } finally {
+            setIsUpdatingSetting(false);
+        }
+    };
+
+    const handleClearSlot = async (index: number) => {
+        const placement = placements.find((p: ComponentPlacement) => p.displayorder === index + 1);
+        if (!placement) return;
+
+        setIsUpdatingSetting(true);
+        try {
+            await deleteComponentData('componentplacement', placement.key, schoolKey);
+        } catch (err) {
+            console.error("Failed to delete placement:", err);
+        } finally {
+            setIsUpdatingSetting(false);
+        }
     };
 
     // handlePublish: upload pending file if any, then save record to DB
@@ -233,6 +294,8 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
             setIsUpdatingSetting(false);
         }
     }
+
+    const showMediaTypeToggle = activeComponentData?.isGroup && (activeComponentData?.allComponents || activeComponentData?.components)?.length > 1;
 
     const MediaTypeToggle = () => (
         <div className="flex p-1 bg-gray-100 rounded-xl gap-1">
@@ -522,19 +585,19 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                 </svg>
             }
             error={error}
-            headerActions={<MediaTypeToggle />}
+            headerActions={showMediaTypeToggle ? <MediaTypeToggle /> : null}
         >
             <div className="space-y-8">
                 {/* Responsive Slides Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-                    {slots.map((slide: any) => {
+                    {slots.map((slide: any, index: number) => {
                         const isSkeleton = slide.isSkeleton;
                         
                         if (isSkeleton) {
                             return (
                                 <div
                                     key={`skeleton-${slide.displayorder}`}
-                                    onClick={() => handleAddNew(slide.displayorder)}
+                                    onClick={() => isEditable ? handleAddNew(slide.displayorder) : setPickingForIndex(index)}
                                     className="border-2 border-dashed border-gray-100 rounded-[20px] flex flex-col items-center justify-center gap-3 text-gray-300 hover:border-red-100 hover:bg-red-50/10 transition-all group cursor-pointer aspect-[4/3]"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-50 transition-colors">
@@ -544,7 +607,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                     </div>
                                     <div className="text-center">
                                         <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 group-hover:text-red-500">Slot {slide.displayorder}</p>
-                                        <p className="text-[9px] font-bold text-gray-300 italic">No Content Assigned</p>
+                                        <p className="text-[9px] font-bold text-gray-300 italic">{isEditable ? "No Content Assigned" : "Select Slide to Display"}</p>
                                     </div>
                                 </div>
                             );
@@ -554,7 +617,17 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                             <div
                                 key={slide.key}
                                 className="group bg-white border border-gray-100 rounded-[20px] hover:border-red-100 hover:shadow-2xl hover:shadow-red-500/10 transition-all cursor-pointer relative flex flex-col overflow-hidden"
-                                onClick={() => { if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl); setPendingFile(null); setPendingPreviewUrl(null); setUploadError(null); setEditingSlide(slide); }}
+                                onClick={() => { 
+                                    if (isEditable) {
+                                        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl); 
+                                        setPendingFile(null); 
+                                        setPendingPreviewUrl(null); 
+                                        setUploadError(null); 
+                                        setEditingSlide(slide); 
+                                    } else if (config?.selectionmethod === 'manual') {
+                                        setPickingForIndex(index);
+                                    }
+                                }}
                             >
                                 {/* Card Media Section — full width, 4:3 ratio, clear preview */}
                                 <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-50 flex-shrink-0">
@@ -602,14 +675,31 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
 
                                 <div className="absolute top-3 right-3 lg:top-4 lg:right-4 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1.5 z-10">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setEditingSlide(slide); }}
-                                        className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                        </svg>
-                                    </button>
+                                    {isEditable ? (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingSlide(slide); }}
+                                            className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </button>
+                                    ) : config?.selectionmethod === 'manual' && (
+                                        <>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setPickingForIndex(index); }}
+                                                className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-blue-500 shadow-lg border border-gray-100 transition-all"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleClearSlot(index); }}
+                                                className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -725,8 +815,8 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                             </div>
                                         )}
                                         <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                                            <h4 className="text-white text-[18px] font-black leading-tight mb-1">{editingSlide.headline || "Slide Headline"}</h4>
-                                            <p className="text-white/80 text-[12px] font-medium mb-4">{editingSlide.subheadline || "Description text"}</p>
+                                            <h4 className="text-white text-[18px] font-black leading-tight mb-1">{editingSlide.headline || "No Headline"}</h4>
+                                            <p className="text-white/80 text-[12px] font-medium mb-4">{editingSlide.subheadline || "No Description"}</p>
                                             <div className="flex gap-2">
                                                 {editingSlide.primarybuttontext && (
                                                     <div className="px-4 py-1.5 bg-white text-black text-[10px] font-black rounded-lg uppercase tracking-wider">{editingSlide.primarybuttontext}</div>
@@ -950,6 +1040,55 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Selection Dialog (Manual Selection Mode only) */}
+                {pickingForIndex !== null && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm shadow-2xl">
+                        <div className="absolute inset-0" onClick={() => setPickingForIndex(null)} />
+                        <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+                            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">Select Slide for Slot {pickingForIndex + 1}</h3>
+                                <button onClick={() => setPickingForIndex(null)} className="w-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+                                {normalizedSlides.length === 0 ? (
+                                    <div className="text-center py-10 text-gray-400 font-bold">No slides found in the source component.</div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {normalizedSlides.map((rec: any) => (
+                                            <button
+                                                key={rec.key}
+                                                onClick={() => handleSelectRecord(rec.key)}
+                                                className={`group relative aspect-video rounded-2xl border-2 text-left transition-all overflow-hidden ${placements.some((p: ComponentPlacement) => p.contentkey === rec.key) ? "border-red-500" : "border-gray-50 hover:border-red-200 bg-white"}`}
+                                            >
+                                                {rec.mediaurl ? (
+                                                    rec.contenttype === 'video' ? (
+                                                        <video src={rec.mediaurl} className="w-full h-full object-cover opacity-60" muted />
+                                                    ) : (
+                                                        <img src={rec.mediaurl} alt="" className="w-full h-full object-cover opacity-60" />
+                                                    )
+                                                ) : <div className="w-full h-full bg-gray-100" />}
+                                                
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 flex flex-col justify-end text-white">
+                                                    <p className="text-[12px] font-black leading-tight line-clamp-1">{rec.headline || "No Headline"}</p>
+                                                    <p className="text-[10px] font-bold text-white/70 line-clamp-1">{rec.subheadline}</p>
+                                                </div>
+
+                                                {placements.some((p: ComponentPlacement) => p.contentkey === rec.key) && (
+                                                    <div className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

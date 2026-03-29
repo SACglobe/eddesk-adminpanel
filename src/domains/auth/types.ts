@@ -10,11 +10,22 @@ export type TableRow<T extends keyof Database['public']['Tables']> = Database['p
 // ComponentRegistry defines what data table a component pulls from
 export type ComponentRegistry = TableRow<'componentregistry'>;
 
+export type ComponentPlacement = {
+    key: string;
+    schoolkey: string;
+    templatecomponentkey: string;
+    componentcode: string;
+    contenttable: string;
+    contentkey: string;
+    displayorder: number;
+    metadata: any;
+    isactive: boolean;
+};
+
 // A single component assigned to a screen
 export type TemplateComponent = TableRow<'templatecomponents'> & {
     componentcode?: string; // Often joined from registry
     componentregistry: ComponentRegistry | null;
-    // The RPC returns config already parsed if it's JSONB, but let's define the expected structure
     config: {
         group?: string;
         groupmode?: 'exclusive' | 'merged';
@@ -24,6 +35,8 @@ export type TemplateComponent = TableRow<'templatecomponents'> & {
         selectionmethod?: 'auto' | 'manual';
         [key: string]: unknown;
     } | null;
+    parentscreenname?: string | null;
+    contentplacements?: ComponentPlacement[];
 };
 
 // A screen (page) in the admin panel, with its nested components
