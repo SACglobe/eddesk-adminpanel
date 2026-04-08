@@ -1,8 +1,9 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import { useState, useMemo, useEffect } from "react";
 import BaseEditor from "./BaseEditor";
-import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { useComponentData, type FilterConfig } from "@/domains/dashboard/hooks/useComponentData";
 import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
 import IconPicker from "@/components/ui/IconPicker";
 import DynamicIcon from "@/components/ui/DynamicIcon";
@@ -16,7 +17,7 @@ interface StatsEditorProps {
 }
 
 export default function StatsEditor({ component, screen, schoolKey }: StatsEditorProps) {
-    const tableName = (component.componentregistry as any)?.tablename || "schoolstats";
+    const tableName = (component.componentregistry as any)?.tablename;
     
     const config = component.config as any;
     const isEditable = component.iseditable;
@@ -109,10 +110,21 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
     };
 
     const handleAddNew = () => {
+        const initialValues: Record<string, any> = {};
+        if (filters && typeof filters === 'object' && 'logic' in filters && 'conditions' in filters) {
+            (filters as FilterConfig).conditions.forEach(c => {
+                if (c.operator === 'equals') {
+                    initialValues[c.field] = c.value;
+                }
+            });
+        } else if (filters && !('logic' in filters)) {
+            Object.assign(initialValues, filters);
+        }
+
         setEditingStat({
-            key: crypto.randomUUID(),
+            key: generateId(),
             schoolkey: schoolKey,
-            ...filters,
+            ...initialValues,
             label: "New Stat",
             value: "0+",
             icon: "TrendingUp",
@@ -123,22 +135,42 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
 
     const slots = useMemo(() => {
         const result = [];
+        const limit = itemCount || (config?.selectionmethod === "manual" ? stats.length : itemCount);
+        const actualLimit = limit > 0 ? limit : (stats.length > 0 ? stats.length : 3); // Fallback to 3 if no limit or data
+
+        // Find items that don't have a valid displayorder within the limit
+        const unassigned = stats.filter(s => 
+            !s.displayorder || s.displayorder > actualLimit || stats.filter(other => other.displayorder === s.displayorder).length > 1
+        ).sort((a, b) => (new Date(b.createdat || 0).getTime()) - (new Date(a.createdat || 0).getTime()));
+
+        let unassignedIdx = 0;
         
-        if (config?.selectionmethod === "manual") {
-            const limit = itemCount || stats.length;
-            for (let i = 0; i < limit; i++) {
-                const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
+        for (let i = 0; i < actualLimit; i++) {
+            const displayOrder = i + 1;
+            if (config?.selectionmethod === "manual") {
+                const placement = placements.find((p: ComponentPlacement) => p.displayorder === displayOrder);
                 const item = placement ? stats.find((s: any) => s.key === placement.contentkey) : null;
-                result.push(item || { isSkeleton: true, displayorder: i + 1 });
-            }
-        } else {
-            const limit = itemCount > 0 ? itemCount : stats.length;
-            for (let i = 0; i < limit; i++) {
-                result.push(stats[i] || { isSkeleton: true, displayorder: i + 1 });
+                
+                if (item) {
+                    result.push(item);
+                } else if (unassignedIdx < unassigned.length) {
+                    result.push({ ...unassigned[unassignedIdx++], displayorder: displayOrder, isAutoFilled: true });
+                } else {
+                    result.push({ isSkeleton: true, displayorder: displayOrder });
+                }
+            } else {
+                const item = stats.find((s: any) => s.displayorder === displayOrder);
+                if (item) {
+                    result.push(item);
+                } else if (unassignedIdx < unassigned.length) {
+                    result.push({ ...unassigned[unassignedIdx++], displayorder: displayOrder });
+                } else {
+                    result.push({ isSkeleton: true, displayorder: displayOrder });
+                }
             }
         }
         return result;
-    }, [stats, placements, itemCount, config?.selectionmethod, isEditable]);
+    }, [stats, placements, itemCount, config?.selectionmethod]);
 
     return (
         <BaseEditor
@@ -154,6 +186,7 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
             parentScreenName={component.parentscreenname}
             selectionMethod={config?.selectionmethod}
             emptySlotsCount={slots.filter((s:any) => s.isSkeleton).length}
+            component={component}
         >
             <div className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -227,17 +260,7 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
                         );
                     })}
 
-                    {isEditable && config?.selectionmethod !== "manual" && (
-                        <button
-                            onClick={() => handleAddNew()}
-                            className="p-6 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/30 transition-all active:scale-[0.98] min-h-[120px]"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span className="text-[13px] font-black tracking-tight">Add New Stat</span>
-                        </button>
-                    )}
+
                 </div>
 
                 {/* Selection Dialog */}

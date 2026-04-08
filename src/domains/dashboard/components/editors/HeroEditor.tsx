@@ -1,12 +1,15 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import BaseEditor from "./BaseEditor";
-import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { useComponentData, getInitialValuesFromFilters } from "@/domains/dashboard/hooks/useComponentData";
 import { uploadFile } from "@/lib/supabase/storage";
 import { createClient } from "@/lib/supabase/client";
 import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
 import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
+import { Check, X } from "lucide-react";
+import MediaUpload from "@/components/ui/MediaUpload";
 
 interface HeroEditorProps {
     component: TemplateComponent;
@@ -19,7 +22,7 @@ interface HeroEditorProps {
 
 export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType }: HeroEditorProps) {
     const supabase = createClient();
-    const tableName = (component.componentregistry as any)?.tablename || "herocontent";
+    const tableName = (component.componentregistry as any)?.tablename;
     const initialItems = (component as any).content || [];
 
     const config = component.config as any;
@@ -122,6 +125,13 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
+    const handleFileSelect = (file: File) => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        const url = URL.createObjectURL(file);
+        setPendingFile(file);
+        setPendingPreviewUrl(url);
+    };
+
     // Simple mobile detection for layout replacement
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -130,9 +140,9 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Video variant is restricted to 1 item, otherwise use config or unlimited
-    const itemCount = isVideoVariant ? 1 : (config?.itemcount ? parseInt(config.itemcount) : null);
-    const isFixedMode = itemCount !== null;
+    // Use config itemCount, or 1 for video, or default to 1 if not specified
+    const itemCount = isVideoVariant ? 1 : (config?.itemcount ? parseInt(config.itemcount) : 1);
+    const isFixedMode = true; // Always fixed mode now
 
     // 2. State for Manual Selection
     const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
@@ -145,8 +155,6 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
     // Map slides to slots
     const slots = useMemo(() => {
-        if (!isFixedMode && config?.selectionmethod !== 'manual') return normalizedSlides;
-        
         const result = [];
         const count = itemCount || 0;
 
@@ -158,14 +166,13 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
             }
         } else {
             // Auto mode or Fixed Auto
-            const sortedSlides = [...normalizedSlides].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
             for (let i = 0; i < count; i++) {
-                const existing = sortedSlides[i];
+                const existing = normalizedSlides.find((s: any) => s.displayorder === i + 1);
                 result.push(existing || { isSkeleton: true, displayorder: i + 1 });
             }
         }
         return result;
-    }, [normalizedSlides, isFixedMode, itemCount, config?.selectionmethod, placements]);
+    }, [normalizedSlides, itemCount, config?.selectionmethod, placements]);
 
     const handleAddNew = (displayOrder?: number) => {
         // Reset any pending file state before opening a new slide
@@ -174,10 +181,10 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
         setPendingPreviewUrl(null);
         setUploadError(null);
         setEditingSlide({
-            key: crypto.randomUUID(),
+            key: generateId(),
             schoolkey: schoolKey,
-            ...filters,
-            contenttype: isVideoVariant ? 'video' : (allowedMediaType && allowedMediaType !== 'both' ? allowedMediaType : 'image'),
+            ...getInitialValuesFromFilters(filters),
+            contenttype: effectiveContentType,
             mediaurl: "",
             headline: "",
             subheadline: "",
@@ -277,7 +284,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
             if (fetchError) throw fetchError;
 
             const currentVariants = (schoolData?.componentvariants as any) || {};
-            const updatedVariants = { ...currentVariants, hero: type };
+            const screenSlug = screen.screenslug || 'home';
+            const updatedVariants = { 
+                ...currentVariants, 
+                [screenSlug]: {
+                    ...(currentVariants[screenSlug] || {}),
+                    hero: type 
+                }
+            };
 
             const { error: updateError } = await supabase
                 .from('schools')
@@ -367,18 +381,18 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                         type="file"
                                         id="mobile-media-upload"
                                         className="hidden"
-                                        accept={allowedMediaType === 'video' ? 'video/*' : allowedMediaType === 'image' ? 'image/*' : 'image/*,video/*'}
+                                        accept={effectiveContentType === 'video' ? 'video/*' : 'image/*'}
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (!file) return;
 
-                                            // Validate against allowed type
-                                            if (allowedMediaType === 'image' && !file.type.startsWith('image/')) {
-                                                setUploadError("Only images are allowed for this school.");
+                                            // Validate against effective type
+                                            if (effectiveContentType === 'image' && !file.type.startsWith('image/')) {
+                                                setUploadError("Only images are allowed for this component variant.");
                                                 return;
                                             }
-                                            if (allowedMediaType === 'video' && !file.type.startsWith('video/')) {
-                                                setUploadError("Only videos are allowed for this school.");
+                                            if (effectiveContentType === 'video' && !file.type.startsWith('video/')) {
+                                                setUploadError("Only videos are allowed for this component variant.");
                                                 return;
                                             }
 
@@ -387,7 +401,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
                                             // Stage file locally — no upload yet
                                             const blobUrl = URL.createObjectURL(file);
-                                            const contenttype = file.type.startsWith('video') ? 'video' : 'image';
+                                            const contenttype: any = effectiveContentType;
                                             setPendingFile(file);
                                             setPendingPreviewUrl(blobUrl);
                                             setUploadError(null);
@@ -419,19 +433,6 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                     className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-red-100 transition-all text-[13px] font-bold outline-none"
                                 />
                             </div>
-                                {(!allowedMediaType || allowedMediaType === 'both') && (
-                                    <div className="flex gap-2">
-                                        {(['image', 'video'] as const).map(type => (
-                                            <button
-                                                key={type}
-                                                onClick={() => setEditingSlide({ ...editingSlide, contenttype: type })}
-                                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${editingSlide.contenttype === type ? 'bg-[#111827] text-white border-transparent' : 'bg-white text-gray-400 border-gray-100'}`}
-                                            >
-                                                {type}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
                         </div>
                     </div>
 
@@ -586,6 +587,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
             }
             error={error}
             headerActions={showMediaTypeToggle ? <MediaTypeToggle /> : null}
+            component={component}
         >
             <div className="space-y-8">
                 {/* Responsive Slides Grid */}
@@ -597,7 +599,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                             return (
                                 <div
                                     key={`skeleton-${slide.displayorder}`}
-                                    onClick={() => isEditable ? handleAddNew(slide.displayorder) : setPickingForIndex(index)}
+                                    onClick={() => isEditable ? handleAddNew(slide.displayorder) : (config?.selectionmethod === 'manual' ? setPickingForIndex(index) : undefined)}
                                     className="border-2 border-dashed border-gray-100 rounded-[20px] flex flex-col items-center justify-center gap-3 text-gray-300 hover:border-red-100 hover:bg-red-50/10 transition-all group cursor-pointer aspect-[4/3]"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-50 transition-colors">
@@ -705,25 +707,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                         );
                     })}
 
-                    {!isFixedMode && (
-                        <button
-                            onClick={() => handleAddNew()}
-                            className="p-5 lg:p-10 border-2 border-dashed border-gray-100 rounded-[20px] lg:rounded-[28px] flex flex-col items-center justify-center gap-2 lg:gap-4 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all group min-h-[100px] lg:min-h-[220px]"
-                        >
-                            <div className="w-8 h-8 lg:w-12 lg:h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                                <svg className="w-4 h-4 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                                </svg>
-                            </div>
-                            <span className="text-[11px] lg:text-[14px] font-black tracking-tight">Add New Slide</span>
-                        </button>
-                    )}
+
                 </div>
 
                 {/* --- DESKTOP MODAL --- */}
                 {editingSlide && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 md:p-12 bg-[#111827]/30 backdrop-blur-sm animate-in fade-in duration-500">
-                        <div className="bg-white w-full max-w-4xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col md:flex-row max-h-[90vh]">
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#111827]/60 backdrop-blur-md animate-in fade-in duration-500">
+                        <div className="absolute inset-0" onClick={handleCancel} />
+                        <div className="relative bg-white w-full max-w-5xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col md:flex-row max-h-[95vh]">
 
                             {/* Left Side: Preview */}
                             <div className="hidden md:flex w-[380px] bg-gray-50 border-r border-gray-100 flex-col overflow-hidden">
@@ -832,19 +823,22 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
                             {/* Right Side: Form */}
                             <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col bg-white">
-                                <div className="p-8 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white z-10">
-                                    <div>
-                                        <h3 className="text-[18px] font-black text-gray-900 tracking-tight">Slide Configuration</h3>
-                                        <p className="text-[11px] text-gray-400 font-bold">Manage banner content and interactions</p>
+                                <div className="p-8 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white z-20">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-[#F54927]/10 text-[#F54927] rounded-2xl flex items-center justify-center">
+                                            <Check className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-[20px] font-black text-gray-900 tracking-tight">Slide Design</h3>
+                                            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Configure appearance and action</p>
+                                        </div>
                                     </div>
-                                    <button onClick={() => setEditingSlide(null)} className="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-[#F54927] rounded-full transition-all">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
+                                    <button onClick={handleCancel} className="w-12 h-12 flex items-center justify-center bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-[#F54927] rounded-full transition-all">
+                                        <X className="w-6 h-6" />
                                     </button>
                                 </div>
 
-                                <div className="p-8 space-y-10">
+                                <div className="p-8 space-y-10 flex-1 overflow-y-auto no-scrollbar">
                                     {/* General Content */}
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -867,95 +861,25 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                                 />
                                             </div>
                                         </div>
-                                    </div>
-
                                     {/* Media Section */}
-                                        <div className="space-y-6">
-                                            <div className="space-y-6">
-                                                <div className="space-y-2">
-                                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Upload Media</label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="file"
-                                                            id="desktop-media-upload"
-                                                            className="hidden"
-                                                            accept={allowedMediaType === 'video' ? 'video/*' : allowedMediaType === 'image' ? 'image/*' : 'image/*,video/*'}
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (!file) return;
-
-                                                            // Validate against allowed type
-                                                            if (allowedMediaType === 'image' && !file.type.startsWith('image/')) {
-                                                                setUploadError("Only images are allowed for this school.");
-                                                                return;
-                                                            }
-                                                            if (allowedMediaType === 'video' && !file.type.startsWith('video/')) {
-                                                                setUploadError("Only videos are allowed for this school.");
-                                                                return;
-                                                            }
-
-                                                            // Revoke previous blob if any
-                                                            if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
-
-                                                            // Stage file locally — no upload yet
-                                                            const blobUrl = URL.createObjectURL(file);
-                                                            const contenttype = file.type.startsWith('video') ? 'video' : 'image';
-                                                            setPendingFile(file);
-                                                            setPendingPreviewUrl(blobUrl);
-                                                            setUploadError(null);
-                                                            setEditingSlide({ ...editingSlide, contenttype });
-                                                        }}
-                                                        />
-                                                        <label
-                                                            htmlFor="desktop-media-upload"
-                                                            className={`w-full py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-center gap-4 transition-all cursor-pointer ${pendingFile ? 'bg-amber-50 border-amber-200' : 'bg-red-50/20 border-red-100 hover:border-red-200'}`}
-                                                        >
-                                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                                                                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                                            </div>
-                                                            <div className="text-left">
-                                                                <p className="text-[14px] font-black text-red-500 uppercase tracking-tight leading-none">
-                                                                    {pendingFile ? pendingFile.name : 'Choose Media File'}
-                                                                </p>
-                                                                <p className="text-[10px] font-bold mt-0.5 text-amber-600">
-                                                                    {pendingFile ? 'Staged — will upload on publish' : 'Images or Videos'}
-                                                                </p>
-                                                            </div>
-                                                        </label>
-                                                    </div>
-                                                    {uploadError && <p className="text-[10px] text-red-500 font-bold pl-2">{uploadError}</p>}
-                                                </div>
-                                                {(!allowedMediaType || allowedMediaType === 'both') && (
-                                                    <div className="space-y-4">
-                                                        <div className="space-y-2">
-                                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Media Type</label>
-                                                            <div className="flex p-1.5 bg-gray-50 rounded-[18px] gap-1 h-[58px]">
-                                                                {(['image', 'video'] as const).map(type => (
-                                                                    <button
-                                                                        key={type}
-                                                                        type="button"
-                                                                        onClick={() => setEditingSlide({ ...editingSlide, contenttype: type })}
-                                                                        className={`flex-1 py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${editingSlide.contenttype === type ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                                                                    >
-                                                                        {type}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Or Paste Direct URL</label>
-                                                <input
-                                                    type="text"
-                                                    value={editingSlide.mediaurl}
-                                                    onChange={e => setEditingSlide({ ...editingSlide, mediaurl: e.target.value })}
-                                                    className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[18px] focus:bg-white focus:border-red-100 transition-all text-[14px] font-bold outline-none"
-                                                    placeholder="https://..."
-                                                />
-                                            </div>
-                                        </div>
+                                    <div className="space-y-6">
+                                        <MediaUpload
+                                            value={editingSlide.mediaurl || ""}
+                                            type={editingSlide.contenttype || (isVideoVariant ? "video" : "image")}
+                                            onChange={(url: string) => setEditingSlide({ ...editingSlide, mediaurl: url })}
+                                            onFileSelect={handleFileSelect}
+                                            isStaged={!!pendingFile}
+                                            stagedPreviewUrl={pendingPreviewUrl}
+                                            isExternalUploading={isUploading}
+                                            schoolKey={schoolKey}
+                                            category="banners"
+                                            label="Banner Media"
+                                            description={isVideoVariant ? "Upload a high-quality video (MP4/WebM)" : "Upload a high-resolution banner image"}
+                                            allowVideo={isVideoVariant}
+                                            allowImage={!isVideoVariant}
+                                            aspectRatio="video"
+                                        />
+                                    </div>
 
                                     {/* Interaction */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1018,25 +942,34 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                             <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-[19px] after:w-[19px] after:transition-all peer-checked:bg-emerald-500"></div>
                                         </div>
                                     </div>
+                                    </div>
                                 </div>
 
-                                <div className="p-8 border-t border-gray-50 bg-white sticky bottom-0 z-10 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.03)] focus-within:z-50">
-                                {!isFixedMode && (
+                                <div className="p-8 border-t border-gray-50 bg-white sticky bottom-0 z-20 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
                                     <button
                                         onClick={() => { if (confirm('Delete slide?')) { removeRecord(editingSlide.key); handleCancel(); } }}
-                                        className="px-6 py-3 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                        className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                                     >
-                                        Delete Slide
+                                        Delete
                                     </button>
-                                )}
-                                    <div className="flex items-center gap-4">
-                                        <button onClick={handleCancel} className="px-6 py-3 text-[13px] font-black text-gray-400 hover:text-gray-900 rounded-2xl transition-all">Cancel</button>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={handleCancel} className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                         <button
-                                            disabled={isUploading || isSaving}
+                                            disabled={isUploading || isSaving || (!editingSlide.mediaurl && !pendingFile)}
                                             onClick={handlePublish}
-                                            className="px-8 py-3 bg-[#10B981] text-white text-[13px] font-black rounded-2xl hover:bg-[#059669] transition-all active:scale-[0.97] shadow-lg shadow-emerald-500/20 disabled:opacity-70"
+                                            className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                         >
-                                            {isUploading ? "Uploading..." : isSaving ? "Saving..." : "Publish Changes"}
+                                            {isSaving || isUploading ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    {isUploading ? "Uploading..." : "Saving..."}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {slides.some(s => s.key === editingSlide.key) ? 'Update Slide' : 'Publish Banner'}
+                                                    <Check className="w-4 h-4" />
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 </div>
@@ -1057,15 +990,18 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-                                {normalizedSlides.length === 0 ? (
-                                    <div className="text-center py-10 text-gray-400 font-bold">No slides found in the source component.</div>
+                                {normalizedSlides.filter(rec => rec.contenttype === effectiveContentType).length === 0 ? (
+                                    <div className="text-center py-20">
+                                        <p className="text-gray-400 font-bold">No {effectiveContentType === 'video' ? 'video' : 'image'} slides found.</p>
+                                        <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new {effectiveContentType} content first.</p>
+                                    </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-4">
-                                        {normalizedSlides.map((rec: any) => (
+                                        {normalizedSlides.filter(rec => rec.contenttype === effectiveContentType).map((rec: any) => (
                                             <button
                                                 key={rec.key}
                                                 onClick={() => handleSelectRecord(rec.key)}
-                                                className={`group relative aspect-video rounded-2xl border-2 text-left transition-all overflow-hidden ${placements.some((p: ComponentPlacement) => p.contentkey === rec.key) ? "border-red-500" : "border-gray-50 hover:border-red-200 bg-white"}`}
+                                                className={`group relative aspect-video rounded-2xl border-2 text-left transition-all overflow-hidden ${placements.some((p: ComponentPlacement) => p.contentkey === rec.key) ? "border-red-500 bg-red-50/20" : "border-gray-50 hover:border-red-200 bg-white"}`}
                                             >
                                                 {rec.mediaurl ? (
                                                     rec.contenttype === 'video' ? (

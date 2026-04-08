@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { Search, X } from 'lucide-react';
 import DynamicIcon from './DynamicIcon';
+import { FLUENT_ICONS } from './FluentIcon';
 
 interface IconPickerProps {
     value: string;
@@ -21,28 +22,107 @@ const COMMON_ICONS = [
     "List", "Lock", "Moon", "Package", "Paperclip", "PieChart", "Play", "Search"
 ];
 
+// Expanded Categories for School Portfolio needs
+const FLUENT_CATEGORIES = {
+    "Education": ["graduation", "backpack", "books", "bookmark", "notebook", "pencil", "ruler", "abacus", "student", "teacher", "school", "certificate"],
+    "Science": ["atom", "dna", "microscope", "telescope", "test-tube", "petri-dish", "magnet", "brain", "rocket", "bulb"],
+    "Sports": ["trophy", "medal-1", "medal-2", "medal-3", "soccer", "basketball", "football", "tennis", "volleyball", "running", "bicycle", "swimming"],
+    "Arts & Music": ["palette", "camera", "video", "guitar", "piano", "violin", "trumpet", "drum", "music", "studio-mic", "headphones"],
+    "Campus": ["bus", "building", "stadium", "bell", "calendar", "clock", "flag", "globe", "map", "compass-alt"],
+    "UI Icons": ["heart", "star", "fire", "shield", "gift", "bulb", "search", "lock", "key", "link", "chart", "money", "sun", "moon", "cloud"]
+};
+
+const VOLUMETRIC_SAMPLES = [
+    "streamline-plump-color:school-building",
+    "streamline-plump-color:graduation-cap",
+    "streamline-plump-color:educational-books",
+    "streamline-plump-color:pencil",
+    "streamline-plump-color:trophy",
+    "streamline-plump-color:microscope",
+    "streamline-plump-color:artist-palette",
+    "streamline-plump-color:music-note",
+    "streamline-plump-color:camera",
+    "streamline-plump-color:briefcase",
+    "streamline-plump-color:calendar",
+    "streamline-plump-color:shield",
+    "streamline-cyber-color:rocket",
+    "streamline-cyber-color:brain",
+    "streamline-cyber-color:atom",
+    "streamline-cyber-color:globe",
+    "streamline-cyber-color:lock",
+    "streamline-cyber-color:setting"
+];
+
 const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeTab, setActiveTab] = useState<'standard' | 'premium' | 'volumetric'>('standard');
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [openUpward, setOpenUpward] = useState(false);
+    const triggerRef = useRef<HTMLDivElement>(null);
+
+    // Reset category when switching tabs
+    useEffect(() => {
+        setActiveCategory(null);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (isOpen && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const expectedHeight = 350; // Max height
+            setOpenUpward(spaceBelow < expectedHeight);
+        }
+    }, [isOpen]);
 
     // Get all icon names from Lucide
-    const allIconNames = useMemo(() => {
+    const allLucideIconNames = useMemo(() => {
         return Object.keys(LucideIcons).filter(name => 
             typeof (LucideIcons as any)[name] === 'function' || 
             (typeof (LucideIcons as any)[name] === 'object' && (LucideIcons as any)[name].$$typeof)
         );
     }, []);
 
+    const premiumIconNames = useMemo(() => Object.keys(FLUENT_ICONS).map(name => `fluent:${name}`), []);
+
+    const premiumIconGroups = useMemo(() => {
+        const groups: Record<string, string[]> = {};
+        Object.entries(FLUENT_CATEGORIES).forEach(([category, icons]) => {
+            groups[category] = icons.map(name => `fluent:${name}`);
+        });
+        return groups;
+    }, []);
+
     const filteredIcons = useMemo(() => {
-        if (!searchTerm) return COMMON_ICONS;
-        return allIconNames.filter(name => 
-            name.toLowerCase().includes(searchTerm.toLowerCase())
-        ).slice(0, 100); // Limit results for performance
-    }, [searchTerm, allIconNames]);
+        if (activeTab === 'standard') {
+            const sourceData = searchTerm ? allLucideIconNames : COMMON_ICONS;
+            if (!searchTerm) return sourceData;
+            return sourceData.filter(name => 
+                name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).slice(0, 100);
+        } else if (activeTab === 'premium') {
+            if (searchTerm) {
+                return Object.keys(FLUENT_ICONS)
+                    .filter(name => name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(name => `fluent:${name}`);
+            }
+            if (activeCategory) {
+                return premiumIconGroups[activeCategory] || [];
+            }
+            // Show all if no category and no search
+            return Object.keys(FLUENT_ICONS).map(name => `fluent:${name}`);
+        } else {
+            // Volumetric tab
+            if (!searchTerm) return VOLUMETRIC_SAMPLES;
+            return VOLUMETRIC_SAMPLES.filter(name => 
+                name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+    }, [searchTerm, allLucideIconNames, activeTab, activeCategory, premiumIconGroups]);
 
     return (
-        <div className="relative w-full">
-            {label && <label className="block text-[12px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">{label}</label>}
+        <div className="relative w-full" ref={triggerRef}>
+            {label && <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest pl-2 mb-2">{label}</label>}
             
             <button
                 type="button"
@@ -65,13 +145,56 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} />
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="p-3 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
+                    <div className={`absolute ${openUpward ? 'bottom-full mb-2' : 'top-full mt-2'} left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-2xl z-40 overflow-hidden animate-in fade-in ${openUpward ? 'slide-in-from-bottom-2' : 'slide-in-from-top-2'} duration-200 flex flex-col`}>
+                        {/* Tabs */}
+                        <div className="flex border-b border-gray-100 bg-gray-50/50 p-1 gap-1">
+                            <button
+                                onClick={() => setActiveTab('standard')}
+                                className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'standard' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                Standard
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('premium')}
+                                className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'premium' ? 'bg-white text-[#ebb017] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                3D Emojis
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('volumetric')}
+                                className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'volumetric' ? 'bg-white text-emerald-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                Volumetric
+                            </button>
+                        </div>
+
+                        {/* Categories for Premium or Volumetric */}
+                        {activeTab === 'premium' && !searchTerm && (
+                            <div className="px-2 py-2 border-b border-gray-100 bg-white flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
+                                <button
+                                    onClick={() => setActiveCategory(null)}
+                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap transition-all ${!activeCategory ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                >
+                                    All
+                                </button>
+                                {Object.keys(FLUENT_CATEGORIES).map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setActiveCategory(cat)}
+                                        className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="p-3 border-b border-gray-100 flex items-center gap-2 bg-white">
                             <Search size={16} className="text-gray-400" />
                             <input
                                 autoFocus
                                 type="text"
-                                placeholder="Search icons..."
+                                placeholder={`Search ${activeTab} icons...`}
                                 className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium text-gray-700"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -82,7 +205,7 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
                                 </button>
                             )}
                         </div>
-                        <div className="max-h-64 overflow-y-auto p-3 grid grid-cols-6 gap-2 no-scrollbar">
+                        <div className="max-h-64 overflow-y-auto p-3 grid grid-cols-6 gap-2 no-scrollbar bg-white">
                             {filteredIcons.map((iconName) => (
                                 <button
                                     key={iconName}
@@ -102,8 +225,8 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
                                 </button>
                             ))}
                             {filteredIcons.length === 0 && (
-                                <div className="col-span-6 py-8 text-center text-[13px] text-gray-400">
-                                    No icons found for "{searchTerm}"
+                                <div className="col-span-6 py-8 text-center text-[13px] text-gray-400 font-bold">
+                                    No {activeTab} icons found.
                                 </div>
                             )}
                         </div>

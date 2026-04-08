@@ -2,9 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import BaseEditor from "./BaseEditor";
-import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { useComponentData, type FilterConfig } from "@/domains/dashboard/hooks/useComponentData";
 import { updateComponentConfig, upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
+import MediaUpload from "@/components/ui/MediaUpload";
 import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
+import { Check, X } from "lucide-react";
+import { uploadFile } from "@/lib/supabase/storage";
 
 interface AchievementsEditorProps {
     component: TemplateComponent;
@@ -15,10 +18,18 @@ interface AchievementsEditorProps {
 export default function AchievementsEditor({ component, screen, schoolKey }: AchievementsEditorProps) {
     const isEditable = component.iseditable;
     const config = component.config || {};
-    const tableName = config.datasource || "schoolachievements";
+    const tableName = (component.componentregistry as any)?.tablename;
     const selectionMethod = config.selectionmethod || "auto"; 
     const itemCount = config.itemcount ? parseInt(config.itemcount) : null;
     const filters = config.filters || {};
+
+    const effectiveMediaType = useMemo(() => {
+        const type = config?.variant || config?.mediatype;
+        if (!type) return "image";
+        const lowType = type.toLowerCase();
+        if (lowType === "video" || lowType === "videos") return "video";
+        return "image";
+    }, [config?.variant, config?.mediatype]);
 
     // Debug Log on mount
     useEffect(() => {
@@ -62,13 +73,6 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
 
     // 3. Map achievements to slots for Selector/Auto mode
     const slots = useMemo(() => {
-        if (isEditable) return allAchievements; // Full Editor mode shows all
-
-        if (selectionMethod === "auto") {
-            // Auto mode: just show top items based on itemCount
-            return itemCount ? allAchievements.slice(0, itemCount) : allAchievements;
-        }
-
         // Manual mode: Map placements to actual records
         if (itemCount) {
             const result = [];
@@ -76,16 +80,75 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
                 // Find placement for this slot (displayorder is 1-indexed)
                 const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
                 const record = placement ? allAchievements.find((a: any) => a.key === placement.contentkey) : null;
-                result.push(record || { isSlot: true, index: i });
+                result.push(record || { isSlot: true, index: i, displayorder: i + 1 });
             }
             return result;
         }
-        return allAchievements;
+        
+        // Auto mode or Default: Strictly itemCount slots
+        const limit = itemCount || allAchievements.length;
+        const result = [];
+        for (let i = 0; i < limit; i++) {
+            result.push(allAchievements.find((a: any) => a.displayorder === i + 1) || { isSlot: true, index: i, displayorder: i + 1 });
+        }
+        return result;
     }, [isEditable, selectionMethod, itemCount, allAchievements, placements]);
 
     // 4. Modal state for Full Editor
     const [editingRecord, setEditingRecord] = useState<any>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    // Staged upload state
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    useEffect(() => {
+        return () => {
+            if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        };
+    }, [pendingPreviewUrl]);
+
+    const handleSave = async () => {
+        if (!editingRecord.title || (!editingRecord.imageurl && !pendingFile)) return;
+
+        try {
+            let finalRecord = { ...editingRecord };
+
+            if (pendingFile) {
+                setIsUploading(true);
+                try {
+                    const uploadedUrl = await uploadFile(pendingFile, schoolKey, "achievements");
+                    finalRecord.imageurl = uploadedUrl;
+                } catch (err) {
+                    console.error("Upload failed:", err);
+                    throw err;
+                } finally {
+                    setIsUploading(false);
+                }
+            }
+
+            await saveRecord(finalRecord);
+            handleCloseModal();
+        } catch (err) {
+            console.error("Save failed:", err);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        setPendingFile(null);
+        setPendingPreviewUrl(null);
+        setEditingRecord(null);
+        setShowDeleteConfirm(false);
+    };
+
+    const handleFileSelect = (file: File) => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        const url = URL.createObjectURL(file);
+        setPendingFile(file);
+        setPendingPreviewUrl(url);
+    };
 
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
@@ -138,33 +201,76 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
                 parentScreenName={component.parentscreenname}
                 selectionMethod={selectionMethod}
                 error={error}
+                emptySlotsCount={0}
+                component={component}
             >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {allAchievements.map((achievement: any) => (
-                        <AchievementCard 
-                            key={achievement.key} 
-                            achievement={achievement} 
-                            onClick={() => setEditingRecord(achievement)}
-                        />
-                    ))}
-                    <button
-                        onClick={() => setEditingRecord({ schoolkey: schoolKey, ...filters, title: "", year: new Date().getFullYear(), isactive: true })}
-                        className="p-10 border-2 border-dashed border-gray-100 rounded-[28px] flex flex-col items-center justify-center gap-4 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all group min-h-[220px]"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                        </div>
-                        <span className="text-[14px] font-black tracking-tight">Add New Achievement</span>
-                    </button>
+                    {slots.map((achievement: any, index: number) => {
+                        if (achievement.isSlot) {
+                            return (
+                                <button
+                                    key={`slot-${index}`}
+                                    onClick={() => {
+                                        const initialValues: Record<string, any> = {};
+                                        if (filters && typeof filters === 'object' && 'logic' in filters && 'conditions' in filters) {
+                                            (filters as FilterConfig).conditions.forEach(c => {
+                                                if (c.operator === 'equals') {
+                                                    initialValues[c.field] = c.value;
+                                                }
+                                            });
+                                        } else if (filters && !('logic' in filters)) {
+                                            Object.assign(initialValues, filters);
+                                        }
+
+                                        setEditingRecord({ 
+                                            schoolkey: schoolKey, 
+                                            ...initialValues, 
+                                            title: "", 
+                                            year: new Date().getFullYear(),
+                                            displayorder: index + 1,
+                                            contenttype: config?.mediatype === "video" ? "video" : "image",
+                                            isactive: true 
+                                        });
+                                    }}
+                                    className="p-10 border-2 border-dashed border-gray-100 rounded-[28px] flex flex-col items-center justify-center gap-4 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all group min-h-[220px]"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[14px] font-black tracking-tight">Slot {index + 1}</p>
+                                        <p className="text-[11px] font-medium text-gray-400">Click to add achievement</p>
+                                    </div>
+                                </button>
+                            );
+                        }
+                        return (
+                            <AchievementCard 
+                                key={achievement.key} 
+                                achievement={achievement} 
+                                onClick={() => setEditingRecord(achievement)}
+                            />
+                        );
+                    })}
                 </div>
 
-                {/* CRUD Modal would go here (omitted for brevity, similar to Broadcast) */}
                 {editingRecord && (
                     <AchievementModal 
                         record={editingRecord} 
-                        onClose={() => setEditingRecord(null)} 
-                        onSave={(data) => { saveRecord(data); setEditingRecord(null); }}
+                        onClose={handleCloseModal} 
+                        onSave={handleSave}
                         isSaving={isSaving}
+                        isUploading={isUploading}
+                        config={config}
+                        handleFileSelect={handleFileSelect}
+                        pendingFile={pendingFile}
+                        pendingPreviewUrl={pendingPreviewUrl}
+                        setEditingRecord={setEditingRecord}
+                        showDeleteConfirm={showDeleteConfirm}
+                        setShowDeleteConfirm={setShowDeleteConfirm}
+                        removeRecord={removeRecord}
+                        allAchievements={allAchievements}
+                        schoolKey={schoolKey}
                     />
                 )}
             </BaseEditor>
@@ -181,6 +287,7 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
             parentScreenName={component.parentscreenname}
             selectionMethod={selectionMethod}
             error={error}
+            component={component}
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {slots.map((item: any, idx: number) => {
@@ -238,10 +345,15 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-                            {allAchievements.length === 0 ? (
-                                <div className="text-center py-10 text-gray-400">No achievements found in the source list.</div>
+                            {allAchievements.filter((rec: any) => rec.contenttype === effectiveMediaType).length === 0 ? (
+                                <div className="py-20 text-center">
+                                    <p className="text-gray-400 font-bold">No {effectiveMediaType} achievements found.</p>
+                                    <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new {effectiveMediaType} content first.</p>
+                                </div>
                             ) : (
-                                allAchievements.map((rec: any) => (
+                                allAchievements
+                                    .filter((rec: any) => rec.contenttype === effectiveMediaType)
+                                    .map((rec: any) => (
                                     <button
                                         key={rec.key}
                                         onClick={() => handleSelectRecord(rec.key)}
@@ -288,9 +400,22 @@ function AchievementCard({ achievement, onClick }: { achievement: any; onClick?:
         >
             <div className="aspect-[16/10] bg-gray-50 overflow-hidden relative">
                 {achievement.imageurl ? (
-                    <img src={achievement.imageurl} alt="" className="w-full h-full object-cover" />
+                    achievement.contenttype === 'video' ? (
+                        <div className="relative w-full h-full">
+                            <video 
+                                src={achievement.imageurl} 
+                                className="w-full h-full object-cover" 
+                                autoPlay 
+                                loop 
+                                muted 
+                                playsInline 
+                            />
+                        </div>
+                    ) : (
+                        <img src={achievement.imageurl} alt="" className="w-full h-full object-cover" />
+                    )
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">No Image</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">No Media</div>
                 )}
                 <div className="absolute top-2.5 left-2.5">
                     <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider">
@@ -306,27 +431,61 @@ function AchievementCard({ achievement, onClick }: { achievement: any; onClick?:
     );
 }
 
-function AchievementModal({ record, onClose, onSave, isSaving }: { record: any; onClose: () => void; onSave: (data: any) => void; isSaving: boolean }) {
+function AchievementModal({ record, onClose, onSave, isSaving, isUploading, config, handleFileSelect, pendingFile, pendingPreviewUrl, setEditingRecord, showDeleteConfirm, setShowDeleteConfirm, removeRecord, allAchievements, schoolKey }: any) {
     const [formData, setFormData] = useState(record);
 
-    return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#111827]/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white w-full max-w-xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col">
-                <div className="p-6 md:p-8 border-b border-gray-50 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-[18px] font-black text-gray-900 tracking-tight">{record.key ? "Edit Achievement" : "New Achievement"}</h3>
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Configure source data</p>
+    if (showDeleteConfirm) {
+        return (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+                <div className="bg-white p-8 rounded-[32px] max-w-sm w-full text-center space-y-4">
+                    <h3 className="text-lg font-black">Delete Achievement?</h3>
+                    <p className="text-sm text-gray-500">This action cannot be undone.</p>
+                    <div className="flex gap-3 pt-4">
+                        <button onClick={onClose} className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all">No, Keep it</button>
+                        <button onClick={async () => { await removeRecord(record.key); onClose(); }} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">Yes, Delete</button>
                     </div>
                 </div>
-                <div className="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[70vh] no-scrollbar">
+            </div>
+        );
+    }
+
+    return (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+            <div className="absolute inset-0" onClick={onClose} />
+            <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
+                <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white/50">
+                    <div>
+                        <h3 className="text-[20px] font-black text-gray-900 tracking-tight">{record.key ? "Update Achievement" : "New Achievement"}</h3>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Manage achievement details and photo</p>
+                    </div>
+                    <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 no-scrollbar">
+                    <MediaUpload
+                        value={formData.imageurl || ""}
+                        type="image"
+                        onChange={(url) => setFormData({ ...formData, imageurl: url })}
+                        onFileSelect={handleFileSelect}
+                        isStaged={!!pendingFile}
+                        stagedPreviewUrl={pendingPreviewUrl}
+                        isExternalUploading={isUploading}
+                        schoolKey={schoolKey}
+                        category="achievements"
+                        label="Achievement Banner"
+                        description="Upload a high-quality photo of the achievement"
+                        allowVideo={config?.mediatype !== "image"}
+                        allowImage={config?.mediatype !== "video"}
+                        aspectRatio="video"
+                    />
                     <div className="space-y-2">
                         <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Title</label>
                         <input 
                             type="text" 
                             value={formData.title} 
                             onChange={e => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none"
+                            className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none shadow-inner"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -359,15 +518,38 @@ function AchievementModal({ record, onClose, onSave, isSaving }: { record: any; 
                         />
                     </div>
                 </div>
-                <div className="p-6 md:p-8 border-t border-gray-50 bg-gray-50/30 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 rounded-xl transition-all">Cancel</button>
-                    <button 
-                        onClick={() => onSave(formData)} 
-                        disabled={isSaving || !formData.title}
-                        className="px-8 py-3 bg-[#111827] text-white text-[13px] font-black rounded-xl hover:bg-black transition-all shadow-xl disabled:opacity-50"
+                <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
+                    <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                     >
-                        {isSaving ? "Saving..." : "Save Changes"}
+                        Delete
                     </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            disabled={isSaving || isUploading || (!formData.imageurl && !pendingFile)}
+                            onClick={() => onSave()}
+                            className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
+                        >
+                            {isSaving || isUploading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    {isUploading ? "Uploading..." : "Saving..."}
+                                </>
+                            ) : (
+                                <>
+                                    {record.key ? 'Update Achievement' : 'Add to Collection'}
+                                    <Check className="w-4 h-4" />
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

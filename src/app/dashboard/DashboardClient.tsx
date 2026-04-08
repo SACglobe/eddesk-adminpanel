@@ -121,12 +121,8 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
             if (mode === 'exclusive') {
                 const variants = adminData.schools.componentvariants || {};
-                const activeVariant = variants[groupName];
+                const activeVariant = variants[selectedScreen.screenslug || '']?.[groupName];
                 
-                if (!activeVariant) {
-                    console.warn(`[Grouping] Exclusive variant not found for group "${groupName}". Falling back to first component.`);
-                }
-
                 const activeComp = groupComponents.find((c: TemplateComponent) => {
                     const config = getEnrichedConfig(c);
                     return config.variant === activeVariant;
@@ -153,6 +149,44 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         const component = selectedScreen.components?.find((c: TemplateComponent) => c.key === selectedComponentKey);
         return component ? { components: [component], isGroup: false } : null;
     }, [selectedComponentKey, selectedScreen, adminData.schools.componentvariants]);
+
+    // Grouping logic for the component list (Mobile and Desktop shared)
+    const displayItems = useMemo(() => {
+        if (!selectedScreen) return [];
+        
+        const components = selectedScreen.components ?? [];
+        const groups: Map<string, { mode: 'exclusive' | 'merged', items: TemplateComponent[], order: number }> = new Map();
+        const singles: TemplateComponent[] = [];
+
+        components.forEach((comp: TemplateComponent) => {
+            const config = getEnrichedConfig(comp);
+            const groupName = config.group;
+            const groupMode = config.groupmode;
+            const variant = config.variant;
+
+            // Only group if it's merged mode, or if it's exclusive mode AND has a variant defined
+            const shouldGroup = groupName && groupMode && (groupMode === 'merged' || variant);
+
+            if (shouldGroup) {
+                if (!groups.has(groupName!)) {
+                    groups.set(groupName!, { mode: groupMode!, items: [], order: comp.displayorder ?? 0 });
+                }
+                const enrichedComp = { ...comp, config };
+                groups.get(groupName!)!.items.push(enrichedComp);
+                
+                if ((comp.displayorder ?? 0) < groups.get(groupName!)!.order) {
+                    groups.get(groupName!)!.order = comp.displayorder ?? 0;
+                }
+            } else {
+                singles.push(comp);
+            }
+        });
+
+        return [
+            ...singles.map(s => ({ type: 'single' as const, item: s, order: s.displayorder ?? 0 })),
+            ...Array.from(groups.entries()).map(([name, data]) => ({ type: 'group' as const, name, ...data }))
+        ].sort((a, b) => a.order - b.order);
+    }, [selectedScreen]);
 
     const selectedComponent = activeComponentData?.components[0] || null;
 
@@ -358,7 +392,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                 onBack={() => setIsMobileMenuOpen(true)}
                                 onSearch={() => setIsSearchOpen(true)}
                                 allScreens={adminData?.templatescreens ?? []}
-                                allowedHeroMediaType={adminData?.schools?.componentvariants?.hero as 'image' | 'video' | 'both' | undefined}
+                                allowedHeroMediaType={adminData?.schools?.componentvariants?.[selectedScreen?.screenslug || '']?.hero as 'image' | 'video' | 'both' | undefined}
                             />
                         </div>
                     </div>
@@ -563,28 +597,80 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-3 space-y-1.5 no-scrollbar">
-                            {selectedScreen.components?.sort((a: TemplateComponent, b: TemplateComponent) => (a.displayorder ?? 0) - (b.displayorder ?? 0)).map((comp: TemplateComponent) => {
-                                const isSelected = selectedComponentKey === comp.key;
-                                return (
-                                    <button
-                                        key={comp.key}
-                                        ref={isSelected ? selectedComponentRef : null}
-                                        onClick={() => { setSelectedComponentKey(comp.key); setIsMobileComponentListOpen(false); }}
-                                        className={`w-full text-left px-4 py-4 rounded-2xl text-[14px] transition-all flex items-center justify-between group active:scale-[0.98] ${isSelected
-                                            ? 'bg-white shadow-[0_4px_20px_rgba(245,73,39,0.08)] text-[#F54927] font-black border border-red-100/50'
-                                            : 'bg-transparent text-gray-600 font-bold border border-transparent hover:bg-gray-50 hover:text-gray-900'
-                                            }`}
-                                    >
-                                        <span className="truncate pr-4">{comp.componentregistry?.componentname ?? comp.componentcode}</span>
-                                        {isSelected && (
-                                            <div className="w-6 h-6 rounded-full bg-[#F54927] flex items-center justify-center shadow-[0_2px_8px_rgba(245,73,39,0.4)] transition-transform group-hover:scale-110">
-                                                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
+                            {displayItems.map((entry) => {
+                                if (entry.type === 'single') {
+                                    const comp = entry.item;
+                                    const isSelected = selectedComponentKey === comp.key;
+                                    return (
+                                        <button
+                                            key={comp.key}
+                                            ref={isSelected ? selectedComponentRef : null}
+                                            onClick={() => { setSelectedComponentKey(comp.key); setIsMobileComponentListOpen(false); }}
+                                            className={`w-full text-left px-4 py-4 rounded-2xl text-[14px] transition-all flex items-center justify-between group active:scale-[0.98] ${isSelected
+                                                ? 'bg-white shadow-[0_4px_20px_rgba(245,73,39,0.08)] text-[#F54927] font-black border border-red-100/50'
+                                                : 'bg-transparent text-gray-600 font-bold border border-transparent hover:bg-gray-50 hover:text-gray-900'
+                                                }`}
+                                        >
+                                            <span className="truncate pr-4">{comp.componentregistry?.componentname ?? comp.componentcode}</span>
+                                            {isSelected && (
+                                                <div className="w-6 h-6 rounded-full bg-[#F54927] flex items-center justify-center shadow-[0_2px_8px_rgba(245,73,39,0.4)] transition-transform group-hover:scale-110">
+                                                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                } else {
+                                    // Group
+                                    const groupKey = `group:${entry.mode}:${entry.name}`;
+                                    const items = entry.items;
+                                    const isSelected = selectedComponentKey === groupKey || items.some(i => i.key === selectedComponentKey);
+
+                                    let displayName = entry.name;
+                                    let variantLabel = "";
+
+                                    if (entry.mode === 'exclusive') {
+                                        displayName = items[0].componentregistry?.componentname ?? entry.name;
+                                        const activeVariant = adminData.schools.componentvariants?.[selectedScreen.screenslug || '']?.[entry.name];
+                                        if (activeVariant) {
+                                            variantLabel = activeVariant.charAt(0).toUpperCase() + activeVariant.slice(1);
+                                        } else {
+                                            variantLabel = "";
+                                        }
+                                    } else {
+                                        displayName = items[0].componentregistry?.componentname ?? entry.name;
+                                        variantLabel = "Merged";
+                                    }
+
+                                    return (
+                                        <button
+                                            key={groupKey}
+                                            ref={isSelected ? selectedComponentRef : null}
+                                            onClick={() => { setSelectedComponentKey(groupKey); setIsMobileComponentListOpen(false); }}
+                                            className={`w-full text-left px-4 py-4 rounded-2xl text-[14px] transition-all flex items-center justify-between group active:scale-[0.98] ${isSelected
+                                                ? 'bg-white shadow-[0_4px_20px_rgba(245,73,39,0.08)] text-[#F54927] font-black border border-red-100/50'
+                                                : 'bg-transparent text-gray-600 font-bold border border-transparent hover:bg-gray-50 hover:text-gray-900'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-2 truncate pr-4">
+                                                <span className="truncate capitalize">{displayName}</span>
+                                                {variantLabel && (
+                                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter shrink-0 ${isSelected ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-400"}`}>
+                                                        {variantLabel}
+                                                    </span>
+                                                )}
                                             </div>
-                                        )}
-                                    </button>
-                                );
+                                            {isSelected && (
+                                                <div className="w-6 h-6 rounded-full bg-[#F54927] flex items-center justify-center shadow-[0_2px_8px_rgba(245,73,39,0.4)] transition-transform group-hover:scale-110">
+                                                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                }
                             })}
                         </div>
                         <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex justify-center">

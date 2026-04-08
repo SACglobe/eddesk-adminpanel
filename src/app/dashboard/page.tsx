@@ -52,7 +52,7 @@ export default async function DashboardPage() {
             // Ensure components have unique keys if the RPC somehow duplicated them
             if (screen.components) {
                 const uniqueComponents = new Map<string, TemplateComponent>();
-                screen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                screen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
                 screen.components = Array.from(uniqueComponents.values());
             }
             uniqueScreensMap.set(screen.screenslug, screen);
@@ -61,8 +61,8 @@ export default async function DashboardPage() {
             const existingScreen = uniqueScreensMap.get(screen.screenslug)!;
             if (screen.components && existingScreen.components) {
                 const uniqueComponents = new Map<string, TemplateComponent>();
-                existingScreen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
-                screen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                existingScreen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
+                screen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
                 existingScreen.components = Array.from(uniqueComponents.values());
             }
         }

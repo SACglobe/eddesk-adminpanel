@@ -1,6 +1,6 @@
 import { createClient } from "./client";
 
-export type StorageCategory = "events" | "achievements" | "students" | "banners" | "schoolachievements";
+export type StorageCategory = "events" | "achievements" | "students" | "banners" | "schoolachievements" | "leadership" | "schoolidentity" | "gallery" | "principal" | "infrastructure" | "faculty" | "testimonials";
 
 /**
  * Uploads a file to Supabase Storage with a structured path.
@@ -12,7 +12,7 @@ export async function uploadFile(
     category: StorageCategory
 ): Promise<string> {
     const supabase = createClient();
-    
+
     // Create a unique filename to avoid collisions
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;

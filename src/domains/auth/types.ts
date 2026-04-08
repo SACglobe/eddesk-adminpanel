@@ -31,12 +31,13 @@ export type TemplateComponent = TableRow<'templatecomponents'> & {
         groupmode?: 'exclusive' | 'merged';
         variant?: string;
         itemcount?: string | number;
-        datasource?: string;
         selectionmethod?: 'auto' | 'manual';
         [key: string]: unknown;
     } | null;
     parentscreenname?: string | null;
     contentplacements?: ComponentPlacement[];
+    editorsname?: string | null;
+    editorsdescription?: string | null;
 };
 
 // A screen (page) in the admin panel, with its nested components
@@ -49,7 +50,7 @@ export type TemplateScreen = TableRow<'templatescreens'> & {
 export type AdminInitialData = {
     adminusers: TableRow<'adminusers'>;
     schools: TableRow<'schools'> & {
-        componentvariants: Record<string, string>;
+        componentvariants: Record<string, Record<string, string>>;
     };
     subscriptions: TableRow<'subscriptions'> | null;
     plans: TableRow<'plans'> | null;

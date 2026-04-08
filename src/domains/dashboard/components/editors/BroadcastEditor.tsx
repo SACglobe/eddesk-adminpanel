@@ -1,8 +1,9 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import { useState, useMemo, useEffect } from "react";
 import BaseEditor from "./BaseEditor";
-import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { useComponentData, getInitialValuesFromFilters } from "@/domains/dashboard/hooks/useComponentData";
 import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
 import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
 
@@ -32,7 +33,7 @@ function getExpiryInfo(expiresat: string | null): { isExpired: boolean; label: s
 }
 
 export default function BroadcastEditor({ component, screen, schoolKey }: BroadcastEditorProps) {
-    const tableName = (component.componentregistry as any)?.tablename || "broadcastcontent";
+    const tableName = (component.componentregistry as any)?.tablename;
     const initialItems = (component as any).content || [];
 
     const config = component.config as any;
@@ -69,17 +70,20 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
 
     // Fixed slots logic
     const slots = useMemo(() => {
-        if (!isFixedMode && component.iseditable) return broadcasts;
-        
-        const count = itemCount || broadcasts.length || 4;
+        const count = itemCount || 1; // Default to 1 slot if not specified
         const result = [];
         for (let i = 0; i < count; i++) {
-            const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
-            const broadcast = placement ? broadcasts.find((b: any) => b.key === placement.contentkey) : (isFixedMode && broadcasts[i] ? broadcasts[i] : null);
-            result.push(broadcast || { isSkeleton: true, displayorder: i + 1 });
+            if (config?.selectionmethod === "manual") {
+                const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
+                const broadcast = placement ? broadcasts.find((b: any) => b.key === placement.contentkey) : null;
+                result.push(broadcast || { isSkeleton: true, displayorder: i + 1 });
+            } else {
+                const broadcast = broadcasts.find((b: any) => b.displayorder === i + 1);
+                result.push(broadcast || { isSkeleton: true, displayorder: i + 1 });
+            }
         }
         return result;
-    }, [broadcasts, isFixedMode, itemCount, placements, component.iseditable]);
+    }, [broadcasts, itemCount, placements, config?.selectionmethod]);
 
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
@@ -132,16 +136,17 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    const handleAddNew = () => {
+    const handleAddNew = (displayOrder?: number) => {
         setEditingBroadcast({
-            key: crypto.randomUUID(),
+            key: generateId(),
             schoolkey: schoolKey,
-            ...filters,
+            ...getInitialValuesFromFilters(filters),
             title: "",
             message: "",
             priority: 1,
             expiresat: null,
             isactive: true,
+            displayorder: displayOrder || broadcasts.length + 1
         });
     };
 
@@ -171,6 +176,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
             isEditable={component.iseditable}
             parentScreenName={component.parentscreenname}
             selectionMethod={config?.selectionmethod}
+            component={component}
         >
             {/* Grid of Broadcasts */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -180,7 +186,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                             <button
                                 key={`empty-${index}`}
                                 type="button"
-                                onClick={() => component.iseditable ? handleAddNew() : setPickingForIndex(index)}
+                                onClick={() => component.iseditable ? handleAddNew(index + 1) : setPickingForIndex(index)}
                                 className="p-6 border-2 border-dashed border-gray-100 rounded-[20px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all active:scale-[0.98] group min-h-[160px]"
                             >
                                 <div className="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
@@ -262,23 +268,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                     );
                 })}
 
-                {!isFixedMode && (
-                    <button
-                        type="button"
-                        onClick={handleAddNew}
-                        className="p-6 border-2 border-dashed border-gray-100 rounded-[20px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all active:scale-[0.98] group min-h-[160px]"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-[13px] font-black tracking-tight">Post New Broadcast</p>
-                            <p className="text-[11px] font-medium text-gray-400">Add an announcement or alert</p>
-                        </div>
-                    </button>
-                )}
+
             </div>
 
             {/* ── SHARED MODAL LOGIC ─────────────────────────────────────────── */}
