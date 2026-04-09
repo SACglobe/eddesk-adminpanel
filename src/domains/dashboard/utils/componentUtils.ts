@@ -13,7 +13,9 @@ export function getEnrichedConfig(comp: TemplateComponent) {
     let group = config.group || null;
     let groupmode = config.groupmode || null;
     
-    if (!group && comp.componentcode?.toLowerCase() === 'hero') {
+    const code = comp.componentcode?.toLowerCase() ?? '';
+    const isHeroCode = code === 'hero' || code.startsWith('hero') || code === 'videohero' || code === 'herobanner' || code === 'heroslider' || code === 'herosection' || code === 'heroslide';
+    if (!group && isHeroCode) {
         group = 'hero';
         groupmode = 'exclusive';
     }

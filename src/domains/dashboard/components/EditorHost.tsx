@@ -166,8 +166,11 @@ export default function EditorHost({
                                             const code = comp.componentcode?.toLowerCase();
                                             if (!code) return null;
 
+                                            // All hero-variant codes — they don't need itemcount/selectionmethod config
+                                            const isHeroCode = code === "hero" || code.startsWith("hero") || code.endsWith("hero") || ["videohero", "herobanner", "heroslider", "herosection", "heroslide"].includes(code);
+
                                             // Determine if the component natively ignores config (singletons)
-                                            const isSingleton = ['contactdetails'].includes(code);
+                                            const isSingleton = ['contactdetails'].includes(code) || isHeroCode;
 
                                             // A config is missing if it doesn't exist, is totally empty, or contains entirely null operational values (and isn't a singleton)
                                             const isConfigMissing = !isSingleton && (!comp.config || Object.keys(comp.config).length === 0 || (
@@ -192,7 +195,7 @@ export default function EditorHost({
                                                 );
                                             }
 
-                                            if (code === "hero") {
+                                            if (isHeroCode) {
                                                 return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
                                             }
                                             if (code === "schoolstats") {
