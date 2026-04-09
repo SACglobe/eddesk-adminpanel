@@ -20,13 +20,13 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
     const config = component.config || {};
     const tableName = (component.componentregistry as any)?.tablename;
     const selectionMethod = config.selectionmethod || "auto"; 
-    const itemCount = config.itemcount ? parseInt(config.itemcount) : null;
-    const filters = config.filters || {};
+    const itemCount = config.itemcount ? parseInt(String(config.itemcount)) : null;
+    const filters = (config.filters || {}) as any;
 
     const effectiveMediaType = useMemo(() => {
         const type = config?.variant || config?.mediatype;
         if (!type) return "image";
-        const lowType = type.toLowerCase();
+        const lowType = String(type).toLowerCase();
         if (lowType === "video" || lowType === "videos") return "video";
         return "image";
     }, [config?.variant, config?.mediatype]);
@@ -280,7 +280,7 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
     // Render Selector (Home Screen)
     return (
         <BaseEditor
-            title={config.filters?.category === 'academics' ? "Academic Achievements" : "Sports Achievements"}
+            title={(config.filters as any)?.category === 'academics' ? "Academic Achievements" : "Sports Achievements"}
             description={selectionMethod === 'manual' ? "Select achievements to display on the home screen." : "Top achievements from the source list."}
             icon={<AchievementsIcon />}
             isEditable={isEditable}

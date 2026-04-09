@@ -211,7 +211,7 @@ export default function EditorHost({
                                                 return <GalleryEditor component={comp} schoolKey={schoolKey} />;
                                             }
                                             if (code === "achievements" || code === "schoolachievements") {
-                                                return <AchievementsEditor component={comp} screen={screen} schoolKey={schoolKey} />;
+                                                return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                             }
                                             if (code === "contactdetails") {
                                                 return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;

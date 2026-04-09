@@ -138,9 +138,10 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
             }, schoolKey);
 
             if (response.success && response.data) {
+                const newPlacement = response.data as unknown as ComponentPlacement;
                 setPlacements(prev => {
-                    const next = prev.filter(p => p.displayorder !== response.data.displayorder);
-                    next.push(response.data);
+                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
+                    next.push(newPlacement);
                     return next.sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
                 });
             }

@@ -86,7 +86,8 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                     .eq("isactive", true);
 
                 if (!error && data) {
-                    const filtered = data.filter(
+                    const placements = data as unknown as ComponentPlacement[];
+                    const filtered = placements.filter(
                         (p: ComponentPlacement) => !deletedPlacementKeysRef.current.has(p.key)
                     );
                     setLocalPlacements(filtered);

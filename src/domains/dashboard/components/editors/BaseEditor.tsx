@@ -13,7 +13,7 @@ interface BaseEditorProps {
     onCancel?: () => void;
     error?: string | null;
     headerActions?: ReactNode;
-    isEditable?: boolean;
+    isEditable?: boolean | null;
     parentScreenName?: string | null;
     selectionMethod?: 'auto' | 'manual' | null;
     emptySlotsCount?: number;
