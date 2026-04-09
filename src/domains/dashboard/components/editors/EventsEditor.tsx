@@ -1,10 +1,15 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import React, { useState, useMemo } from "react";
 import BaseEditor from "./BaseEditor";
 import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
 import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
 import type { TemplateComponent, ComponentPlacement } from "@/domains/auth/types";
+import MediaUpload from "@/components/ui/MediaUpload";
+import { Check, X } from "lucide-react";
+import { useEffect } from "react";
+import { uploadFile } from "@/lib/supabase/storage";
 
 interface EventsEditorProps {
     component: TemplateComponent;
@@ -14,8 +19,16 @@ interface EventsEditorProps {
 export default function EventsEditor({ component, schoolKey }: EventsEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
-    const tableName = "events";
+    const tableName = (component.componentregistry as any)?.tablename;
     const itemCount = config?.itemcount ? parseInt(config.itemcount) : 0;
+
+    const effectiveMediaType = useMemo(() => {
+        const type = config?.variant || config?.mediatype;
+        if (!type) return "image";
+        const lowType = type.toLowerCase();
+        if (lowType === "video" || lowType === "videos") return "video";
+        return "image";
+    }, [config?.variant, config?.mediatype]);
 
     const {
         records: events,
@@ -34,11 +47,36 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
     const [editingItem, setEditingItem] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Staged upload state
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     const placements = useMemo(() => {
         return (component.contentplacements || [])
             .filter((p: ComponentPlacement) => p.isactive !== false)
             .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0));
     }, [component.contentplacements]);
+
+    useEffect(() => {
+        return () => {
+            if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        };
+    }, [pendingPreviewUrl]);
+
+    const handleCloseModal = () => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        setPendingFile(null);
+        setPendingPreviewUrl(null);
+        setEditingItem(null);
+    };
+
+    const handleFileSelect = (file: File) => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        const url = URL.createObjectURL(file);
+        setPendingFile(file);
+        setPendingPreviewUrl(url);
+    };
 
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
@@ -79,9 +117,9 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
         }
     };
 
-    const handleAddNew = () => {
+    const handleAddNew = (displayOrder?: number) => {
         setEditingItem({
-            key: crypto.randomUUID(),
+            key: generateId(),
             schoolkey: schoolKey,
             title: "",
             description: "",
@@ -89,18 +127,34 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
             eventdate: new Date().toISOString().split('T')[0],
             starttime: "10:00 AM",
             imageurl: "",
-            contenttype: "event",
+            contenttype: config?.mediatype === "video" ? "video" : "image",
             isactive: true,
-            isfeatured: false
+            isfeatured: false,
+            displayorder: displayOrder || events.length + 1
         });
     };
 
     const handleSave = async () => {
-        if (!editingItem.title) return;
+        if (!editingItem.title || (!editingItem.imageurl && !pendingFile)) return;
         setIsSaving(true);
         try {
-            await saveRecord(editingItem);
-            setEditingItem(null);
+            let finalItem = { ...editingItem };
+
+            if (pendingFile) {
+                setIsUploading(true);
+                try {
+                    const uploadedUrl = await uploadFile(pendingFile, schoolKey, "events");
+                    finalItem.imageurl = uploadedUrl;
+                } catch (err) {
+                    console.error("Upload failed:", err);
+                    throw err;
+                } finally {
+                    setIsUploading(false);
+                }
+            }
+
+            await saveRecord(finalItem);
+            handleCloseModal();
         } catch (err) {
             console.error("Failed to save event:", err);
         } finally {
@@ -110,15 +164,37 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
 
     const slots = useMemo(() => {
         const result = [];
-        const limit = itemCount > 0 ? itemCount : events.length;
+        const limit = itemCount > 0 ? itemCount : (events.length > 0 ? events.length : 4);
+        
+        // Find items that don't have a valid displayorder within the limit
+        const unassigned = events.filter(e => 
+            !e.displayorder || e.displayorder > limit || events.filter(other => other.displayorder === e.displayorder).length > 1
+        ).sort((a, b) => (new Date(b.createdat || 0).getTime()) - (new Date(a.createdat || 0).getTime()));
+
+        let unassignedIdx = 0;
         
         for (let i = 0; i < limit; i++) {
+            const displayOrder = i + 1;
             if (config?.selectionmethod === "manual") {
-                const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
+                const placement = placements.find((p: ComponentPlacement) => p.displayorder === displayOrder);
                 const item = placement ? events.find((e: any) => e.key === placement.contentkey) : null;
-                result.push(item || { isSkeleton: true, displayorder: i + 1 });
+                
+                if (item) {
+                    result.push(item);
+                } else if (unassignedIdx < unassigned.length) {
+                    result.push({ ...unassigned[unassignedIdx++], displayorder: displayOrder, isAutoFilled: true });
+                } else {
+                    result.push({ isSkeleton: true, displayorder: displayOrder });
+                }
             } else {
-                result.push(events[i] || { isSkeleton: true, displayorder: i + 1 });
+                const item = events.find((e: any) => e.displayorder === displayOrder);
+                if (item) {
+                    result.push(item);
+                } else if (unassignedIdx < unassigned.length) {
+                    result.push({ ...unassigned[unassignedIdx++], displayorder: displayOrder });
+                } else {
+                    result.push({ isSkeleton: true, displayorder: displayOrder });
+                }
             }
         }
         return result;
@@ -138,6 +214,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
             parentScreenName={component.parentscreenname}
             selectionMethod={config?.selectionmethod}
             emptySlotsCount={slots.filter((s:any) => s.isSkeleton).length}
+            component={component}
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {slots.map((item: any, index: number) => {
@@ -147,7 +224,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                         return (
                             <div
                                 key={`empty-${index}`}
-                                onClick={() => canEditSlot ? (isEditable ? handleAddNew() : setPickingForIndex(index)) : undefined}
+                                onClick={() => canEditSlot ? (isEditable ? handleAddNew(index + 1) : setPickingForIndex(index)) : undefined}
                                 className={`p-6 border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center gap-3 text-gray-400 min-h-[220px] ${canEditSlot ? "hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 cursor-pointer transition-all group" : "opacity-70 bg-gray-50/30"}`}
                             >
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${canEditSlot ? "bg-gray-50 group-hover:bg-red-100" : "bg-gray-100/50"}`}>
@@ -175,7 +252,20 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                         <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
                             <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
                                 {item.imageurl ? (
-                                    <img src={item.imageurl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    item.contenttype === 'video' ? (
+                                        <div className="relative w-full h-full">
+                                            <video 
+                                                src={item.imageurl} 
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                                autoPlay 
+                                                loop 
+                                                muted 
+                                                playsInline 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <img src={item.imageurl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    )
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-200">
                                         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -224,19 +314,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                     );
                 })}
 
-                {isEditable && config?.selectionmethod !== "manual" && (
-                    <button
-                        onClick={handleAddNew}
-                        className="p-6 border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all group min-h-[220px]"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-gray-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                        <p className="text-[14px] font-black tracking-tight">Post New Event</p>
-                    </button>
-                )}
+
             </div>
 
             {/* Selection Dialog */}
@@ -251,10 +329,15 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-3 no-scrollbar">
-                            {events.length === 0 ? (
-                                <div className="py-20 text-center text-gray-400 font-bold">No events found.</div>
+                            {events.filter((item: any) => item.contenttype === effectiveMediaType).length === 0 ? (
+                                <div className="py-20 text-center">
+                                    <p className="text-gray-400 font-bold">No {effectiveMediaType} events found.</p>
+                                    <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new {effectiveMediaType} content first.</p>
+                                </div>
                             ) : (
-                                events.map((item: any) => (
+                                events
+                                    .filter((item: any) => item.contenttype === effectiveMediaType)
+                                    .map((item: any) => (
                                     <button
                                         key={item.key}
                                         onClick={() => handleSelectRecord(item.key)}
@@ -282,13 +365,20 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
 
             {/* Edit/Add Modal */}
             {editingItem && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-                    <div className="absolute inset-0" onClick={() => setEditingItem(null)} />
-                    <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                            <h3 className="text-[18px] font-black text-gray-900 tracking-tight">{events.some(e => e.key === editingItem.key) ? "Edit Event" : "Post New Event"}</h3>
-                            <button onClick={() => setEditingItem(null)} className="w-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+                    <div className="absolute inset-0" onClick={handleCloseModal} />
+                    <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
+                        <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white/50">
+                            <div>
+                                <h3 className="text-[20px] font-black text-gray-900 tracking-tight">
+                                    {events.some(e => e.key === editingItem.key) ? 'Update' : 'Add'} Event
+                                </h3>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                    Manage event details and photo
+                                </p>
+                            </div>
+                            <button onClick={handleCloseModal} className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
@@ -333,13 +423,21 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Image URL</label>
-                                    <input
-                                        type="text"
-                                        value={editingItem.imageurl}
-                                        onChange={e => setEditingItem({ ...editingItem, imageurl: e.target.value })}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
-                                        placeholder="https://"
+                                    <MediaUpload
+                                        value={editingItem.imageurl || ""}
+                                        type="image"
+                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                        onFileSelect={handleFileSelect}
+                                        isStaged={!!pendingFile}
+                                        stagedPreviewUrl={pendingPreviewUrl}
+                                        isExternalUploading={isUploading}
+                                        schoolKey={schoolKey}
+                                        category="events"
+                                        label="Event Banner"
+                                        description="Upload a high-quality photo of the event"
+                                        allowVideo={config?.mediatype !== "image"}
+                                        allowImage={config?.mediatype !== "video"}
+                                        aspectRatio="video"
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
@@ -354,26 +452,36 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                 </div>
                             </div>
                         </div>
-                        <div className="p-6 bg-gray-50/50 flex items-center justify-between">
+                        <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
                             <button
-                                onClick={() => { removeRecord(editingItem.key); setEditingItem(null); }}
-                                className="px-5 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 rounded-xl transition-all"
+                                onClick={() => { if (confirm("Delete this event?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                             >
                                 Delete
                             </button>
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => setEditingItem(null)}
-                                    className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 rounded-xl transition-all"
+                                    onClick={handleCloseModal}
+                                    className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || !editingItem.title}
+                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
                                     onClick={handleSave}
-                                    className="px-8 py-3 bg-[#111827] text-white text-[13px] font-black rounded-xl hover:bg-black transition-all shadow-xl disabled:opacity-50"
+                                    className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >
-                                    {isSaving ? "Saving..." : (events.some(e => e.key === editingItem.key) ? "Update Event" : "Create Event")}
+                                    {isSaving || isUploading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            {isUploading ? "Uploading..." : "Saving..."}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {events.some(e => e.key === editingItem.key) ? 'Update Event' : 'Add to Collection'}
+                                            <Check className="w-4 h-4" />
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

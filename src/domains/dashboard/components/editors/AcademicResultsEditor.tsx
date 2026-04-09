@@ -1,8 +1,9 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import { useState, useMemo, useEffect } from "react";
 import BaseEditor from "./BaseEditor";
-import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { useComponentData, getInitialValuesFromFilters } from "@/domains/dashboard/hooks/useComponentData";
 import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
 import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
 
@@ -14,7 +15,7 @@ interface AcademicResultsEditorProps {
 
 export default function AcademicResultsEditor({ component, screen, schoolKey }: AcademicResultsEditorProps) {
     const isEditable = component.iseditable;
-    const tableName = (component.componentregistry as any)?.tablename || "academicresults";
+    const tableName = (component.componentregistry as any)?.tablename;
     const initialItems = (component as any).content || [];
 
     const config = component.config as any;
@@ -66,10 +67,8 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
 
     // 3. Fixed slots logic
     const slots = useMemo(() => {
-        if (!isFixedMode && config?.selectionmethod !== 'manual') return results;
-        
         const result = [];
-        const count = itemCount || 0;
+        const count = itemCount || 1; // Default to 1 slot if not specified
 
         if (config?.selectionmethod === 'manual') {
             for (let i = 0; i < count; i++) {
@@ -78,13 +77,13 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                 result.push(record || null);
             }
         } else {
-            // Auto mode: just fill slots with results
+            // Auto mode: just fill slots with results based on displayorder
             for (let i = 0; i < count; i++) {
-                result.push(results[i] || null);
+                result.push(results.find((r: any) => r.displayorder === i + 1) || null);
             }
         }
         return result;
-    }, [results, isFixedMode, itemCount, config?.selectionmethod, placements]);
+    }, [results, itemCount, config?.selectionmethod, placements]);
 
     const [editingResult, setEditingResult] = useState<any>(null);
 
@@ -127,18 +126,19 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
         }
     };
 
-    const handleAddNew = () => {
+    const handleAddNew = (displayOrder?: number) => {
         const currentYear = new Date().getFullYear();
         setEditingResult({
-            key: crypto.randomUUID(),
+            key: generateId(),
             schoolkey: schoolKey,
-            ...filters,
+            ...getInitialValuesFromFilters(filters),
             year: currentYear,
             passpercentage: 100,
             distinctions: 0,
             firstclass: 0,
             legacyquote: "",
-            isactive: true
+            isactive: true,
+            displayorder: displayOrder || results.length + 1
         });
     };
 
@@ -155,6 +155,7 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
             parentScreenName={component.parentscreenname}
             selectionMethod={config?.selectionmethod || 'auto'}
             error={error}
+            component={component}
         >
             <div className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
@@ -168,7 +169,7 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                             return (
                                 <button
                                     key={`empty-${index}`}
-                                    onClick={() => isEditable ? handleAddNew() : setPickingForIndex(index)}
+                                    onClick={() => isEditable ? handleAddNew(index + 1) : setPickingForIndex(index)}
                                     className="p-6 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/30 transition-all active:scale-[0.98] min-h-[160px] bg-gray-50/50"
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,17 +246,7 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                         );
                     })}
 
-                    {isEditable && !isFixedMode && (
-                        <button
-                            onClick={() => handleAddNew()}
-                            className="p-6 border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-2xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/30 transition-all active:scale-[0.98] min-h-[160px]"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span className="text-[13px] font-black tracking-tight uppercase">Add Year Data</span>
-                        </button>
-                    )}
+
                 </div>
 
                 {editingResult && (

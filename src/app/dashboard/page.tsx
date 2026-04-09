@@ -48,21 +48,22 @@ export default async function DashboardPage() {
     // but WE MUST KEEP all components to support variants and merged groups.
     const uniqueScreensMap = new Map<string, TemplateScreen>();
     typedData.templatescreens?.forEach(screen => {
-        if (!uniqueScreensMap.has(screen.screenslug)) {
+        const slug = screen.screenslug ?? '';
+        if (!uniqueScreensMap.has(slug)) {
             // Ensure components have unique keys if the RPC somehow duplicated them
             if (screen.components) {
                 const uniqueComponents = new Map<string, TemplateComponent>();
-                screen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                screen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
                 screen.components = Array.from(uniqueComponents.values());
             }
-            uniqueScreensMap.set(screen.screenslug, screen);
+            uniqueScreensMap.set(slug, screen);
         } else {
             // If we found the same screen slug again, merge its components into the existing one
-            const existingScreen = uniqueScreensMap.get(screen.screenslug)!;
+            const existingScreen = uniqueScreensMap.get(slug)!;
             if (screen.components && existingScreen.components) {
                 const uniqueComponents = new Map<string, TemplateComponent>();
-                existingScreen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
-                screen.components.forEach(comp => uniqueComponents.set(comp.key, comp));
+                existingScreen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
+                screen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
                 existingScreen.components = Array.from(uniqueComponents.values());
             }
         }

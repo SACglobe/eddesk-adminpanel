@@ -7,7 +7,7 @@ interface ComponentListPanelProps {
     selectedScreen: TemplateScreen | null;
     selectedComponentKey: string | null;
     onSelectComponent: (key: string) => void;
-    componentVariants?: Record<string, string>;
+    componentVariants?: Record<string, Record<string, string>>;
 }
 
 export default function ComponentListPanel({
@@ -39,18 +39,22 @@ export default function ComponentListPanel({
         const config = getEnrichedConfig(comp);
         const groupName = config.group;
         const groupMode = config.groupmode;
+        const variant = config.variant;
 
-        if (groupName && groupMode) {
-            if (!groups.has(groupName)) {
-                groups.set(groupName, { mode: groupMode, items: [], order: comp.displayorder ?? 0 });
+        // Only group if it's merged mode, or if it's exclusive mode AND has a variant defined
+        const shouldGroup = groupName && groupMode && (groupMode === 'merged' || variant);
+
+        if (shouldGroup) {
+            if (!groups.has(groupName!)) {
+                groups.set(groupName!, { mode: groupMode!, items: [], order: comp.displayorder ?? 0 });
             }
             // Ensure the component has the enriched config for internal logic
             const enrichedComp = { ...comp, config };
-            groups.get(groupName)!.items.push(enrichedComp);
+            groups.get(groupName!)!.items.push(enrichedComp);
             
             // Use the lowest displayorder for the group
-            if ((comp.displayorder ?? 0) < groups.get(groupName)!.order) {
-                groups.get(groupName)!.order = comp.displayorder ?? 0;
+            if ((comp.displayorder ?? 0) < groups.get(groupName!)!.order) {
+                groups.get(groupName!)!.order = comp.displayorder ?? 0;
             }
         } else {
             singles.push(comp);
@@ -127,11 +131,11 @@ export default function ComponentListPanel({
                                     if (entry.mode === 'exclusive') {
                                         // Use the component name from one of the members, or capitalize group name
                                         displayName = items[0].componentregistry?.componentname ?? entry.name;
-                                        const activeVariant = componentVariants[entry.name];
+                                        const activeVariant = componentVariants[selectedScreen.screenslug || '']?.[entry.name];
                                         if (activeVariant) {
                                             variantLabel = activeVariant.charAt(0).toUpperCase() + activeVariant.slice(1);
                                         } else {
-                                            variantLabel = "No Variant";
+                                            variantLabel = "";
                                         }
                                     } else {
                                         // Merged: Use the component name from first item or display name

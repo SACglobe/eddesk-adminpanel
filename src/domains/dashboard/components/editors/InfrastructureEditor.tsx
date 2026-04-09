@@ -1,13 +1,17 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import React, { useState, useMemo, useEffect } from "react";
 import BaseEditor from "./BaseEditor";
-import { useComponentData } from "@/domains/dashboard/hooks/useComponentData";
+import { useComponentData, getInitialValuesFromFilters } from "@/domains/dashboard/hooks/useComponentData";
 import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/actions";
 import IconPicker from "@/components/ui/IconPicker";
 import DynamicIcon from "@/components/ui/DynamicIcon";
 import { useRouter } from "next/navigation";
 import type { TemplateComponent, ComponentPlacement } from "@/domains/auth/types";
+import MediaUpload from "@/components/ui/MediaUpload";
+import { Check, X } from "lucide-react";
+import { uploadFile } from "@/lib/supabase/storage";
 
 interface InfrastructureEditorProps {
     component: TemplateComponent;
@@ -17,9 +21,17 @@ interface InfrastructureEditorProps {
 export default function InfrastructureEditor({ component, schoolKey }: InfrastructureEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
-    const tableName = "infrastructure";
+    const tableName = (component.componentregistry as any)?.tablename;
     const itemCount = config?.itemcount ? parseInt(config.itemcount) : 0;
     const router = useRouter();
+
+    const effectiveMediaType = useMemo(() => {
+        const type = config?.variant || config?.mediatype;
+        if (!type) return "image";
+        const lowType = type.toLowerCase();
+        if (lowType === "video" || lowType === "videos") return "video";
+        return "image";
+    }, [config?.variant, config?.mediatype]);
 
     const filters = useMemo(() => ({
         ...(config?.filters || {})
@@ -43,6 +55,11 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
     const [editingItem, setEditingItem] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Staged upload state
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     const [placements, setPlacements] = useState<ComponentPlacement[]>(() => {
         return (component.contentplacements || [])
             .filter((p: ComponentPlacement) => p.isactive !== false)
@@ -54,6 +71,26 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             .filter((p: ComponentPlacement) => p.isactive !== false)
             .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
     }, [component.contentplacements]);
+
+    useEffect(() => {
+        return () => {
+            if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        };
+    }, [pendingPreviewUrl]);
+
+    const handleCloseModal = () => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        setPendingFile(null);
+        setPendingPreviewUrl(null);
+        setEditingItem(null);
+    };
+
+    const handleFileSelect = (file: File) => {
+        if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+        const url = URL.createObjectURL(file);
+        setPendingFile(file);
+        setPendingPreviewUrl(url);
+    };
 
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
@@ -73,9 +110,10 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             }, schoolKey);
             
             if (response.success && response.data) {
+                const newPlacement = response.data as unknown as ComponentPlacement;
                 setPlacements(prev => {
-                    const next = prev.filter(p => p.displayorder !== response.data.displayorder);
-                    next.push(response.data);
+                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
+                    next.push(newPlacement);
                     return next.sort((a,b) => (a.displayorder || 0) - (b.displayorder || 0));
                 });
             }
@@ -107,28 +145,45 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
         }
     };
 
-    const handleAddNew = () => {
+    const handleAddNew = (displayOrder?: number) => {
         setEditingItem({
-            key: crypto.randomUUID(),
+            key: generateId(),
             schoolkey: schoolKey,
-            ...filters,
+            ...getInitialValuesFromFilters(filters),
             title: "",
             description: "",
             bulletintextlist: [],
-            tag: "",
-            icon: "",
+            tag: "#2563eb",
+            icon: "School",
             imageurl: "",
+            contenttype: config?.mediatype === "video" ? "video" : "image",
             isactive: true,
-            displayorder: facilities.length + 1
+            displayorder: displayOrder || facilities.length + 1
         });
     };
 
     const handleSave = async () => {
-        if (!editingItem.title) return;
+        if (!editingItem.title || (!editingItem.imageurl && !pendingFile)) return;
         setIsSaving(true);
         try {
-            await saveRecord(editingItem);
+            let finalItem = { ...editingItem };
+
+            if (pendingFile) {
+                setIsUploading(true);
+                try {
+                    const uploadedUrl = await uploadFile(pendingFile, schoolKey, "infrastructure");
+                    finalItem.imageurl = uploadedUrl;
+                } catch (err) {
+                    console.error("Upload failed:", err);
+                    throw err;
+                } finally {
+                    setIsUploading(false);
+                }
+            }
+
+            await saveRecord(finalItem);
             setEditingItem(null);
+            handleCloseModal();
         } catch (err) {
             console.error("Failed to save facility:", err);
         } finally {
@@ -147,13 +202,12 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                 result.push(item || { isSkeleton: true, displayorder: i + 1 });
             }
         } else {
-            const limit = itemCount > 0 ? itemCount : facilities.length;
-            for (let i = 0; i < limit; i++) {
-                result.push(facilities[i] || { isSkeleton: true, displayorder: i + 1 });
+            for (let i = 0; i < itemCount; i++) {
+                result.push(facilities.find((f: any) => f.displayorder === i + 1) || { isSkeleton: true, displayorder: i + 1 });
             }
         }
         return result;
-    }, [facilities, placements, itemCount, config?.selectionmethod, isEditable]);
+    }, [facilities, placements, itemCount, config?.selectionmethod]);
 
     return (
         <BaseEditor
@@ -169,6 +223,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             parentScreenName={component.parentscreenname}
             selectionMethod={config?.selectionmethod}
             emptySlotsCount={slots.filter((s:any) => s.isSkeleton).length}
+            component={component}
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {slots.map((item: any, index: number) => {
@@ -178,7 +233,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                         return (
                             <div
                                 key={`empty-${index}`}
-                                onClick={() => canEditSlot ? (isEditable ? handleAddNew() : setPickingForIndex(index)) : undefined}
+                                onClick={() => canEditSlot ? (isEditable ? handleAddNew(index + 1) : setPickingForIndex(index)) : undefined}
                                 className={`p-6 border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center gap-3 text-gray-400 min-h-[300px] ${canEditSlot ? "hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 cursor-pointer transition-all group" : "opacity-70 bg-gray-50/30"}`}
                             >
                                 <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${canEditSlot ? "bg-gray-50 group-hover:bg-red-100" : "bg-gray-100/50"}`}>
@@ -255,19 +310,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                     );
                 })}
 
-                {isEditable && config?.selectionmethod !== "manual" && (
-                    <button
-                        onClick={handleAddNew}
-                        className="p-6 border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 transition-all group min-h-[300px]"
-                    >
-                        <div className="w-16 h-16 rounded-full bg-gray-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                        <p className="text-[14px] font-black tracking-tight">Add Facility</p>
-                    </button>
-                )}
+
             </div>
 
             {/* Selection Dialog */}
@@ -282,11 +325,16 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
-                            {facilities.length === 0 ? (
-                                <div className="py-20 text-center text-gray-400 font-bold">No infrastructure items found.</div>
+                            {facilities.filter((item: any) => item.contenttype === effectiveMediaType).length === 0 ? (
+                                <div className="py-20 text-center">
+                                    <p className="text-gray-400 font-bold">No {effectiveMediaType} items found.</p>
+                                    <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new {effectiveMediaType} content first.</p>
+                                </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {facilities.map((item: any) => (
+                                {facilities
+                                    .filter((item: any) => item.contenttype === effectiveMediaType)
+                                    .map((item: any) => (
                                     <button
                                         key={item.key}
                                         onClick={() => handleSelectRecord(item.key)}
@@ -319,13 +367,20 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
 
             {/* Edit/Add Modal */}
             {editingItem && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-                    <div className="absolute inset-0" onClick={() => setEditingItem(null)} />
-                    <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                            <h3 className="text-[18px] font-black text-gray-900 tracking-tight">{facilities.some(f => f.key === editingItem.key) ? "Edit Facility" : "New Facility"}</h3>
-                            <button onClick={() => setEditingItem(null)} className="w-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+                    <div className="absolute inset-0" onClick={handleCloseModal} />
+                    <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
+                        <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white/50">
+                            <div>
+                                <h3 className="text-[20px] font-black text-gray-900 tracking-tight">
+                                    {facilities.some(f => f.key === editingItem.key) ? 'Update' : 'Add'} Facility
+                                </h3>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                    Manage facility details and photo
+                                </p>
+                            </div>
+                            <button onClick={handleCloseModal} className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
@@ -348,6 +403,24 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                         onChange={e => setEditingItem({ ...editingItem, tag: e.target.value })}
                                         className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
                                         placeholder="e.g. #2563eb or #ebb017"
+                                    />
+                                </div>
+                                <div className="space-y-2 col-span-2">
+                                    <MediaUpload
+                                        value={editingItem.imageurl || ""}
+                                        type="image"
+                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                        onFileSelect={handleFileSelect}
+                                        isStaged={!!pendingFile}
+                                        stagedPreviewUrl={pendingPreviewUrl}
+                                        isExternalUploading={isUploading}
+                                        schoolKey={schoolKey}
+                                        category="infrastructure"
+                                        label="Facility Photo"
+                                        description="Upload a high-quality photo of the facility"
+                                        allowVideo={config?.mediatype !== "image"}
+                                        allowImage={config?.mediatype !== "video"}
+                                        aspectRatio="video"
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
@@ -404,26 +477,36 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                 </div>
                             </div>
                         </div>
-                        <div className="p-6 bg-gray-50/50 flex items-center justify-between">
+                        <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
                             <button
-                                onClick={() => { removeRecord(editingItem.key); setEditingItem(null); }}
-                                className="px-5 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 rounded-xl transition-all"
+                                onClick={() => { if (confirm("Delete this facility?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                             >
                                 Delete
                             </button>
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => setEditingItem(null)}
-                                    className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 rounded-xl transition-all"
+                                    onClick={handleCloseModal}
+                                    className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || !editingItem.title}
+                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
                                     onClick={handleSave}
-                                    className="px-8 py-3 bg-[#111827] text-white text-[13px] font-black rounded-xl hover:bg-black transition-all shadow-xl disabled:opacity-50"
+                                    className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >
-                                    {isSaving ? "Saving..." : (facilities.some(f => f.key === editingItem.key) ? "Update Facility" : "Add Facility")}
+                                    {isSaving || isUploading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            {isUploading ? "Uploading..." : "Saving..."}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {facilities.some(f => f.key === editingItem.key) ? 'Update Facility' : 'Add to Collection'}
+                                            <Check className="w-4 h-4" />
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

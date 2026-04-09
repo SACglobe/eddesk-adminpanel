@@ -1,4 +1,5 @@
 "use client";
+import { generateId } from '@/lib/generateId';
 
 import { useState } from "react";
 import BaseEditor from "./BaseEditor";
@@ -11,7 +12,7 @@ interface ContactDetailsEditorProps {
 }
 
 export default function ContactDetailsEditor({ component, schoolKey }: ContactDetailsEditorProps) {
-    const tableName = "contactdetails";
+    const tableName = (component.componentregistry as any)?.tablename;
     const isEditable = component.iseditable;
     
     const {
@@ -22,6 +23,7 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
     } = useComponentData({
         tableName,
         schoolKey,
+        orderBy: "createdat",
         initialRecords: (component as any).content || []
     });
 
@@ -34,7 +36,7 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
             setEditingDetails({ ...contactInfo });
         } else {
             setEditingDetails({
-                key: crypto.randomUUID(),
+                key: generateId(),
                 schoolkey: schoolKey,
                 address: "",
                 phone: "",
@@ -63,6 +65,7 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
             parentScreenName={component.parentscreenname}
             selectionMethod="auto"
             emptySlotsCount={0} // Singleton editor, no empty slots logic required.
+            component={component}
         >
             <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm flex flex-col md:flex-row gap-10">
                 <div className="flex-1 space-y-6">

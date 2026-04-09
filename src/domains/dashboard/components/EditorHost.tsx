@@ -12,8 +12,12 @@ import GalleryEditor from "./editors/GalleryEditor";
 import EventsEditor from "./editors/EventsEditor";
 import FacultyEditor from "./editors/FacultyEditor";
 import TestimonialEditor from "./editors/TestimonialEditor";
-import LeadershipEditor from "./editors/LeadershipEditor";
+import PrincipalMessageEditor from "./editors/PrincipalMessageEditor";
 import InfrastructureEditor from "./editors/InfrastructureEditor";
+import VisionMissionEditor from "./editors/VisionMissionEditor";
+import BoardMembersEditor from "./editors/BoardMembersEditor";
+import BoardMessageEditor from "./editors/BoardMessageEditor";
+import WhyChooseUsEditor from "./editors/WhyChooseUsEditor";
 
 interface EditorHostProps {
     selectedComponent: TemplateComponent | null;
@@ -207,7 +211,7 @@ export default function EditorHost({
                                                 return <GalleryEditor component={comp} schoolKey={schoolKey} />;
                                             }
                                             if (code === "achievements" || code === "schoolachievements") {
-                                                return <AchievementsEditor component={comp} screen={screen} schoolKey={schoolKey} />;
+                                                return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                             }
                                             if (code === "contactdetails") {
                                                 return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
@@ -221,11 +225,23 @@ export default function EditorHost({
                                             if (code === "testimonial") {
                                                 return <TestimonialEditor component={comp} schoolKey={schoolKey} />;
                                             }
-                                            if (code === "leadership") {
-                                                return <LeadershipEditor component={comp} schoolKey={schoolKey} />;
+                                            if (code === "leadership" || code === "principalmessage") {
+                                                return <PrincipalMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                             }
                                             if (code === "infrastructure") {
                                                 return <InfrastructureEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "visionmission" || code === "schoolidentity") {
+                                                return <VisionMissionEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "boardmembers") {
+                                                return <BoardMembersEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "boardmembersmessage" || code === "board_message" || code === "boardmessage") {
+                                                return <BoardMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "whychooseus") {
+                                                return <WhyChooseUsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                             }
 
                                             return (

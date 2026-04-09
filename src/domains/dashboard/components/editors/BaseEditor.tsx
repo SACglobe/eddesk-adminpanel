@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import type { TemplateComponent } from "@/domains/auth/types";
 
 interface BaseEditorProps {
     title: string;
@@ -12,15 +13,16 @@ interface BaseEditorProps {
     onCancel?: () => void;
     error?: string | null;
     headerActions?: ReactNode;
-    isEditable?: boolean;
+    isEditable?: boolean | null;
     parentScreenName?: string | null;
     selectionMethod?: 'auto' | 'manual' | null;
     emptySlotsCount?: number;
+    component?: TemplateComponent;
 }
 
 export default function BaseEditor({
-    title,
-    description,
+    title: defaultTitle,
+    description: defaultDescription,
     icon,
     children,
     isSaving,
@@ -31,8 +33,12 @@ export default function BaseEditor({
     isEditable = true,
     parentScreenName,
     selectionMethod,
-    emptySlotsCount
+    emptySlotsCount,
+    component
 }: BaseEditorProps) {
+    const title = (component as any)?.editorsname || defaultTitle;
+    const description = (component as any)?.editorsdescription || defaultDescription;
+
     return (
         <div className="flex flex-col h-full bg-white relative animate-in fade-in duration-300">
             {/* Header Area */}
