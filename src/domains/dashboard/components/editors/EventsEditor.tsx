@@ -127,7 +127,6 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
             eventdate: new Date().toISOString().split('T')[0],
             starttime: "10:00 AM",
             imageurl: "",
-            contenttype: config?.mediatype === "video" ? "video" : "image",
             isactive: true,
             isfeatured: false,
             displayorder: displayOrder || events.length + 1
@@ -249,7 +248,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
+                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col">
                             <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
                                 {item.imageurl ? (
                                     item.contenttype === 'video' ? (
@@ -285,27 +284,29 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                 <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed mb-4">{item.description}</p>
                             </div>
 
-                            <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-white via-white/80 to-transparent opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3 translate-y-4 group-hover:translate-y-0 duration-300">
+                            <div className="absolute top-6 right-6 p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center gap-2">
                                 {isEditable ? (
                                     <button
                                         onClick={() => setEditingItem(item)}
-                                        className="px-6 py-2.5 bg-[#111827] text-white rounded-xl text-[12px] font-black hover:bg-black transition-all shadow-lg"
+                                        className="text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                     >
-                                        Edit Details
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
                                     </button>
                                 ) : config?.selectionmethod === "manual" && (
                                     <>
                                         <button
                                             onClick={() => setPickingForIndex(index)}
-                                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-blue-500 hover:text-white transition-all shadow-lg border border-gray-100"
+                                            className="text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         </button>
                                         <button
                                             onClick={() => handleClearSlot(index)}
-                                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-red-500 hover:text-white transition-all shadow-lg border border-gray-100"
+                                            className="text-gray-400 hover:text-red-500 transition-all active:scale-90"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     </>
                                 )}

@@ -25,12 +25,25 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
     const itemCount = config?.itemcount ? parseInt(config.itemcount) : 0;
     const router = useRouter();
 
+    const hasIcon = useMemo(() => {
+        const variant = config?.variant?.toLowerCase() || '';
+        return ['icon', 'textwithicon', 'bulletintextwithicon'].includes(variant);
+    }, [config?.variant]);
+
+    const hasImage = useMemo(() => {
+        const variant = config?.variant?.toLowerCase() || '';
+        // If it's specifically an icon variant, it should NOT have an image unless it's a known dual variant
+        if (hasIcon) return false;
+        return true; // Default to image for other variants including bulletintextwithimage
+    }, [config?.variant, hasIcon]);
+
     const effectiveMediaType = useMemo(() => {
         const type = config?.variant || config?.mediatype;
         if (!type) return "image";
         const lowType = type.toLowerCase();
-        if (lowType === "video" || lowType === "videos") return "video";
-        return "image";
+        if (lowType.includes("video")) return "video";
+        // If it's a known variant like 'bulletintextwithicon', return it directly for correct filtering
+        return type;
     }, [config?.variant, config?.mediatype]);
 
     const filters = useMemo(() => ({
@@ -152,18 +165,20 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             ...getInitialValuesFromFilters(filters),
             title: "",
             description: "",
+            highlighttitle: "",
+            highlightdescription: "",
             bulletintextlist: [],
             tag: "#2563eb",
             icon: "School",
             imageurl: "",
-            contenttype: config?.mediatype === "video" ? "video" : "image",
+            contenttype: effectiveMediaType,
             isactive: true,
             displayorder: displayOrder || facilities.length + 1
         });
     };
 
     const handleSave = async () => {
-        if (!editingItem.title || (!editingItem.imageurl && !pendingFile)) return;
+        if (!editingItem.title || (hasImage && !editingItem.imageurl && !pendingFile)) return;
         setIsSaving(true);
         try {
             let finalItem = { ...editingItem };
@@ -211,7 +226,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
 
     return (
         <BaseEditor
-            title="School Infrastructure"
+            title={component.editorsname || "School Infrastructure"}
             description="Highlight key facilities, campuses, or specialized labs and resources."
             icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,12 +273,37 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col p-8 text-left min-h-[350px]">
-                            <div className="w-[72px] h-[72px] rounded-[24px] mb-8 flex items-center justify-center shrink-0 shadow-sm transition-colors" style={{ backgroundColor: item.tag || '#2563eb' }}>
-                                <DynamicIcon name={item.icon} size={32} className="text-white" />
-                            </div>
+                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col text-left min-h-[400px]">
+                            {/* Card Image / Header Area */}
+                            {item.imageurl ? (
+                                <div className="relative h-[200px] w-full overflow-hidden shrink-0">
+                                    <img 
+                                        src={item.imageurl} 
+                                        alt={item.title}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    
+                                    {/* Overlapping Icon (Only if variant supports icons) */}
+                                    {hasIcon && (
+                                        <div className="absolute -bottom-6 left-8 w-[56px] h-[56px] rounded-[18px] flex items-center justify-center shadow-xl border-4 border-white transition-transform group-hover:-translate-y-1" style={{ backgroundColor: item.tag || '#2563eb' }}>
+                                            <DynamicIcon name={item.icon} size={24} className="text-white" />
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="p-8 pb-0">
+                                    {hasIcon ? (
+                                        <div className="w-[72px] h-[72px] rounded-[24px] flex items-center justify-center shrink-0 shadow-sm transition-colors" style={{ backgroundColor: item.tag || '#2563eb' }}>
+                                            <DynamicIcon name={item.icon} size={32} className="text-white" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-12 h-1.5 rounded-full" style={{ backgroundColor: item.tag || '#2563eb' }} />
+                                    )}
+                                </div>
+                            )}
                             
-                            <div className="flex-1 flex flex-col min-w-0 w-full relative z-10 bg-white">
+                            <div className={`flex-1 flex flex-col min-w-0 w-full relative z-10 bg-white ${item.imageurl ? 'p-8 pt-10' : 'p-8 pt-8'}`}>
                                 <div className="mb-6 inline-block shrink-0 self-start">
                                     <h4 className="text-[22px] font-black text-[#1e293b] group-hover:text-[#F54927] transition-colors truncate pr-4">{item.title}</h4>
                                     <div className="h-1 bg-amber-400 mt-2 rounded-full w-4/5" />
@@ -281,27 +321,29 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                 </ul>
                             </div>
 
-                            <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-white via-white/95 to-transparent flex items-center justify-center gap-3 translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">
+                            <div className="absolute top-6 right-6 p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center gap-2">
                                 {isEditable ? (
                                     <button
                                         onClick={() => setEditingItem(item)}
-                                        className="px-6 py-2.5 bg-[#111827] text-white rounded-xl text-[12px] font-black hover:bg-black transition-all shadow-lg"
+                                        className="text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                     >
-                                        Edit Facility
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
                                     </button>
                                 ) : config?.selectionmethod === "manual" && (
                                     <>
                                         <button
                                             onClick={() => setPickingForIndex(index)}
-                                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-blue-500 hover:text-white transition-all shadow-lg border border-gray-100"
+                                            className="text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         </button>
                                         <button
                                             onClick={() => handleClearSlot(index)}
-                                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-red-500 hover:text-white transition-all shadow-lg border border-gray-100"
+                                            className="text-gray-400 hover:text-red-500 transition-all active:scale-90"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     </>
                                 )}
@@ -396,6 +438,39 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
+                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Description</label>
+                                    <textarea
+                                        value={editingItem.description || ""}
+                                        onChange={e => setEditingItem({ ...editingItem, description: e.target.value })}
+                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none min-h-[100px] resize-none"
+                                        placeholder="Brief details about this facility..."
+                                    />
+                                </div>
+                                {editingItem.contenttype?.toLowerCase().includes("bulletin") && (
+                                    <>
+                                        <div className="space-y-2 col-span-1">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Highlight Title</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.highlighttitle || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, highlighttitle: e.target.value })}
+                                                className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
+                                                placeholder="e.g. Featured Lab"
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-1">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Highlight Description</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.highlightdescription || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, highlightdescription: e.target.value })}
+                                                className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
+                                                placeholder="e.g. State-of-the-art"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                                <div className="space-y-2 col-span-2">
                                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Icon Background Color (Hex)</label>
                                     <input
                                         type="text"
@@ -405,31 +480,35 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                         placeholder="e.g. #2563eb or #ebb017"
                                     />
                                 </div>
-                                <div className="space-y-2 col-span-2">
-                                    <MediaUpload
-                                        value={editingItem.imageurl || ""}
-                                        type="image"
-                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
-                                        onFileSelect={handleFileSelect}
-                                        isStaged={!!pendingFile}
-                                        stagedPreviewUrl={pendingPreviewUrl}
-                                        isExternalUploading={isUploading}
-                                        schoolKey={schoolKey}
-                                        category="infrastructure"
-                                        label="Facility Photo"
-                                        description="Upload a high-quality photo of the facility"
-                                        allowVideo={config?.mediatype !== "image"}
-                                        allowImage={config?.mediatype !== "video"}
-                                        aspectRatio="video"
-                                    />
-                                </div>
-                                <div className="space-y-2 col-span-2">
-                                    <IconPicker
-                                        value={editingItem.icon || ""}
-                                        onChange={iconName => setEditingItem({ ...editingItem, icon: iconName })}
-                                        label="Facility Icon"
-                                    />
-                                </div>
+                                {hasImage && (
+                                    <div className="space-y-2 col-span-2">
+                                        <MediaUpload
+                                            value={editingItem.imageurl || ""}
+                                            type="image"
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onFileSelect={handleFileSelect}
+                                            isStaged={!!pendingFile}
+                                            stagedPreviewUrl={pendingPreviewUrl}
+                                            isExternalUploading={isUploading}
+                                            schoolKey={schoolKey}
+                                            category="infrastructure"
+                                            label="Facility Photo"
+                                            description="Upload a high-quality photo of the facility"
+                                            allowVideo={config?.mediatype !== "image"}
+                                            allowImage={config?.mediatype !== "video"}
+                                            aspectRatio="video"
+                                        />
+                                    </div>
+                                )}
+                                {hasIcon && (
+                                    <div className="space-y-2 col-span-2">
+                                        <IconPicker
+                                            value={editingItem.icon || ""}
+                                            onChange={iconName => setEditingItem({ ...editingItem, icon: iconName })}
+                                            label="Facility Icon"
+                                        />
+                                    </div>
+                                )}
                                 <div className="space-y-4 col-span-2">
                                     <div className="flex items-center justify-between">
                                         <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Facility Highlights</label>
@@ -492,7 +571,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
+                                    disabled={isSaving || isUploading || (hasImage && !editingItem.imageurl && !pendingFile)}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

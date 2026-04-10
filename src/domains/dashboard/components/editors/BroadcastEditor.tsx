@@ -209,7 +209,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                         <div
                             key={broadcast.key}
                             onClick={() => component.iseditable ? setEditingBroadcast(broadcast) : setPickingForIndex(index)}
-                            className={`group bg-white border border-gray-100 rounded-[20px] hover:border-red-100 hover:shadow-2xl hover:shadow-red-500/10 transition-all cursor-pointer relative flex flex-col overflow-hidden ${isInactive || isExpired ? "opacity-60" : ""}`}
+                            className={`group bg-white border border-gray-100 rounded-[20px] shadow-sm hover:border-red-100 hover:shadow-2xl hover:shadow-red-500/10 transition-all cursor-pointer relative flex flex-col overflow-hidden ${isInactive || isExpired ? "opacity-60" : ""}`}
                         >
                             <div className={`h-1.5 w-full bg-gradient-to-r ${p.preview} flex-shrink-0`} />
                             <div className="flex-1 p-4 space-y-2">

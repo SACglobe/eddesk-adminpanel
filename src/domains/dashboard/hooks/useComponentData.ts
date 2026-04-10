@@ -2,11 +2,12 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLoading } from "@/providers/LoadingProvider";
 import { upsertComponentData, deleteComponentData, updateComponentOrder } from "@/domains/dashboard/actions";
 
 export interface FilterCondition {
     field: string;
-    operator: 'equals' | 'notequals' | 'contains' | 'startswith' | 'endswith' | 'in';
+    operator: 'equals' | 'notequals' | 'contains' | 'startswith' | 'endswith' | 'in' | 'gte' | 'lte' | 'gt' | 'lt';
     value: any;
 }
 
@@ -54,6 +55,22 @@ export function useComponentData({
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { setLoading: setGlobalLoading } = useLoading();
+
+    // Sync local loading state with global loader
+    useEffect(() => {
+        // We use a small delay or check to avoid flashing for ultra-fast-local operations if needed,
+        // but for now, direct sync is what the user asked for.
+        setGlobalLoading(isLoading || isSaving);
+        
+        // Cleanup on unmount to ensure global loader is cleared
+        return () => {
+            if (isLoading || isSaving) {
+                setGlobalLoading(false);
+            }
+        };
+    }, [isLoading, isSaving, setGlobalLoading]);
 
     // Client-side filtering logic to maintain consistency after upserts
     const filteredRecords = useMemo(() => {
@@ -122,6 +139,10 @@ export function useComponentData({
                                 case 'startswith': filteredQuery = filteredQuery.ilike(c.field, `${c.value}%`); break;
                                 case 'endswith': filteredQuery = filteredQuery.ilike(c.field, `%${c.value}`); break;
                                 case 'in': filteredQuery = filteredQuery.in(c.field, c.value); break;
+                                case 'gte': filteredQuery = filteredQuery.gte(c.field, c.value); break;
+                                case 'lte': filteredQuery = filteredQuery.lte(c.field, c.value); break;
+                                case 'gt': filteredQuery = filteredQuery.gt(c.field, c.value); break;
+                                case 'lt': filteredQuery = filteredQuery.lt(c.field, c.value); break;
                             }
                         });
                         query = filteredQuery;
@@ -135,6 +156,10 @@ export function useComponentData({
                                 case 'startswith': return `${c.field}.ilike.${c.value}%`;
                                 case 'endswith': return `${c.field}.ilike.%${c.value}`;
                                 case 'in': return `${c.field}.in.(${Array.isArray(c.value) ? c.value.join(',') : c.value})`;
+                                case 'gte': return `${c.field}.gte.${c.value}`;
+                                case 'lte': return `${c.field}.lte.${c.value}`;
+                                case 'gt': return `${c.field}.gt.${c.value}`;
+                                case 'lt': return `${c.field}.lt.${c.value}`;
                                 default: return '';
                             }
                         }).filter(Boolean);
@@ -205,8 +230,10 @@ export function useComponentData({
             } else {
                 setError(result.error ?? "Failed to save record");
             }
+            return result;
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred");
+            return { success: false, error: err.message };
         } finally {
             setIsSaving(false);
         }

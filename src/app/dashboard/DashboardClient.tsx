@@ -4,11 +4,13 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/domains/auth/queries";
 import { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
-import NavigationRail, { GetIcon, GENERAL_ITEMS } from "@/domains/dashboard/components/NavigationRail";
+import NavigationRail, { GetIcon, GENERAL_ITEMS, CONNECT_ITEMS } from "@/domains/dashboard/components/NavigationRail";
 import ComponentListPanel from "@/domains/dashboard/components/ComponentListPanel";
 import EditorHost from "@/domains/dashboard/components/EditorHost";
 import BrandLogo from "@/components/BrandLogo";
 import { getEnrichedConfig } from "@/domains/dashboard/utils/componentUtils";
+import { LoadingProvider } from "@/providers/LoadingProvider";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
 interface DashboardClientProps {
     initialData: AdminInitialData;
@@ -195,6 +197,11 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         return GENERAL_ITEMS.find(item => item.key === selectedScreenKey) || null;
     }, [selectedScreenKey]);
 
+    const connectItemSelected = useMemo(() => {
+        if (!selectedScreenKey) return null;
+        return CONNECT_ITEMS.find(item => item.key === selectedScreenKey) || null;
+    }, [selectedScreenKey]);
+
     // Global Keyboard Shortcut for Search (Cmd+K / Ctrl+K)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -244,7 +251,9 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     // Handle screen selection
     const handleSelectScreen = (key: string) => {
         const isGeneral = GENERAL_ITEMS.some(item => item.key === key);
-        if (isGeneral) {
+        const isConnect = CONNECT_ITEMS.some(item => item.key === key);
+
+        if (isGeneral || isConnect) {
             setSelectedScreenKey(key);
             setSelectedComponentKey(null);
             setIsMobileMenuOpen(false);
@@ -281,9 +290,11 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     };
 
     return (
-        <div className="h-screen flex flex-col bg-white overflow-hidden text-gray-900 font-sans selection:bg-red-100 selection:text-red-900">
-            {/* Header */}
-            <header className="h-16 border-b border-[#f1f1f1] flex items-center justify-between px-4 lg:px-6 flex-shrink-0 z-50 bg-white w-full">
+        <LoadingProvider>
+            <div className="h-screen flex flex-col bg-white overflow-hidden text-gray-900 font-sans selection:bg-red-100 selection:text-red-900">
+                <LoadingOverlay />
+                {/* Header */}
+                <header className="h-16 border-b border-[#f1f1f1] flex items-center justify-between px-4 lg:px-6 flex-shrink-0 z-50 bg-white w-full">
                 <div className="flex items-center gap-4 text-[14px] font-medium text-gray-500 overflow-hidden">
                     <div className="hidden lg:block">
                         <BrandLogo variant="full" size="md" />
@@ -371,7 +382,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                 <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#f9fafb]">
                     <div className="flex flex-1 overflow-hidden relative">
                         {/* Component List Desktop */}
-                        {!generalItemSelected && (
+                        {!generalItemSelected && !connectItemSelected && (
                             <div className="hidden lg:flex h-full w-60 flex-shrink-0">
                                 <ComponentListPanel
                                     selectedScreen={selectedScreen}
@@ -388,7 +399,9 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                 activeComponentData={activeComponentData}
                                 selectedScreen={selectedScreen}
                                 generalItem={generalItemSelected}
+                                connectItem={connectItemSelected}
                                 schoolKey={school?.key ?? ""}
+                                adminData={adminData}
                                 onBack={() => setIsMobileMenuOpen(true)}
                                 onSearch={() => setIsSearchOpen(true)}
                                 allScreens={adminData?.templatescreens ?? []}
@@ -447,6 +460,41 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                                         </span>
                                                     </div>
                                                     {isActiveScreen && (
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#F54927] shadow-[0_0_8px_rgba(245,73,39,0.5)]" />
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+                                
+                                {/* Connect Section */}
+                                <section>
+                                    <div className="flex items-center justify-between mb-4 px-1">
+                                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">CONNECT</h3>
+                                        <div className="h-px flex-1 bg-gray-100 ml-4 opacity-50" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {CONNECT_ITEMS.map(item => {
+                                            const isSelected = selectedScreenKey === item.key;
+                                            return (
+                                                <button
+                                                    key={item.key}
+                                                    onClick={() => handleSelectScreen(item.key)}
+                                                    className={`w-full group text-left px-4 py-3.5 rounded-2xl transition-all flex items-center justify-between active:scale-[0.98] ${isSelected
+                                                        ? 'bg-white shadow-[0_4px_20px_rgba(245,73,39,0.08)] border border-red-100/50 text-[#F54927]'
+                                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3.5">
+                                                        <span className={`w-6 h-6 flex items-center justify-center transition-colors duration-200 ${isSelected ? 'text-[#F54927]' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                                                            {item.icon}
+                                                        </span>
+                                                        <span className={`text-[15px] tracking-tight ${isSelected ? 'font-black' : 'font-bold'}`}>
+                                                            {item.label}
+                                                        </span>
+                                                    </div>
+                                                    {isSelected && (
                                                         <div className="w-1.5 h-1.5 rounded-full bg-[#F54927] shadow-[0_0_8px_rgba(245,73,39,0.5)]" />
                                                     )}
                                                 </button>
@@ -569,7 +617,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             </div>
 
             {/* Mobile Components FAB */}
-            {!generalItemSelected && selectedScreen && (
+            {!generalItemSelected && !connectItemSelected && selectedScreen && (
                 <div className="lg:hidden fixed bottom-6 left-0 right-0 z-40 flex justify-center pointer-events-none">
                     <button onClick={() => setIsMobileComponentListOpen(true)} className="bg-gray-900 text-white shadow-xl shadow-gray-900/20 px-6 py-3.5 rounded-full flex items-center gap-2.5 font-bold text-[14px] hover:bg-black transition-transform active:scale-95 pointer-events-auto border border-gray-800 tracking-wide">
                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -716,5 +764,6 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                 </div>
             )}
         </div>
+        </LoadingProvider>
     );
 }
