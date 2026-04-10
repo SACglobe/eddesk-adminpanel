@@ -259,7 +259,7 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
                     return (
                         <div
                             key={item.key}
-                            onClick={() => isEditable ? handleEditItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
+                            onClick={() => isEditable ? setEditingItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
                             className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col items-center p-6 pb-8 text-center min-h-[280px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
                         >
                             <div className="w-24 h-24 rounded-full bg-gray-50 overflow-hidden mb-5 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">

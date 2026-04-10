@@ -163,8 +163,8 @@ export default function AcademicsListEditor({ component, schoolKey }: AcademicsL
             const response = await saveRecord(dataToSave);
             
             // If we came from an empty slot (Manual Mode), auto-place it
-            if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && response.success && response.data) {
-                const recordKey = (response.data as any).key;
+            if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && (response as any).data) {
+                const recordKey = (response as any).data.key;
                 await handleSelectRecordFromIndex(targetSlotIndex, recordKey);
             }
 

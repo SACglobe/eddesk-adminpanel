@@ -38,10 +38,10 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
                 </div>
 
                 <div className="p-8 lg:p-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-12">
-                    <DetailItem label="Active Plan" value={adminData?.plans?.name} isEditing={false} badge={adminData?.plans?.code} color="blue" />
-                    <DetailItem label="Billing Frequency" value={adminData?.plans?.billingcycle} isEditing={false} />
-                    <DetailItem label="Investment" value={`${adminData?.plans?.price} ${(adminData?.plans as any)?.currency || 'INR'}`} isEditing={false} />
-                    <DetailItem label="Subscription Status" value={adminData?.subscriptions?.status} isEditing={false} badge="Active" color="emerald" />
+                    <DetailItem label="Active Plan" value={(adminData?.plans as any)?.name} isEditing={false} badge={(adminData?.plans as any)?.code} color="blue" />
+                    <DetailItem label="Billing Frequency" value={(adminData?.plans as any)?.billingcycle} isEditing={false} />
+                    <DetailItem label="Investment" value={`${(adminData?.plans as any)?.price} ${(adminData?.plans as any)?.currency || 'INR'}`} isEditing={false} />
+                    <DetailItem label="Subscription Status" value={(adminData?.subscriptions as any)?.status} isEditing={false} badge="Active" color="emerald" />
                     <DetailItem label="Last Payment" value={adminData?.subscriptions?.startdate ? new Date(adminData.subscriptions.startdate).toLocaleDateString() : 'N/A'} isEditing={false} />
                     <DetailItem label="Renewal Date" value={adminData?.subscriptions?.enddate ? new Date(adminData.subscriptions.enddate).toLocaleDateString() : 'N/A'} isEditing={false} color="blue" />
                 </div>
@@ -158,7 +158,7 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
     );
 }
 
-function DetailItem({ label, value, isEditing, badge, color = 'gray' }: { label: string, value?: string, isEditing: boolean, badge?: string, color?: 'gray' | 'emerald' | 'blue' }) {
+function DetailItem({ label, value, isEditing, badge, color = 'gray' }: { label: string, value?: string | null, isEditing: boolean, badge?: string | null, color?: 'gray' | 'emerald' | 'blue' }) {
     const colorClasses = {
         gray: 'bg-gray-50 text-gray-600 border-gray-100',
         emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -171,7 +171,7 @@ function DetailItem({ label, value, isEditing, badge, color = 'gray' }: { label:
             {isEditing ? (
                 <input 
                     type="text" 
-                    defaultValue={value}
+                    defaultValue={value || ""}
                     className="w-full h-11 bg-gray-50 border-2 border-transparent focus:border-[#F54927]/20 focus:bg-white rounded-xl px-4 text-[13px] font-bold text-gray-900 transition-all outline-none"
                 />
             ) : (
