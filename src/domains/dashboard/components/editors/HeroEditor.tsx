@@ -529,15 +529,17 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-[20px] after:w-[20px] after:transition-all peer-checked:bg-emerald-500"></div>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                            <span className="text-[13px] font-black text-gray-900">Display Order</span>
-                            <input
-                                type="number"
-                                value={editingSlide.displayorder}
-                                onChange={e => setEditingSlide({ ...editingSlide, displayorder: parseInt(e.target.value) || 0 })}
-                                className="w-16 px-2 py-2 bg-gray-50 text-center border-2 border-transparent rounded-lg transition-all text-[14px] font-black outline-none"
-                            />
-                        </div>
+                        {itemCount > 1 && (
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                                <span className="text-[13px] font-black text-gray-900">Display Order</span>
+                                <input
+                                    type="number"
+                                    value={editingSlide.displayorder}
+                                    onChange={e => setEditingSlide({ ...editingSlide, displayorder: parseInt(e.target.value) || 0 })}
+                                    className="w-16 px-2 py-2 bg-gray-50 text-center border-2 border-transparent rounded-lg transition-all text-[14px] font-black outline-none"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile Delete */}
@@ -578,8 +580,8 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
     return (
         <BaseEditor
-            title="Hero Section"
-            description="Manage the main banner slides of your homepage."
+            title={`${screen.screenname ?? screen.screenslug} Hero Section`}
+            description={`Manage the banner slides for the ${screen.screenname?.toLowerCase() ?? screen.screenslug} section.`}
             icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -676,13 +678,13 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
 
 
-                                <div className="absolute top-3 right-3 lg:top-4 lg:right-4 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1.5 z-10">
+                                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-2 z-10">
                                     {isEditable ? (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setEditingSlide(slide); }}
-                                            className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
+                                            className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all active:scale-90"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
                                         </button>
@@ -690,15 +692,15 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                         <>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setPickingForIndex(index); }}
-                                                className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-blue-500 shadow-lg border border-gray-100 transition-all"
+                                                className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all active:scale-90"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                             </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleClearSlot(index); }}
-                                                className="p-2 lg:p-2.5 bg-white rounded-xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all"
+                                                className="p-3 bg-white rounded-2xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all active:scale-90"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                         </>
                                     )}
@@ -714,112 +716,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                 {editingSlide && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#111827]/60 backdrop-blur-md animate-in fade-in duration-500">
                         <div className="absolute inset-0" onClick={handleCancel} />
-                        <div className="relative bg-white w-full max-w-5xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col md:flex-row max-h-[95vh]">
-
-                            {/* Left Side: Preview */}
-                            <div className="hidden md:flex w-[380px] bg-gray-50 border-r border-gray-100 flex-col overflow-hidden">
-                                <div className="p-8 border-b border-gray-100">
-                                    <h3 className="text-[12px] font-black text-gray-400 uppercase tracking-widest mb-4">Preview</h3>
-                                    <div className="relative aspect-[4/5] rounded-[24px] overflow-hidden shadow-2xl border border-white">
-                                        {previewMediaUrl ? (
-                                            editingSlide.contenttype === 'video' ? (
-                                                <div className="relative w-full h-full group/preview overflow-hidden rounded-[24px]">
-                                                    <video 
-                                                        ref={videoRef}
-                                                        src={previewMediaUrl} 
-                                                        className="w-full h-full object-cover" 
-                                                        autoPlay 
-                                                        loop 
-                                                        muted 
-                                                        playsInline 
-                                                        onTimeUpdate={handleTimeUpdate}
-                                                        onLoadedMetadata={handleMetadataLoaded}
-                                                        onClick={togglePlay}
-                                                    />
-                                                    
-                                                    {/* Video Controls Overlay */}
-                                                    <div className="absolute inset-0 flex flex-col justify-between p-6 bg-black/10 transition-opacity">
-                                                        {/* Center Play/Pause Toggle */}
-                                                        <div className="flex-1 flex items-center justify-center">
-                                                            <button 
-                                                                type="button"
-                                                                onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                                                                className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
-                                                            >
-                                                                {isPlaying ? (
-                                                                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                                                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                                                                    </svg>
-                                                                ) : (
-                                                                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                                                        <path d="M8 5v14l11-7z" />
-                                                                    </svg>
-                                                                )}
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Bottom Controls */}
-                                                        <div className="flex flex-col gap-3">
-                                                            {/* Progress Slider */}
-                                                            <div className="relative w-full h-6 flex items-center group/slider">
-                                                                <input 
-                                                                    type="range"
-                                                                    min="0"
-                                                                    max={duration || 100}
-                                                                    step="0.01"
-                                                                    value={currentTime}
-                                                                    onChange={(e) => handleSeek(parseFloat(e.target.value))}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    className="absolute w-full h-1.5 bg-white/30 rounded-full appearance-none cursor-pointer accent-white overflow-hidden [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(0,0,0,0.5)]"
-                                                                    style={{
-                                                                        background: `linear-gradient(to right, white ${duration ? (currentTime / duration) * 100 : 0}%, rgba(255, 255, 255, 0.3) ${duration ? (currentTime / duration) * 100 : 0}%)`
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                            
-                                                            {/* Time Display */}
-                                                            <div className="flex items-center justify-between text-white text-[10px] font-bold tracking-widest uppercase">
-                                                                <div className="flex items-center gap-3">
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={(e) => { e.stopPropagation(); togglePlay(); }} 
-                                                                        className="hover:text-gray-200 transition-colors"
-                                                                    >
-                                                                        {isPlaying ? 'PAUSE' : 'PLAY'}
-                                                                    </button>
-                                                                    <span>{formatTime(currentTime)}</span>
-                                                                </div>
-                                                                <span>{formatTime(duration)}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <img src={previewMediaUrl} alt="" className="w-full h-full object-cover" />
-                                            )
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full bg-gray-200 text-gray-400">No Media</div>
-                                        )}
-                                        {pendingFile && (
-                                            <div className="absolute top-3 left-3 right-3 bg-amber-500/90 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl text-center">
-                                                📎 New file staged — uploads on publish
-                                            </div>
-                                        )}
-                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                                            <h4 className="text-white text-[18px] font-black leading-tight mb-1">{editingSlide.headline || "No Headline"}</h4>
-                                            <p className="text-white/80 text-[12px] font-medium mb-4">{editingSlide.subheadline || "No Description"}</p>
-                                            <div className="flex gap-2">
-                                                {editingSlide.primarybuttontext && (
-                                                    <div className="px-4 py-1.5 bg-white text-black text-[10px] font-black rounded-lg uppercase tracking-wider">{editingSlide.primarybuttontext}</div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-8 flex-1 flex flex-col justify-end">
-                                    <p className="text-[10px] text-gray-400 font-bold leading-relaxed">Headlines and subheadlines should be concise to ensure readability across all devices.</p>
-                                </div>
-                            </div>
+                        <div className="relative bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col max-h-[95vh]">
 
                             {/* Right Side: Form */}
                             <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col bg-white">
@@ -935,7 +832,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                     <div className="pt-6 border-t border-gray-100 flex items-center justify-between cursor-pointer" onClick={() => setEditingSlide({ ...editingSlide, isactive: !editingSlide.isactive })}>
                                         <div className="flex flex-col">
                                             <span className="text-[14px] font-black text-gray-900 tracking-tight">Active Status</span>
-                                            <span className="text-[11px] text-gray-400 font-bold">Visible on public homepage</span>
+                                            <span className="text-[11px] text-gray-400 font-bold">Visible on your website</span>
                                         </div>
                                         <div className="relative inline-flex items-center">
                                             <input type="checkbox" className="sr-only peer" checked={editingSlide.isactive} readOnly />

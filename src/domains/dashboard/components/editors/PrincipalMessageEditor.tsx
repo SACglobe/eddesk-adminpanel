@@ -270,7 +270,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                         <div
                             key={item.key}
                             onClick={() => isEditable ? handleEditItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
-                            className={`group relative rounded-[40px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col items-center p-12 text-center min-h-[500px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
+                            className={`group relative rounded-[40px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-500 flex flex-col items-center p-12 text-center min-h-[500px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
                         >
                             <div className="w-40 h-40 rounded-full overflow-hidden mb-8 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">
                                 {item.imageurl ? (
@@ -303,11 +303,11 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                 </div>
                             )}
 
-                            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-2 z-10">
+                            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 z-10">
                                 {isEditable ? (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleEditItem(item); }}
-                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
+                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-2xl border border-gray-100 transition-all active:scale-90"
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -316,7 +316,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                 ) : config?.selectionmethod === "manual" && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleClearSlot(index); }}
-                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all"
+                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-red-500 shadow-2xl border border-gray-100 transition-all active:scale-90"
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>

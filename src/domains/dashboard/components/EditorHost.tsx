@@ -10,6 +10,7 @@ import AcademicResultsEditor from "./editors/AcademicResultsEditor";
 import AchievementsEditor from "./editors/AchievementsEditor";
 import GalleryEditor from "./editors/GalleryEditor";
 import EventsEditor from "./editors/EventsEditor";
+import MonthwiseEventsEditor from "./editors/MonthwiseEventsEditor";
 import FacultyEditor from "./editors/FacultyEditor";
 import TestimonialEditor from "./editors/TestimonialEditor";
 import PrincipalMessageEditor from "./editors/PrincipalMessageEditor";
@@ -18,6 +19,16 @@ import VisionMissionEditor from "./editors/VisionMissionEditor";
 import BoardMembersEditor from "./editors/BoardMembersEditor";
 import BoardMessageEditor from "./editors/BoardMessageEditor";
 import WhyChooseUsEditor from "./editors/WhyChooseUsEditor";
+import AdmissionInstructionEditor from "./editors/AdmissionInstructionEditor";
+import AcademicsListEditor from "./editors/AcademicsListEditor";
+import HighlightedAcademicsEditor from "./editors/HighlightedAcademicsEditor";
+import ActivitiesEditor from "./editors/ActivitiesEditor";
+import HighlightedActivitiesEditor from "./editors/HighlightedActivitiesEditor";
+import HighlightedInfrastructureEditor from "./editors/HighlightedInfrastructureEditor";
+import HelpEditor from "./editors/HelpEditor";
+import FeedbackEditor from "./editors/FeedbackEditor";
+import AccountDetailsEditor from "./editors/AccountDetailsEditor";
+import { getEnrichedConfig } from "../utils/componentUtils";
 
 interface EditorHostProps {
     selectedComponent: TemplateComponent | null;
@@ -29,11 +40,13 @@ interface EditorHostProps {
     } | null;
     selectedScreen?: TemplateScreen | null;
     generalItem?: { key: string; label: string; icon: React.ReactNode } | null;
+    connectItem?: { key: string; label: string; icon: React.ReactNode } | null;
     schoolKey?: string;
     onBack?: () => void;
     onSearch?: () => void;
     allScreens?: TemplateScreen[];
     allowedHeroMediaType?: 'image' | 'video' | 'both';
+    adminData?: any;
 }
 
 export default function EditorHost({
@@ -41,11 +54,13 @@ export default function EditorHost({
     activeComponentData,
     selectedScreen,
     generalItem,
+    connectItem,
     schoolKey,
     onBack,
     onSearch,
     allScreens,
-    allowedHeroMediaType
+    allowedHeroMediaType,
+    adminData
 }: EditorHostProps) {
     const isGroup = activeComponentData?.isGroup;
     const groupName = activeComponentData?.groupName;
@@ -76,7 +91,14 @@ export default function EditorHost({
                             <span className="text-gray-900 font-bold truncate max-w-[120px] lg:max-w-none">{generalItem.label}</span>
                         </div>
                     )}
-                    {!generalItem && selectedScreen && (selectedComponent || isGroup) && (
+                    {connectItem && (
+                        <div className="flex items-center gap-1.5 lg:gap-2 text-[12px] lg:text-[13px] font-medium text-gray-500 tracking-tight">
+                            <span className="capitalize hover:text-gray-900 transition-colors cursor-default hidden lg:inline">Connect</span>
+                            <span className="text-gray-300 font-light hidden lg:inline">/</span>
+                            <span className="text-gray-900 font-bold truncate max-w-[120px] lg:max-w-none">{connectItem.label}</span>
+                        </div>
+                    )}
+                    {!generalItem && !connectItem && selectedScreen && (selectedComponent || isGroup) && (
                         <div className="flex items-center gap-1.5 lg:gap-2 text-[12px] lg:text-[13px] font-medium text-gray-500 tracking-tight">
                             <span className="capitalize hover:text-gray-900 transition-colors cursor-default truncate max-w-[100px] lg:max-w-none">{selectedScreen.screenname ?? selectedScreen.screenslug}</span>
                             <span className="text-gray-300 font-light">/</span>
@@ -112,26 +134,71 @@ export default function EditorHost({
                             Manage and configure settings for {generalItem.label}.
                         </p>
 
+                        {generalItem.key === 'help' ? (
+                            <HelpEditor adminData={adminData} />
+                        ) : generalItem.key === 'feedback' ? (
+                            <FeedbackEditor adminData={adminData} />
+                        ) : generalItem.key === 'account-details' ? (
+                            <AccountDetailsEditor adminData={adminData} />
+                        ) : (
+                            <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
+                                <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
+                                    <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
+                                        {generalItem.label} Settings
+                                    </h3>
+                                </div>
+                                <div className="px-4 lg:px-6 py-8 flex flex-col items-center justify-center text-center">
+                                    <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
+                                        {generalItem.icon}
+                                    </div>
+                                    <h2 className="text-lg font-bold text-gray-900">
+                                        {generalItem.label} Editor
+                                    </h2>
+                                    <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
+                                        The configuration form for {generalItem.label} will be implemented here.
+                                    </p>
+
+                                    <div className="mt-8 flex gap-3">
+                                        <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
+                                            Implement Feature
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : connectItem ? (
+                    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <h1 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2 px-4 lg:px-0">
+                            {connectItem.label}
+                        </h1>
+                        <p className="text-[13px] lg:text-[14px] text-gray-500 mb-6 lg:mb-10 px-4 lg:px-0">
+                            View and manage incoming {connectItem.label.toLowerCase()}.
+                        </p>
+
                         <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
                             <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
                                 <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
-                                    {generalItem.label} Settings
+                                    {connectItem.label} List
                                 </h3>
                             </div>
-                            <div className="px-4 lg:px-6 py-8 flex flex-col items-center justify-center text-center">
-                                <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
-                                    {generalItem.icon}
+                            <div className="px-4 lg:px-6 py-12 flex flex-col items-center justify-center text-center">
+                                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-5">
+                                    {connectItem.icon}
                                 </div>
-                                <h2 className="text-lg font-bold text-gray-900">
-                                    {generalItem.label} Editor
+                                <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                                    Incoming {connectItem.label}
                                 </h2>
-                                <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
-                                    The configuration form for {generalItem.label} will be implemented here.
+                                <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">
+                                    This view will display a searchable, paginated list of all {connectItem.label.toLowerCase()} received through the portal.
                                 </p>
 
                                 <div className="mt-8 flex gap-3">
-                                    <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
-                                        Implement Feature
+                                    <button className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-lg shadow-sm transition-all duration-150">
+                                        Refresh List
+                                    </button>
+                                    <button className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold rounded-lg transition-all duration-150">
+                                        Export Data
                                     </button>
                                 </div>
                             </div>
@@ -169,14 +236,16 @@ export default function EditorHost({
                                             // All hero-variant codes — they don't need itemcount/selectionmethod config
                                             const isHeroCode = code === "hero" || code.startsWith("hero") || code.endsWith("hero") || ["videohero", "herobanner", "heroslider", "herosection", "heroslide"].includes(code);
 
+                                            const config = getEnrichedConfig(comp);
+
                                             // Determine if the component natively ignores config (singletons)
                                             const isSingleton = ['contactdetails'].includes(code) || isHeroCode;
 
                                             // A config is missing if it doesn't exist, is totally empty, or contains entirely null operational values (and isn't a singleton)
-                                            const isConfigMissing = !isSingleton && (!comp.config || Object.keys(comp.config).length === 0 || (
-                                                comp.config.variant === null && 
-                                                comp.config.itemcount === null && 
-                                                comp.config.selectionmethod === null
+                                            const isConfigMissing = !isSingleton && (!config || Object.keys(config).length === 0 || (
+                                                config.variant === null && 
+                                                config.itemcount === null && 
+                                                config.selectionmethod === null
                                             ));
 
                                             if (isConfigMissing) {
@@ -219,7 +288,10 @@ export default function EditorHost({
                                             if (code === "contactdetails") {
                                                 return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
                                             }
-                                            if (code === "events") {
+                                            if (code === "events" || code === "monthwiseevents" || code === "monthwise_events") {
+                                                if (config?.variant === "monthwiseevents" || config?.variant === "monthwise_events" || code === "monthwiseevents" || code === "monthwise_events") {
+                                                    return <MonthwiseEventsEditor component={comp} schoolKey={schoolKey} />;
+                                                }
                                                 return <EventsEditor component={comp} schoolKey={schoolKey} />;
                                             }
                                             if (code === "faculty") {
@@ -231,7 +303,7 @@ export default function EditorHost({
                                             if (code === "leadership" || code === "principalmessage") {
                                                 return <PrincipalMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                             }
-                                            if (code === "infrastructure") {
+                                            if (code === "infrastructure" || code === "campusfeatures" || code === "infrastructurelist") {
                                                 return <InfrastructureEditor component={comp} schoolKey={schoolKey} />;
                                             }
                                             if (code === "visionmission" || code === "schoolidentity") {
@@ -245,6 +317,24 @@ export default function EditorHost({
                                             }
                                             if (code === "whychooseus") {
                                                 return <WhyChooseUsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "admissioninstructions") {
+                                                return <AdmissionInstructionEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "academicslist") {
+                                                return <AcademicsListEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "highlightedacademics") {
+                                                return <HighlightedAcademicsEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "activitieslist") {
+                                                return <ActivitiesEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "highlightedactivites") {
+                                                return <HighlightedActivitiesEditor component={comp} schoolKey={schoolKey} />;
+                                            }
+                                            if (code === "highlightedinfrastructure") {
+                                                return <HighlightedInfrastructureEditor component={comp} schoolKey={schoolKey} />;
                                             }
 
                                             return (
@@ -276,13 +366,14 @@ export default function EditorHost({
                     </div>
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
-                        <div className="w-16 h-16 bg-gray-100/50 rounded-2xl flex items-center justify-center mb-6">
-                            <svg className="w-8 h-8 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
+                        <div className="grid grid-cols-2 gap-3 mb-6 opacity-20 transform -rotate-3">
+                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
                         </div>
-                        <h2 className="text-[16px] font-bold text-gray-900 mb-1">No component selected</h2>
-                        <p className="text-[13px] text-gray-500">Select a component from the sidebar to start configuring it.</p>
+                        <h2 className="text-[16px] font-bold text-gray-900 mb-1">Select an Item</h2>
+                        <p className="text-[13px] text-gray-500 px-8">Pick a screen, general setting, or connection category from the sidebar.</p>
                     </div>
                 )}
             </div>

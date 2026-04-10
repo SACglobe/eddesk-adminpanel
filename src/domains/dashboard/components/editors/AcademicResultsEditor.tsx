@@ -186,32 +186,32 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                         return (
                             <div
                                 key={`${result.key}-${index}`}
-                                className={`group p-6 bg-white border border-gray-100 rounded-2xl transition-all relative shadow-sm ${isEditable ? 'hover:border-red-100 hover:shadow-xl hover:shadow-red-500/5 cursor-pointer' : ''}`}
+                                className={`group p-6 bg-white border border-gray-100 rounded-2xl transition-all relative shadow-sm ${isEditable ? 'hover:border-red-100 hover:shadow-2xl hover:shadow-red-500/10 cursor-pointer' : ''}`}
                                 onClick={() => isEditable && setEditingResult(result)}
                             >
-                                {isEditable && (
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                 {isEditable && (
+                                    <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
                                         {config?.selectionmethod === 'manual' && !isEditable ? (
-                                             <>
+                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setPickingForIndex(index); }}
-                                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-blue-500 transition-colors"
+                                                    className="p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                 </button>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleClearSlot(index); }}
-                                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+                                                    className="p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 text-gray-400 hover:text-red-500 transition-all active:scale-90"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                                 </button>
-                                             </>
+                                             </div>
                                         ) : (
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setEditingResult(result); }}
-                                                className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-gray-400 hover:text-[#F54927] transition-colors"
+                                                className="p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
                                             </button>

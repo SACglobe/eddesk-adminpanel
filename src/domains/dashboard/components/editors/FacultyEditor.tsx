@@ -8,7 +8,7 @@ import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/ac
 import { useRouter } from "next/navigation";
 import type { TemplateComponent, ComponentPlacement } from "@/domains/auth/types";
 import MediaUpload from "@/components/ui/MediaUpload";
-import { Check, X } from "lucide-react";
+import { Check, X, Plus, Trash2, Star } from "lucide-react";
 import { uploadFile } from "@/lib/supabase/storage";
 
 interface FacultyEditorProps {
@@ -150,7 +150,12 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
             name: "",
             designation: "",
             qualification: "",
+            experience_years: 0,
+            email: "",
+            phone: "",
             description: "",
+            highlighteddescription: "",
+            quotes: "",
             imageurl: "",
             isactive: true,
             displayorder: displayOrder || faculty.length + 1
@@ -252,45 +257,57 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center p-6 pb-8 text-center">
-                            <div className="w-24 h-24 rounded-full bg-gray-50 overflow-hidden mb-5 border-4 border-gray-50 group-hover:border-red-50 transition-colors">
+                        <div
+                            key={item.key}
+                            onClick={() => isEditable ? handleEditItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
+                            className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col items-center p-6 pb-8 text-center min-h-[280px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
+                        >
+                            <div className="w-24 h-24 rounded-full bg-gray-50 overflow-hidden mb-5 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">
                                 {item.imageurl ? (
                                     <img src={item.imageurl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-200">
-                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gray-50 text-gray-300 group-hover:text-[#F54927]/60 transition-colors">
+                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
                                     </div>
                                 )}
                             </div>
                             
-                            <div className="flex-1 flex flex-col items-center min-w-0 w-full">
-                                <h4 className="text-[16px] font-black text-gray-900 group-hover:text-[#F54927] transition-colors truncate w-full mb-0.5">{item.name}</h4>
+                            <div className="flex-1 flex flex-col items-center min-w-0 w-full mb-2">
+                                <h4 className="text-[16px] font-black text-gray-900 group-hover:text-[#F54927] transition-all truncate w-full mb-0.5">{item.name}</h4>
                                 <p className="text-[10px] font-black text-[#F54927] uppercase tracking-widest mb-3 leading-none">{item.designation}</p>
-                                <p className="text-[12px] text-gray-400 font-bold mb-3">{item.qualification || "No Qualification"}</p>
-                                <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed text-center px-2">{item.description}</p>
+                                <p className="text-[12px] text-gray-400 font-bold mb-1">{item.qualification || "No Qualification"}</p>
+                                {item.experience_years > 0 && (
+                                    <p className="text-[11px] text-gray-400 font-black uppercase tracking-widest mb-3">{item.experience_years} Years Experience</p>
+                                )}
+                                <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed text-center px-2 font-medium">{item.description}</p>
                             </div>
 
-                            <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-white via-white/95 to-transparent opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3 translate-y-4 group-hover:translate-y-0 duration-300">
+                            {/* Floating Pen Icon */}
+                            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 z-20">
                                 {isEditable ? (
                                     <button
-                                        onClick={() => setEditingItem(item)}
-                                        className="px-6 py-2.5 bg-[#111827] text-white rounded-xl text-[12px] font-black hover:bg-black transition-all shadow-lg"
+                                        onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-2xl border border-gray-100 transition-all active:scale-90"
                                     >
-                                        Edit Profile
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
                                     </button>
                                 ) : config?.selectionmethod === "manual" && (
                                     <>
                                         <button
-                                            onClick={() => setPickingForIndex(index)}
-                                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-blue-500 hover:text-white transition-all shadow-lg border border-gray-100"
+                                            onClick={(e) => { e.stopPropagation(); setPickingForIndex(index); }}
+                                            className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-2xl border border-gray-100 transition-all active:scale-90"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         </button>
                                         <button
-                                            onClick={() => handleClearSlot(index)}
-                                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-red-500 hover:text-white transition-all shadow-lg border border-gray-100"
+                                            onClick={(e) => { e.stopPropagation(); handleClearSlot(index); }}
+                                            className="p-3 bg-white rounded-2xl text-gray-400 hover:text-red-500 shadow-2xl border border-red-50 transition-all active:scale-90"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            <Trash2 className="w-5 h-5" />
                                         </button>
                                     </>
                                 )}
@@ -298,8 +315,6 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
                         </div>
                     );
                 })}
-
-
             </div>
 
             {/* Selection Dialog */}
@@ -348,112 +363,205 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
                 </div>
             )}
 
-            {/* Edit/Add Modal */}
+            {/* Premium Split-View Modal */}
             {editingItem && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="absolute inset-0" onClick={handleCloseModal} />
-                    <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
-                        <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white/50">
-                            <div>
-                                <h3 className="text-[20px] font-black text-gray-900 tracking-tight">
-                                    {faculty.some(f => f.key === editingItem.key) ? 'Update' : 'Add'} Faculty Member
-                                </h3>
-                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                    Manage faculty details and profile photo
-                                </p>
+                    <div className="relative bg-white w-full max-w-[1000px] rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[95vh]">
+                        <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-white">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-[#F54927]/10 text-[#F54927] rounded-2xl flex items-center justify-center">
+                                    <Star className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-[20px] font-black text-gray-900 tracking-tight">Faculty Profile Editor</h3>
+                                    <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Edit Official Profile & Media</p>
+                                </div>
                             </div>
                             <button onClick={handleCloseModal} className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2 col-span-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Full Name</label>
-                                    <input
-                                        type="text"
-                                        value={editingItem.name}
-                                        onChange={e => setEditingItem({ ...editingItem, name: e.target.value })}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[15px] font-bold outline-none"
-                                        placeholder="e.g. Dr. Jane Doe"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Designation</label>
-                                    <input
-                                        type="text"
-                                        value={editingItem.designation}
-                                        onChange={e => setEditingItem({ ...editingItem, designation: e.target.value })}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
-                                        placeholder="e.g. Senior Faculty"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Qualification</label>
-                                    <input
-                                        type="text"
-                                        value={editingItem.qualification}
-                                        onChange={e => setEditingItem({ ...editingItem, qualification: e.target.value })}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
-                                        placeholder="e.g. M.Sc, B.Ed"
-                                    />
-                                </div>
-                                <div className="space-y-2 col-span-2">
-                                    <MediaUpload
-                                        value={editingItem.imageurl || ""}
-                                        type="image"
-                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
-                                        onFileSelect={handleFileSelect}
-                                        isStaged={!!pendingFile}
-                                        stagedPreviewUrl={pendingPreviewUrl}
-                                        isExternalUploading={isUploading}
-                                        schoolKey={schoolKey}
-                                        category="faculty"
-                                        label="Profile Photo"
-                                        description="Upload a high-quality headshot"
-                                        aspectRatio="square"
-                                    />
-                                </div>
-                                <div className="space-y-2 col-span-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Biography / Description</label>
-                                    <textarea
-                                        value={editingItem.description}
-                                        onChange={e => setEditingItem({ ...editingItem, description: e.target.value })}
-                                        rows={4}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none resize-none"
-                                        placeholder="Brief introduction..."
-                                    />
+
+                        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+                            {/* Left: Preview Card */}
+                            <div className="w-full md:w-[380px] bg-gray-50/50 p-10 border-r border-gray-50 flex items-center justify-center overflow-y-auto no-scrollbar">
+                                <div className="w-full max-w-[300px] bg-white rounded-[40px] shadow-xl border border-gray-100 p-8 flex flex-col items-center text-center gap-6 animate-in slide-in-from-left-4 duration-500">
+                                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-50 shadow-inner bg-gray-50">
+                                        {(editingItem.imageurl || pendingPreviewUrl) ? <img src={pendingPreviewUrl || editingItem.imageurl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-200"><svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>}
+                                    </div>
+                                    <div className="space-y-1 w-full">
+                                        <h4 className="text-[22px] font-black text-gray-900 truncate px-2 leading-tight">{editingItem.name || "Full Name"}</h4>
+                                        <p className="text-[12px] font-black text-[#F54927] uppercase tracking-[0.2em] mb-2">{editingItem.designation || "Designation"}</p>
+                                        <div className="flex flex-wrap justify-center gap-2 mb-4">
+                                            {editingItem.qualification && <span className="px-3 py-1 bg-gray-50 text-gray-500 text-[11px] font-bold rounded-full border border-gray-100">{editingItem.qualification}</span>}
+                                            {editingItem.experience_years > 0 && <span className="px-3 py-1 bg-red-50 text-[#F54927] text-[11px] font-black rounded-full border border-red-100">{editingItem.experience_years} Years Exp.</span>}
+                                        </div>
+                                        {editingItem.quotes && (
+                                            <div className="relative pt-4 pb-2 italic text-gray-400 text-[13px] font-medium leading-relaxed">
+                                                <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[40px] opacity-10 leading-none">"</span>
+                                                {editingItem.quotes}
+                                            </div>
+                                        )}
+                                        <div className="text-[13px] text-gray-500 font-medium line-clamp-3 px-2 mt-2 leading-relaxed whitespace-pre-wrap">{editingItem.highlighteddescription || editingItem.description || "Brief introduction..."}</div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Right: Form Fields */}
+                            <div className="flex-1 overflow-y-auto p-12 space-y-10 no-scrollbar">
+                                <section className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Full Name</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.name || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, name: e.target.value })}
+                                                className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-bold outline-none"
+                                                placeholder="e.g. Dr. Robert Wilson"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Qualification</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.qualification || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, qualification: e.target.value })}
+                                                className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-bold outline-none"
+                                                placeholder="e.g. M.Sc, B.Ed"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Designation</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.designation || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, designation: e.target.value })}
+                                                className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-bold outline-none"
+                                                placeholder="e.g. Senior Faculty"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Experience (Years)</label>
+                                            <input
+                                                type="number"
+                                                value={editingItem.experience_years || 0}
+                                                onChange={e => setEditingItem({ ...editingItem, experience_years: parseInt(e.target.value) || 0 })}
+                                                className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-bold outline-none"
+                                                placeholder="10"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
+                                            <input
+                                                type="email"
+                                                value={editingItem.email || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, email: e.target.value })}
+                                                className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-bold outline-none"
+                                                placeholder="robert@school.edu"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Phone Number</label>
+                                            <input
+                                                type="tel"
+                                                value={editingItem.phone || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, phone: e.target.value })}
+                                                className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-bold outline-none"
+                                                placeholder="+1 234 567 890"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Highlighted Quote</label>
+                                        <textarea
+                                            value={editingItem.quotes || ""}
+                                            onChange={e => setEditingItem({ ...editingItem, quotes: e.target.value })}
+                                            rows={2}
+                                            className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-medium italic outline-none resize-none"
+                                            placeholder="A short inspirational quote..."
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Highlighted Overview</label>
+                                        <textarea
+                                            value={editingItem.highlighteddescription || ""}
+                                            onChange={e => setEditingItem({ ...editingItem, highlighteddescription: e.target.value })}
+                                            rows={3}
+                                            className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-medium outline-none resize-none"
+                                            placeholder="Catchy highlight for the profile card..."
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Full Biography / Detailed Description</label>
+                                        <textarea
+                                            value={editingItem.description || ""}
+                                            onChange={e => setEditingItem({ ...editingItem, description: e.target.value })}
+                                            rows={5}
+                                            className="w-full px-6 py-5 bg-neutral-50/80 border-2 border-transparent rounded-[32px] focus:bg-white focus:border-[#F54927] transition-all text-[15px] font-medium outline-none resize-none leading-relaxed"
+                                            placeholder="Detailed introduction and history..."
+                                        />
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <MediaUpload
+                                            value={editingItem.imageurl || ""}
+                                            type="image"
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onFileSelect={handleFileSelect}
+                                            isStaged={!!pendingFile}
+                                            stagedPreviewUrl={pendingPreviewUrl}
+                                            isExternalUploading={isUploading}
+                                            schoolKey={schoolKey}
+                                            category="faculty"
+                                            label="Profile Photo"
+                                            description="Upload a high-quality headshot"
+                                            aspectRatio="square"
+                                        />
+                                    </div>
+                                </section>
+                            </div>
                         </div>
-                        <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
+
+                        {/* Footer Actions */}
+                        <div className="p-8 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
                             <button
-                                onClick={() => { if (confirm("Delete this faculty member?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                onClick={() => { if (confirm("Remove this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                className="px-8 py-3 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                             >
-                                Delete
+                                Delete Profile
                             </button>
-                            <div className="flex gap-3">
+                            <div className="flex gap-4">
                                 <button
                                     onClick={handleCloseModal}
-                                    className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"
+                                    className="px-8 py-3 text-[14px] font-black text-gray-400 hover:text-gray-900 transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
                                     onClick={handleSave}
-                                    className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
+                                    className={`
+                                        px-12 py-4 text-[14px] font-black rounded-[20px] shadow-xl transition-all active:scale-[0.97] flex items-center gap-3 h-[60px]
+                                        ${isSaving || isUploading 
+                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                                            : "bg-neutral-950 text-white hover:bg-black"
+                                        }
+                                    `}
                                 >
-                                    {isSaving || isUploading ? (
+                                    {(isSaving || isUploading) ? (
                                         <>
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            {isUploading ? "Uploading..." : "Saving..."}
+                                            <div className="w-5 h-5 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin" />
+                                            Saving...
                                         </>
                                     ) : (
                                         <>
-                                            {faculty.some(f => f.key === editingItem.key) ? 'Update Profile' : 'Add Member'}
-                                            <Check className="w-4 h-4" />
+                                            Update Profile
+                                            <Check className="w-5 h-5" />
                                         </>
                                     )}
                                 </button>
