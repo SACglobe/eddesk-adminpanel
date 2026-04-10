@@ -202,7 +202,7 @@ export default function HighlightedAcademicsEditor({ component, schoolKey }: Hig
             const response = await saveRecord(dataToSave);
             
             // If we came from an empty slot (Manual Mode), auto-place it
-            if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && response?.data) {
+            if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && response.success && response.data) {
                 const recordKey = (response.data as any).key;
                 await handleSelectRecordFromIndex(targetSlotIndex, recordKey);
             }

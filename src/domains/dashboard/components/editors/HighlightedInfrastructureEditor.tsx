@@ -148,7 +148,7 @@ export default function HighlightedInfrastructureEditor({ component, schoolKey }
             
             const savedRecord = await saveRecord(editingItem);
             
-            if (targetSlotIndex !== null && savedRecord?.data) {
+            if (targetSlotIndex !== null && savedRecord.success && savedRecord.data) {
                 const existingPlacement = placements.find(p => p.displayorder === targetSlotIndex);
                 
                 await upsertComponentData('componentplacement', {
