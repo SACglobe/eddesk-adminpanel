@@ -14,7 +14,7 @@ interface MediaUploadProps {
     description?: string;
     allowVideo?: boolean;
     allowImage?: boolean;
-    aspectRatio?: "video" | "square" | "portrait" | "any";
+    aspectRatio?: "video" | "square" | "portrait" | "any" | "16:10";
     lockType?: boolean;
     // New props for staged mode
     onFileSelect?: (file: File) => void;
@@ -124,7 +124,8 @@ export default function MediaUpload({
         video: "aspect-video",
         square: "aspect-square",
         portrait: "aspect-[3/4]",
-        any: "min-h-[200px]"
+        any: "min-h-[200px]",
+        "16:10": "aspect-[16/10]"
     };
 
     return (

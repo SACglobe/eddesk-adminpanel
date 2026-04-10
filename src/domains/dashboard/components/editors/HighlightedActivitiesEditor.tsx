@@ -200,8 +200,8 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
             const { isSkeleton, _isSkeleton, ...dataToSave } = finalItem;
             const response = await saveRecord(dataToSave);
             
-            if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && response.success && response.data) {
-                const recordKey = (response.data as any).key;
+            if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && (response as any).data) {
+                const recordKey = (response as any).data.key;
                 await handleSelectRecordFromIndex(targetSlotIndex, recordKey);
             }
 
