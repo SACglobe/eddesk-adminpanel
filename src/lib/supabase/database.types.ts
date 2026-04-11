@@ -55,6 +55,7 @@ export interface Database {
         Row: {
           key: string;
           name: string | null;
+          email: string | null;
           slug: string | null;
           customdomain: string | null;
           isactive: boolean | null;
@@ -65,6 +66,7 @@ export interface Database {
         Insert: {
           key?: string;
           name?: string | null;
+          email?: string | null;
           slug?: string | null;
           customdomain?: string | null;
           isactive?: boolean | null;
@@ -75,6 +77,7 @@ export interface Database {
         Update: {
           key?: string;
           name?: string | null;
+          email?: string | null;
           slug?: string | null;
           customdomain?: string | null;
           isactive?: boolean | null;
@@ -124,6 +127,7 @@ export interface Database {
           code: string | null;
           description: string | null;
           price: number | null;
+          graceperiod: number | null;
           isactive: boolean | null;
           createdat: string | null;
           updatedat: string | null;
@@ -134,6 +138,7 @@ export interface Database {
           code?: string | null;
           description?: string | null;
           price?: number | null;
+          graceperiod?: number | null;
           isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
@@ -144,6 +149,7 @@ export interface Database {
           code?: string | null;
           description?: string | null;
           price?: number | null;
+          graceperiod?: number | null;
           isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
