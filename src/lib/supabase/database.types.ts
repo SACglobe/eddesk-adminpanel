@@ -372,6 +372,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      payments: {
+        Row: {
+          key: string;
+          payment_id: string | null;
+          merchant_id: string | null;
+          status: string | null;
+          plankey: string | null;
+          schoolkey: string | null;
+          amount: number | null;
+          time: string | null;
+          metadata: Json | null;
+          createdat: string | null;
+        };
+        Insert: {
+          key?: string;
+          payment_id?: string | null;
+          merchant_id?: string | null;
+          status?: string | null;
+          plankey?: string | null;
+          schoolkey?: string | null;
+          amount?: number | null;
+          time?: string | null;
+          metadata?: Json | null;
+          createdat?: string | null;
+        };
+        Update: {
+          key?: string;
+          payment_id?: string | null;
+          merchant_id?: string | null;
+          status?: string | null;
+          plankey?: string | null;
+          schoolkey?: string | null;
+          amount?: number | null;
+          time?: string | null;
+          metadata?: Json | null;
+          createdat?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
