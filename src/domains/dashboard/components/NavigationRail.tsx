@@ -52,6 +52,15 @@ export const GENERAL_ITEMS = [
     },
 ];
 
+export const LEGAL_ITEMS = [
+    { name: 'About Us', href: 'https://www.eddesk.in/about' },
+    { name: 'Contact Us', href: 'https://www.eddesk.in/contact' },
+    { name: 'Terms & Conditions', href: 'https://www.eddesk.in/terms' },
+    { name: 'Privacy Policy', href: 'https://www.eddesk.in/privacy' },
+    { name: 'Refund & Cancellation', href: 'https://www.eddesk.in/refund-cancellation' },
+];
+
+
 export default function NavigationRail({
     screens,
     selectedScreenKey,
@@ -373,7 +382,39 @@ export default function NavigationRail({
                     </div>
                 )}
 
+                {/* ── Legal Links section ── */}
+                <div className="px-3.5 pb-2">
+                    <div className="mx-3.5 my-3 border-t border-gray-100" />
+                    <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            Legal
+                        </h3>
+                    </div>
+                    <nav className="space-y-0.5">
+                        {LEGAL_ITEMS.map((item) => (
+                            <a
+                                key={item.name}
+                                href={item.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full flex items-center rounded-xl text-[12px] font-bold text-gray-500 hover:text-[#F54927] hover:bg-red-50 px-3.5 py-2 transition-all duration-300 h-9 relative group/item"
+                            >
+                                <span className={`truncate ${textOpacityClass} transition-all duration-500`}>
+                                    {item.name}
+                                </span>
+                                {isCollapsedMode && (
+                                    <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-[10px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-800 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
+                                        {item.name}
+                                        <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-800" />
+                                    </div>
+                                )}
+                            </a>
+                        ))}
+                    </nav>
+                </div>
+
                 {/* ── Sidebar Control — always at the bottom ── */}
+
                 <div
                     className="border-t border-gray-100 flex-shrink-0 relative"
                     style={{ height: '56px' }}
