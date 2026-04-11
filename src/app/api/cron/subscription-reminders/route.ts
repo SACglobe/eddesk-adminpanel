@@ -25,7 +25,7 @@ export async function GET(request: Request) {
         schools (name, email),
         plans (name, graceperiod)
       `)
-      .eq('isactive', true);
+      .eq('status', 'active');
 
     if (subsError) throw subsError;
 

@@ -48,7 +48,7 @@ export default async function DashboardPage() {
     const now = new Date();
     const isExpired = sub?.enddate ? new Date(sub.enddate) < now : true;
 
-    if (!sub?.isactive || isExpired) {
+    if (sub?.status !== "active" || isExpired) {
         redirect("/plans?status=required");
     }
 
