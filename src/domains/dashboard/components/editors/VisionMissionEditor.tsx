@@ -101,22 +101,26 @@ export default function VisionMissionEditor({ component, screen, schoolKey }: Vi
         >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {cards.map((card) => (
-                    <div 
+                        <div 
                         key={card.id}
                         onClick={isEditable ? handleEdit : undefined}
-                        className={`group relative bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center gap-6 min-h-[320px] ${isEditable ? "cursor-pointer" : ""}`}
+                        className={`group relative bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col items-center text-center gap-6 min-h-[320px] ${
+                            card.color === "blue" ? "hover:shadow-blue-500/10" : 
+                            card.color === "orange" ? "hover:shadow-orange-500/10" : 
+                            "hover:shadow-purple-500/10"
+                        } ${isEditable ? "cursor-pointer" : ""}`}
                     >
                         {/* Hover Pencil Icon */}
                         {isEditable && (
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 z-10">
-                                <button 
+                            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                                <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleEdit();
                                     }}
-                                    className="p-2.5 bg-white rounded-xl shadow-lg border border-gray-100 text-gray-400 hover:text-[#F54927] hover:border-red-100 transition-all"
+                                    className="p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                 </button>
@@ -140,9 +144,9 @@ export default function VisionMissionEditor({ component, screen, schoolKey }: Vi
 
                         {/* Decoration */}
                         <div className={`absolute bottom-0 inset-x-0 h-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-[32px] ${
-                            card.color === "blue" ? "bg-blue-400" : 
-                            card.color === "orange" ? "bg-orange-400" : 
-                            "bg-purple-400"
+                            card.color === "blue" ? "shadow-[0_4px_20px_-2px_rgba(59,130,246,0.3)] bg-blue-400" : 
+                            card.color === "orange" ? "shadow-[0_4px_20px_-2px_rgba(249,115,22,0.3)] bg-orange-400" : 
+                            "shadow-[0_4px_20px_-2px_rgba(168,85,247,0.3)] bg-purple-400"
                         }`} />
                     </div>
                 ))}

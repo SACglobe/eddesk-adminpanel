@@ -295,10 +295,10 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                         <div
                             key={item.key}
                             onClick={() => isEditable ? handleEditItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
-                            className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center p-6 pb-8 text-center h-[320px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
+                            className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col items-center p-6 pb-8 text-center min-h-[300px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
                         >
                             {/* Avatar */}
-                            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">
+                            <div className="w-24 h-24 rounded-full bg-gray-50 overflow-hidden mb-5 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">
                                 {item.imageurl ? (
                                     item.contenttype === 'video' ? (
                                         <video 
@@ -320,33 +320,33 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                     </div>
                                 )}
                             </div>
-
-                            <div className="flex-1 flex flex-col items-center min-w-0 w-full">
-                                <span className="text-[9px] font-black text-[#F54927] uppercase tracking-[0.2em] mb-1.5">{item.designation || "Member"}</span>
-                                <h4 className="text-[16px] font-black text-gray-900 group-hover:text-[#F54927] transition-colors truncate w-full">{item.name || "Name Not Set"}</h4>
+ 
+                            <div className="flex-1 flex flex-col items-center min-w-0 w-full mb-2">
+                                <h4 className="text-[16px] font-black text-gray-900 group-hover:text-[#F54927] transition-colors truncate w-full mb-0.5">{item.name || "Name Not Set"}</h4>
+                                <p className="text-[10px] font-black text-[#F54927] uppercase tracking-widest mb-3 leading-none">{item.designation || "Member"}</p>
                                 
                                 {item.quote && (
-                                    <p className="text-[11px] text-gray-500 font-bold italic mt-2 line-clamp-2 px-2">"{item.quote}"</p>
+                                    <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed text-center px-2 font-medium">"{item.quote}"</p>
                                 )}
                             </div>
 
                             {/* Hover Pencil Icon */}
-                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1.5 z-10">
+                            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 z-10">
                                 {isEditable ? (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleEditItem(item); }}
-                                        className="p-2 bg-white rounded-xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all"
+                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-2xl border border-gray-100 transition-all active:scale-90"
                                     >
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                         </svg>
                                     </button>
                                 ) : config?.selectionmethod === "manual" && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleClearSlot(index); }}
-                                        className="p-2 bg-white rounded-xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all"
+                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-red-500 shadow-2xl border border-gray-100 transition-all active:scale-90"
                                     >
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
                                 )}
                             </div>

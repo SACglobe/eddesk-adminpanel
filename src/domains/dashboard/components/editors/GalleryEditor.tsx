@@ -370,7 +370,7 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                     }
 
                     return (
-                        <div key={item.key} className="group relative aspect-square rounded-[32px] overflow-hidden bg-gray-100 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
+                        <div key={item.key} className="group relative aspect-square rounded-[32px] overflow-hidden bg-gray-100 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300">
                             {item.url ? (
                                 item.contenttype === 'video' ? (
                                     <div className="relative w-full h-full">
@@ -397,11 +397,11 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                                 </div>
                             )}
                             
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
+                            <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-2 z-20">
                                 {isEditable ? (
                                     <button
                                         onClick={() => setEditingItem(item)}
-                                        className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-emerald-500 hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-300 shadow-xl"
+                                        className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all active:scale-90"
                                     >
                                         <Edit3 className="w-5 h-5" />
                                     </button>
@@ -410,9 +410,8 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                                         <button
                                             title="Change selection"
                                             onClick={() => setPickingForIndex(index)}
-                                            className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-blue-500 hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-300 shadow-xl"
+                                            className="p-3 bg-white rounded-2xl text-gray-400 hover:text-[#F54927] shadow-lg border border-gray-100 transition-all active:scale-90"
                                         >
-                                            {/* Image picker icon */}
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
@@ -420,7 +419,7 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                                         <button
                                             title="Remove from this slot"
                                             onClick={() => handleClearSlot(index)}
-                                            className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:bg-red-500 hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-300 shadow-xl"
+                                            className="p-3 bg-white rounded-2xl text-gray-400 hover:text-red-500 shadow-lg border border-gray-100 transition-all active:scale-90"
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>

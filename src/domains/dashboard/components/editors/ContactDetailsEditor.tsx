@@ -67,7 +67,7 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
             emptySlotsCount={0} // Singleton editor, no empty slots logic required.
             component={component}
         >
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm flex flex-col md:flex-row gap-10">
+            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-red-500/5 transition-all duration-300 flex flex-col md:flex-row gap-10">
                 <div className="flex-1 space-y-6">
                     <div>
                         <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Primary Email</h4>
@@ -99,18 +99,20 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
                         </a>
                     </div>
                     {isEditable && (
-                        <div className="pt-6">
+                        <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
                             <button
                                 onClick={handleEdit}
-                                className="px-6 py-3 bg-[#111827] text-white text-[13px] font-black rounded-xl hover:bg-black transition-all shadow-xl"
+                                className="p-3 bg-white rounded-2xl shadow-2xl border border-gray-100 text-gray-400 hover:text-[#F54927] transition-all active:scale-90"
                             >
-                                Edit Contact Information
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
                             </button>
                         </div>
                     )}
                 </div>
-                <div className="flex-1 min-h-[250px] bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden relative">
-                    {contactInfo?.mapembedurl ? (
+                <div className="flex-1 min-h-[250px] bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden relative group/map">
+                    {contactInfo?.mapembedurl && contactInfo.mapembedurl.includes('/maps/embed') ? (
                         <iframe 
                             src={contactInfo.mapembedurl}
                             className="absolute inset-0 w-full h-full border-0"
@@ -119,11 +121,20 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
                             referrerPolicy="no-referrer-when-downgrade"
                         />
                     ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                            <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                            </svg>
-                            <p className="text-[12px] font-bold">No Map Embed Configured</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 text-gray-300">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                </svg>
+                            </div>
+                            <h5 className="text-[14px] font-bold text-gray-900 mb-1">
+                                {contactInfo?.mapembedurl ? "Invalid Map URL" : "No Map Configured"}
+                            </h5>
+                            <p className="text-[12px] text-gray-500 max-w-[200px] leading-relaxed">
+                                {contactInfo?.mapembedurl 
+                                    ? "This link isn't an embeddable map. Please use the 'Embed Map' URL from Google Maps."
+                                    : "Configure your Google Maps embed URL to show your location here."}
+                            </p>
                         </div>
                     )}
                 </div>
@@ -174,15 +185,38 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Google Maps Embed URL</label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-2">Google Maps Embed URL</label>
+                                        {editingDetails.mapembedurl && !editingDetails.mapembedurl.includes('/maps/embed') && (
+                                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full animate-pulse">Invalid Format</span>
+                                        )}
+                                    </div>
                                     <input
                                         type="url"
                                         value={editingDetails.mapembedurl || ""}
-                                        onChange={e => setEditingDetails({ ...editingDetails, mapembedurl: e.target.value })}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
-                                        placeholder="https://www.google.com/maps/embed?..."
+                                        onChange={e => {
+                                            let val = e.target.value;
+                                            // Auto-extract src if full iframe tag is pasted
+                                            if (val.includes('<iframe')) {
+                                                const match = val.match(/src="([^"]+)"/);
+                                                if (match) val = match[1];
+                                            }
+                                            setEditingDetails({ ...editingDetails, mapembedurl: val });
+                                        }}
+                                        className={`w-full px-6 py-5 bg-gray-50 border-2 transition-all text-[15px] font-bold outline-none shadow-inner rounded-[24px] ${editingDetails.mapembedurl && !editingDetails.mapembedurl.includes('/maps/embed') ? 'border-red-200 focus:bg-white focus:border-red-400' : 'border-transparent focus:bg-white focus:border-red-100'}`}
+                                        placeholder="Paste the embed code or URL here..."
                                     />
-                                    <p className="text-[10px] text-gray-400 font-medium px-2">Go to Google Maps → Share → Embed a map, and copy only the "src" URL.</p>
+                                    <div className="mt-2 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                                        <div className="flex gap-3">
+                                            <div className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">?</div>
+                                            <p className="text-[11px] text-blue-700 font-medium leading-relaxed">
+                                                <strong className="block mb-0.5">How to get this URL:</strong>
+                                                1. Go to Google Maps and find your school.<br/>
+                                                2. Click <span className="font-bold underline">Share</span> → <span className="font-bold underline">Embed a map</span>.<br/>
+                                                3. Copy only the <span className="font-bold">src="..."</span> URL from the code snippet.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="col-span-2 border-t border-gray-100 pt-6 mt-2">
                                     <h4 className="text-[13px] font-black text-gray-900 mb-4">Social Media Links</h4>

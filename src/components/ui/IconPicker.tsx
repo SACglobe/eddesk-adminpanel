@@ -53,10 +53,53 @@ const VOLUMETRIC_SAMPLES = [
     "streamline-cyber-color:setting"
 ];
 
+const MODERN_CATEGORIES: Record<string, string[]> = {
+    "Education": [
+        "ph:graduation-cap-duotone", 
+        "solar:notebook-bold-duotone", 
+        "material-symbols:school-outline", 
+        "ph:book-open-duotone",
+        "solar:bookmark-bold-duotone",
+        "ph:pencil-duotone"
+    ],
+    "Science": [
+        "ph:atom-duotone", 
+        "solar:rocket-bold-duotone", 
+        "material-symbols:microscope", 
+        "ph:dna-duotone",
+        "solar:test-tube-bold-duotone",
+        "ph:brain-duotone"
+    ],
+    "Sports": [
+        "ph:basketball-duotone", 
+        "solar:medal-star-bold-duotone", 
+        "material-symbols:sports-soccer", 
+        "ph:trophy-duotone",
+        "solar:flag-bold-duotone",
+        "ph:bicycle-duotone"
+    ],
+    "Campus": [
+        "ph:building-duotone", 
+        "solar:city-bold-duotone", 
+        "material-symbols:map",
+        "ph:bus-duotone",
+        "solar:calendar-bold-duotone",
+        "ph:clock-duotone"
+    ],
+    "UI Icons": [
+        "ph:heart-duotone", 
+        "solar:star-bold-duotone", 
+        "ph:bell-duotone", 
+        "solar:settings-bold-duotone",
+        "material-symbols:search",
+        "ph:shield-check-duotone"
+    ]
+};
+
 const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [activeTab, setActiveTab] = useState<'standard' | 'premium' | 'volumetric'>('standard');
+    const [activeTab, setActiveTab] = useState<'standard' | 'premium' | 'modern' | 'volumetric'>('standard');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [openUpward, setOpenUpward] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +154,18 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
             }
             // Show all if no category and no search
             return Object.keys(FLUENT_ICONS).map(name => `fluent:${name}`);
+        } else if (activeTab === 'modern') {
+            if (searchTerm) {
+                // If searching, we don't have a static list, but we can look through categories
+                const allModern = Object.values(MODERN_CATEGORIES).flat();
+                return allModern.filter(name => 
+                    name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            if (activeCategory) {
+                return MODERN_CATEGORIES[activeCategory] || [];
+            }
+            return Object.values(MODERN_CATEGORIES).flat();
         } else {
             // Volumetric tab
             if (!searchTerm) return VOLUMETRIC_SAMPLES;
@@ -161,6 +216,12 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
                                 3D Emojis
                             </button>
                             <button
+                                onClick={() => setActiveTab('modern')}
+                                className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'modern' ? 'bg-white text-[#F54927] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                Modern
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('volumetric')}
                                 className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeTab === 'volumetric' ? 'bg-white text-emerald-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                             >
@@ -168,8 +229,8 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
                             </button>
                         </div>
 
-                        {/* Categories for Premium or Volumetric */}
-                        {activeTab === 'premium' && !searchTerm && (
+                        {/* Categories for Premium or Modern */}
+                        {(activeTab === 'premium' || activeTab === 'modern') && !searchTerm && (
                             <div className="px-2 py-2 border-b border-gray-100 bg-white flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
                                 <button
                                     onClick={() => setActiveCategory(null)}
@@ -177,7 +238,7 @@ const IconPicker = ({ value, onChange, label = "Select Icon" }: IconPickerProps)
                                 >
                                     All
                                 </button>
-                                {Object.keys(FLUENT_CATEGORIES).map(cat => (
+                                {Object.keys(activeTab === 'premium' ? FLUENT_CATEGORIES : MODERN_CATEGORIES).map(cat => (
                                     <button
                                         key={cat}
                                         onClick={() => setActiveCategory(cat)}

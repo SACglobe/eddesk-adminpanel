@@ -21,7 +21,7 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
     const tableName = (component.componentregistry as any)?.tablename;
     const selectionMethod = config.selectionmethod || "auto"; 
     const itemCount = config.itemcount ? parseInt(String(config.itemcount)) : null;
-    const filters = (config.filters || {}) as any;
+    const filters = useMemo(() => (config.filters || {}), [config.filters]) as any;
 
     const effectiveMediaType = useMemo(() => {
         const type = config?.variant || config?.mediatype;
@@ -311,20 +311,23 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
 
                     return (
                         <div key={`${item.key}-${idx}`} className="group relative">
-                            <AchievementCard achievement={item} />
+                            <AchievementCard 
+                                achievement={item} 
+                                onClick={isEditable ? () => setEditingRecord(item) : undefined} 
+                            />
                             {selectionMethod === 'manual' && (
-                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+                                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all flex gap-2 z-20">
                                     <button
                                         onClick={() => setPickingForIndex(idx)}
-                                        className="p-2 bg-white rounded-xl text-blue-500 hover:bg-blue-50 shadow-lg border border-gray-100 transition-all"
+                                        className="p-3 bg-white rounded-2xl text-[#111827] hover:text-[#F54927] hover:bg-red-50 shadow-xl border border-gray-100 transition-all active:scale-90"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                     </button>
                                     <button
                                         onClick={() => handleClearSlot(idx)}
-                                        className="p-2 bg-white rounded-xl text-red-500 hover:bg-red-50 shadow-lg border border-gray-100 transition-all"
+                                        className="p-3 bg-white rounded-2xl text-red-500 hover:bg-red-50 shadow-xl border border-gray-100 transition-all active:scale-90"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
                                 </div>
                             )}
@@ -396,7 +399,7 @@ function AchievementCard({ achievement, onClick }: { achievement: any; onClick?:
     return (
         <div 
             onClick={onClick}
-            className={`bg-white border border-gray-100 rounded-[24px] hover:border-blue-100 hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer overflow-hidden flex flex-col ${!achievement.isactive ? "opacity-60" : ""}`}
+            className={`group bg-white border border-gray-100 rounded-[24px] shadow-sm hover:border-blue-100 hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer overflow-hidden flex flex-col relative ${!achievement.isactive ? "opacity-60" : ""}`}
         >
             <div className="aspect-[16/10] bg-gray-50 overflow-hidden relative">
                 {achievement.imageurl ? (
@@ -412,20 +415,28 @@ function AchievementCard({ achievement, onClick }: { achievement: any; onClick?:
                             />
                         </div>
                     ) : (
-                        <img src={achievement.imageurl} alt="" className="w-full h-full object-cover" />
+                        <img src={achievement.imageurl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     )
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">No Media</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold uppercase tracking-widest text-[10px]">No Media</div>
                 )}
                 <div className="absolute top-2.5 left-2.5">
                     <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider">
                         {achievement.year}
                     </span>
                 </div>
+
+                {onClick && (
+                    <div className="absolute top-6 right-6 p-3 bg-white rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 text-gray-900 active:scale-90 z-20">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </div>
+                )}
             </div>
             <div className="p-4 flex-1">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{achievement.awardlevel || 'Achievement'}</p>
-                <h4 className="text-[14px] font-black text-gray-900 line-clamp-2 leading-snug">{achievement.title}</h4>
+                <h4 className="text-[14px] font-black text-gray-900 group-hover:text-blue-500 transition-colors line-clamp-2 leading-snug">{achievement.title}</h4>
             </div>
         </div>
     );
