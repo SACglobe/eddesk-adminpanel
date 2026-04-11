@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
       const gracePeriod = sub.plans?.graceperiod || 1;
       const schoolEmail = sub.schools.email;
-      const schoolName = sub.schools.name;
+      const schoolName = sub.schools?.name ?? "School";
       const planName = sub.plans?.name || "Premium Plan";
 
       const emailData = {

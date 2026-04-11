@@ -116,9 +116,9 @@ export async function POST(request: Request) {
 
         if (school?.email) {
           await sendSubscriptionEmail(school.email, 'RECEIPT', {
-            schoolName: school.name,
-            planName: plan.name,
-            amount: plan.price,
+            schoolName: school.name ?? "School",
+            planName: plan.name ?? "Premium Plan",
+            amount: plan.price ?? 0,
             paymentId: razorpay_payment_id,
             orderId: razorpay_order_id,
             customerDomain: school.customdomain || undefined,
