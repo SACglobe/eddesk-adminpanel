@@ -42,6 +42,15 @@ export default async function DashboardPage() {
     }
 
     const typedData = data as AdminInitialData;
+    
+    // Check if subscription is active and not expired
+    const sub = typedData.subscriptions;
+    const now = new Date();
+    const isExpired = sub?.enddate ? new Date(sub.enddate) < now : true;
+
+    if (sub?.status !== "active" || isExpired) {
+        redirect("/plans?status=required");
+    }
 
     // 3. Deduplicate 
     // We deduplicate screens by slug to avoid redundant sidebar entries, 

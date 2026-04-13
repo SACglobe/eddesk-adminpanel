@@ -19,6 +19,7 @@ import VisionMissionEditor from "./editors/VisionMissionEditor";
 import BoardMembersEditor from "./editors/BoardMembersEditor";
 import BoardMessageEditor from "./editors/BoardMessageEditor";
 import WhyChooseUsEditor from "./editors/WhyChooseUsEditor";
+import LegalFooter from "@/components/LegalFooter";
 import AdmissionInstructionEditor from "./editors/AdmissionInstructionEditor";
 import AcademicsListEditor from "./editors/AcademicsListEditor";
 import HighlightedAcademicsEditor from "./editors/HighlightedAcademicsEditor";
@@ -124,258 +125,263 @@ export default function EditorHost({
             </div>
 
             {/* Workspace Area */}
-            <div className="flex-1 overflow-auto p-4 lg:p-8 xl:p-12 bg-[#f9fafb]">
-                {generalItem ? (
-                    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <h1 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2 px-4 lg:px-0">
-                            {generalItem.label}
-                        </h1>
-                        <p className="text-[13px] lg:text-[14px] text-gray-500 mb-6 lg:mb-10 px-4 lg:px-0">
-                            Manage and configure settings for {generalItem.label}.
-                        </p>
+            <div className="flex-1 overflow-auto flex flex-col bg-[#f9fafb]">
+                <div className="flex-1 p-4 lg:p-8 xl:p-12">
+                    {generalItem ? (
+                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2 px-4 lg:px-0">
+                                {generalItem.label}
+                            </h1>
+                            <p className="text-[13px] lg:text-[14px] text-gray-500 mb-6 lg:mb-10 px-4 lg:px-0">
+                                Manage and configure settings for {generalItem.label}.
+                            </p>
 
-                        {generalItem.key === 'help' ? (
-                            <HelpEditor adminData={adminData} />
-                        ) : generalItem.key === 'feedback' ? (
-                            <FeedbackEditor adminData={adminData} />
-                        ) : generalItem.key === 'account-details' ? (
-                            <AccountDetailsEditor adminData={adminData} />
-                        ) : (
+                            {generalItem.key === 'help' ? (
+                                <HelpEditor adminData={adminData} />
+                            ) : generalItem.key === 'feedback' ? (
+                                <FeedbackEditor adminData={adminData} />
+                            ) : generalItem.key === 'account-details' ? (
+                                <AccountDetailsEditor adminData={adminData} />
+                            ) : (
+                                <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
+                                    <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
+                                        <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
+                                            {generalItem.label} Settings
+                                        </h3>
+                                    </div>
+                                    <div className="px-4 lg:px-6 py-8 flex flex-col items-center justify-center text-center">
+                                        <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
+                                            {generalItem.icon}
+                                        </div>
+                                        <h2 className="text-lg font-bold text-gray-900">
+                                            {generalItem.label} Editor
+                                        </h2>
+                                        <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
+                                            The configuration form for {generalItem.label} will be implemented here.
+                                        </p>
+
+                                        <div className="mt-8 flex gap-3">
+                                            <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
+                                                Implement Feature
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : connectItem ? (
+                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2 px-4 lg:px-0">
+                                {connectItem.label}
+                            </h1>
+                            <p className="text-[13px] lg:text-[14px] text-gray-500 mb-6 lg:mb-10 px-4 lg:px-0">
+                                View and manage incoming {connectItem.label.toLowerCase()}.
+                            </p>
+
                             <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
                                 <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
                                     <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
-                                        {generalItem.label} Settings
+                                        {connectItem.label} List
                                     </h3>
                                 </div>
-                                <div className="px-4 lg:px-6 py-8 flex flex-col items-center justify-center text-center">
-                                    <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
-                                        {generalItem.icon}
+                                <div className="px-4 lg:px-6 py-12 flex flex-col items-center justify-center text-center">
+                                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-5">
+                                        {connectItem.icon}
                                     </div>
-                                    <h2 className="text-lg font-bold text-gray-900">
-                                        {generalItem.label} Editor
+                                    <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                                        Incoming {connectItem.label}
                                     </h2>
-                                    <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
-                                        The configuration form for {generalItem.label} will be implemented here.
+                                    <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">
+                                        This view will display a searchable, paginated list of all {connectItem.label.toLowerCase()} received through the portal.
                                     </p>
 
                                     <div className="mt-8 flex gap-3">
-                                        <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
-                                            Implement Feature
+                                        <button className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-lg shadow-sm transition-all duration-150">
+                                            Refresh List
+                                        </button>
+                                        <button className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold rounded-lg transition-all duration-150">
+                                            Export Data
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                ) : connectItem ? (
-                    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <h1 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2 px-4 lg:px-0">
-                            {connectItem.label}
-                        </h1>
-                        <p className="text-[13px] lg:text-[14px] text-gray-500 mb-6 lg:mb-10 px-4 lg:px-0">
-                            View and manage incoming {connectItem.label.toLowerCase()}.
-                        </p>
-
-                        <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
-                            <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
-                                <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
-                                    {connectItem.label} List
-                                </h3>
-                            </div>
-                            <div className="px-4 lg:px-6 py-12 flex flex-col items-center justify-center text-center">
-                                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-5">
-                                    {connectItem.icon}
-                                </div>
-                                <h2 className="text-lg font-black text-gray-900 tracking-tight">
-                                    Incoming {connectItem.label}
-                                </h2>
-                                <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">
-                                    This view will display a searchable, paginated list of all {connectItem.label.toLowerCase()} received through the portal.
-                                </p>
-
-                                <div className="mt-8 flex gap-3">
-                                    <button className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-lg shadow-sm transition-all duration-150">
-                                        Refresh List
-                                    </button>
-                                    <button className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold rounded-lg transition-all duration-150">
-                                        Export Data
-                                    </button>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-                ) : (selectedComponent || isGroup) ? (
-                    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 px-4 sm:px-0 capitalize">
-                            {mainTitle}
-                        </h1>
-                        <p className="text-[13px] sm:text-[14px] text-gray-500 mb-6 sm:mb-10 px-4 sm:px-0">
-                            Manage and configuration for the {mainTitle} module.
-                        </p>
+                    ) : (selectedComponent || isGroup) ? (
+                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 px-4 sm:px-0 capitalize">
+                                {mainTitle}
+                            </h1>
+                            <p className="text-[13px] sm:text-[14px] text-gray-500 mb-6 sm:mb-10 px-4 sm:px-0">
+                                Manage and configuration for the {mainTitle} module.
+                            </p>
 
-                        <div className="space-y-6">
-                            {(activeComponentData?.components ?? (selectedComponent ? [selectedComponent] : [])).map((comp, idx) => (
-                                <div key={comp.key} className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 md:mx-0">
-                                    <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 md:px-6 py-3 flex items-center justify-between">
-                                        <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
-                                            {comp.componentregistry?.componentname ?? comp.componentcode} Properties
-                                        </h3>
-                                        {groupMode === 'merged' && (
-                                            <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">
-                                                Part {idx + 1}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        {(() => {
-                                            if (!schoolKey) return null;
+                            <div className="space-y-6">
+                                {(activeComponentData?.components ?? (selectedComponent ? [selectedComponent] : [])).map((comp, idx) => (
+                                    <div key={comp.key} className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 md:mx-0">
+                                        <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 md:px-6 py-3 flex items-center justify-between">
+                                            <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
+                                                {comp.componentregistry?.componentname ?? comp.componentcode} Properties
+                                            </h3>
+                                            {groupMode === 'merged' && (
+                                                <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">
+                                                    Part {idx + 1}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            {(() => {
+                                                if (!schoolKey) return null;
 
-                                            const code = comp.componentcode?.toLowerCase();
-                                            if (!code) return null;
+                                                const code = comp.componentcode?.toLowerCase();
+                                                if (!code) return null;
 
-                                            // All hero-variant codes — they don't need itemcount/selectionmethod config
-                                            const isHeroCode = code === "hero" || code.startsWith("hero") || code.endsWith("hero") || ["videohero", "herobanner", "heroslider", "herosection", "heroslide"].includes(code);
+                                                // All hero-variant codes — they don't need itemcount/selectionmethod config
+                                                const isHeroCode = code === "hero" || code.startsWith("hero") || code.endsWith("hero") || ["videohero", "herobanner", "heroslider", "herosection", "heroslide"].includes(code);
 
-                                            const config = getEnrichedConfig(comp);
+                                                const config = getEnrichedConfig(comp);
 
-                                            // Determine if the component natively ignores config (singletons)
-                                            const isSingleton = ['contactdetails'].includes(code) || isHeroCode;
+                                                // Determine if the component natively ignores config (singletons)
+                                                const isSingleton = ['contactdetails'].includes(code) || isHeroCode;
 
-                                            // A config is missing if it doesn't exist, is totally empty, or contains entirely null operational values (and isn't a singleton)
-                                            const isConfigMissing = !isSingleton && (!config || Object.keys(config).length === 0 || (
-                                                config.variant === null && 
-                                                config.itemcount === null && 
-                                                config.selectionmethod === null
-                                            ));
+                                                // A config is missing if it doesn't exist, is totally empty, or contains entirely null operational values (and isn't a singleton)
+                                                const isConfigMissing = !isSingleton && (!config || Object.keys(config).length === 0 || (
+                                                    config.variant === null && 
+                                                    config.itemcount === null && 
+                                                    config.selectionmethod === null
+                                                ));
 
-                                            if (isConfigMissing) {
+                                                if (isConfigMissing) {
+                                                    return (
+                                                        <div className="p-8 md:p-16 text-center flex flex-col items-center justify-center bg-white border-t border-gray-50">
+                                                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-5 animate-pulse">
+                                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                </svg>
+                                                            </div>
+                                                            <h2 className="text-[18px] font-black text-gray-900 mb-2 tracking-tight">Configuration Missing</h2>
+                                                            <p className="text-[14px] font-medium text-gray-500 max-w-sm mx-auto leading-relaxed">
+                                                                This component does not have a valid configuration block assigned in the template. Please assign configuration parameters (like item counts and layout) to enable the editor.
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                if (isHeroCode) {
+                                                    return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
+                                                }
+                                                if (code === "schoolstats") {
+                                                    return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "broadcast") {
+                                                    return <BroadcastEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "academicresults") {
+                                                    return <AcademicResultsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "schoolachievements") {
+                                                    return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "gallery") {
+                                                    return <GalleryEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "achievements" || code === "schoolachievements") {
+                                                    return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "contactdetails") {
+                                                    return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "events" || code === "monthwiseevents" || code === "monthwise_events") {
+                                                    if (config?.variant === "monthwiseevents" || config?.variant === "monthwise_events" || code === "monthwiseevents" || code === "monthwise_events") {
+                                                        return <MonthwiseEventsEditor component={comp} schoolKey={schoolKey} />;
+                                                    }
+                                                    return <EventsEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "faculty") {
+                                                    return <FacultyEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "testimonial") {
+                                                    return <TestimonialEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "leadership" || code === "principalmessage") {
+                                                    return <PrincipalMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "infrastructure" || code === "campusfeatures" || code === "infrastructurelist") {
+                                                    return <InfrastructureEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "visionmission" || code === "schoolidentity") {
+                                                    return <VisionMissionEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "boardmembers") {
+                                                    return <BoardMembersEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "boardmembersmessage" || code === "board_message" || code === "boardmessage") {
+                                                    return <BoardMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "whychooseus") {
+                                                    return <WhyChooseUsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "admissioninstructions") {
+                                                    return <AdmissionInstructionEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "academicslist") {
+                                                    return <AcademicsListEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "highlightedacademics") {
+                                                    return <HighlightedAcademicsEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "activitieslist") {
+                                                    return <ActivitiesEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "highlightedactivites") {
+                                                    return <HighlightedActivitiesEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+                                                if (code === "highlightedinfrastructure") {
+                                                    return <HighlightedInfrastructureEditor component={comp} schoolKey={schoolKey} />;
+                                                }
+
                                                 return (
-                                                    <div className="p-8 md:p-16 text-center flex flex-col items-center justify-center bg-white border-t border-gray-50">
-                                                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-5 animate-pulse">
-                                                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                    <div className="px-4 md:px-6 py-8 flex flex-col items-center justify-center text-center">
+                                                        <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
+                                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                                                             </svg>
                                                         </div>
-                                                        <h2 className="text-[18px] font-black text-gray-900 mb-2 tracking-tight">Configuration Missing</h2>
-                                                        <p className="text-[14px] font-medium text-gray-500 max-w-sm mx-auto leading-relaxed">
-                                                            This component does not have a valid configuration block assigned in the template. Please assign configuration parameters (like item counts and layout) to enable the editor.
+                                                        <h2 className="text-lg font-bold text-gray-900">
+                                                            {comp.componentregistry?.componentname ?? comp.componentcode} Editor
+                                                        </h2>
+                                                        <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
+                                                            The editor form for this component will appear here.
                                                         </p>
+
+                                                        <div className="mt-8 flex gap-3">
+                                                            <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
+                                                                Implement editor
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 );
-                                            }
-
-                                            if (isHeroCode) {
-                                                return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
-                                            }
-                                            if (code === "schoolstats") {
-                                                return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "broadcast") {
-                                                return <BroadcastEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "academicresults") {
-                                                return <AcademicResultsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "schoolachievements") {
-                                                return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "gallery") {
-                                                return <GalleryEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "achievements" || code === "schoolachievements") {
-                                                return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "contactdetails") {
-                                                return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "events" || code === "monthwiseevents" || code === "monthwise_events") {
-                                                if (config?.variant === "monthwiseevents" || config?.variant === "monthwise_events" || code === "monthwiseevents" || code === "monthwise_events") {
-                                                    return <MonthwiseEventsEditor component={comp} schoolKey={schoolKey} />;
-                                                }
-                                                return <EventsEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "faculty") {
-                                                return <FacultyEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "testimonial") {
-                                                return <TestimonialEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "leadership" || code === "principalmessage") {
-                                                return <PrincipalMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "infrastructure" || code === "campusfeatures" || code === "infrastructurelist") {
-                                                return <InfrastructureEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "visionmission" || code === "schoolidentity") {
-                                                return <VisionMissionEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "boardmembers") {
-                                                return <BoardMembersEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "boardmembersmessage" || code === "board_message" || code === "boardmessage") {
-                                                return <BoardMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "whychooseus") {
-                                                return <WhyChooseUsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "admissioninstructions") {
-                                                return <AdmissionInstructionEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "academicslist") {
-                                                return <AcademicsListEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "highlightedacademics") {
-                                                return <HighlightedAcademicsEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "activitieslist") {
-                                                return <ActivitiesEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "highlightedactivites") {
-                                                return <HighlightedActivitiesEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-                                            if (code === "highlightedinfrastructure") {
-                                                return <HighlightedInfrastructureEditor component={comp} schoolKey={schoolKey} />;
-                                            }
-
-                                            return (
-                                                <div className="px-4 md:px-6 py-8 flex flex-col items-center justify-center text-center">
-                                                    <div className="w-12 h-12 bg-red-50 text-[#F54927] rounded-xl flex items-center justify-center mb-4">
-                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                                                        </svg>
-                                                    </div>
-                                                    <h2 className="text-lg font-bold text-gray-900">
-                                                        {comp.componentregistry?.componentname ?? comp.componentcode} Editor
-                                                    </h2>
-                                                    <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto">
-                                                        The editor form for this component will appear here.
-                                                    </p>
-
-                                                    <div className="mt-8 flex gap-3">
-                                                        <button className="px-6 py-2 bg-gradient-to-r from-[#F54927] to-[#ff6b52] hover:opacity-90 text-white text-[13px] font-bold rounded-md shadow-sm transition-all duration-150">
-                                                            Implement editor
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
+                                            })()}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
-                        <div className="grid grid-cols-2 gap-3 mb-6 opacity-20 transform -rotate-3">
-                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
-                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
-                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
-                            <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
+                            <div className="grid grid-cols-2 gap-3 mb-6 opacity-20 transform -rotate-3">
+                                <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                                <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                                <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                                <div className="w-12 h-12 bg-gray-300 rounded-xl" />
+                            </div>
+                            <h2 className="text-[16px] font-bold text-gray-900 mb-1">Select an Item</h2>
+                            <p className="text-[13px] text-gray-500 px-8">Pick a screen, general setting, or connection category from the sidebar.</p>
                         </div>
-                        <h2 className="text-[16px] font-bold text-gray-900 mb-1">Select an Item</h2>
-                        <p className="text-[13px] text-gray-500 px-8">Pick a screen, general setting, or connection category from the sidebar.</p>
-                    </div>
-                )}
+                    )}
+                </div>
+
+                {/* Legal Footer for Compliance */}
+                <LegalFooter />
             </div>
         </div>
     );

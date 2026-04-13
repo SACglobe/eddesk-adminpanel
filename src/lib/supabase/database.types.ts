@@ -55,6 +55,7 @@ export interface Database {
         Row: {
           key: string;
           name: string | null;
+          email: string | null;
           slug: string | null;
           customdomain: string | null;
           isactive: boolean | null;
@@ -65,6 +66,7 @@ export interface Database {
         Insert: {
           key?: string;
           name?: string | null;
+          email?: string | null;
           slug?: string | null;
           customdomain?: string | null;
           isactive?: boolean | null;
@@ -75,6 +77,7 @@ export interface Database {
         Update: {
           key?: string;
           name?: string | null;
+          email?: string | null;
           slug?: string | null;
           customdomain?: string | null;
           isactive?: boolean | null;
@@ -124,6 +127,7 @@ export interface Database {
           code: string | null;
           description: string | null;
           price: number | null;
+          graceperiod: number | null;
           isactive: boolean | null;
           createdat: string | null;
           updatedat: string | null;
@@ -134,6 +138,7 @@ export interface Database {
           code?: string | null;
           description?: string | null;
           price?: number | null;
+          graceperiod?: number | null;
           isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
@@ -144,6 +149,7 @@ export interface Database {
           code?: string | null;
           description?: string | null;
           price?: number | null;
+          graceperiod?: number | null;
           isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
@@ -369,6 +375,45 @@ export interface Database {
           metadata?: Json | null;
           isactive?: boolean | null;
           updatedat?: string | null;
+        };
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          key: string;
+          payment_id: string | null;
+          merchant_id: string | null;
+          status: string | null;
+          plankey: string | null;
+          schoolkey: string | null;
+          amount: number | null;
+          time: string | null;
+          metadata: Json | null;
+          createdat: string | null;
+        };
+        Insert: {
+          key?: string;
+          payment_id?: string | null;
+          merchant_id?: string | null;
+          status?: string | null;
+          plankey?: string | null;
+          schoolkey?: string | null;
+          amount?: number | null;
+          time?: string | null;
+          metadata?: Json | null;
+          createdat?: string | null;
+        };
+        Update: {
+          key?: string;
+          payment_id?: string | null;
+          merchant_id?: string | null;
+          status?: string | null;
+          plankey?: string | null;
+          schoolkey?: string | null;
+          amount?: number | null;
+          time?: string | null;
+          metadata?: Json | null;
+          createdat?: string | null;
         };
         Relationships: [];
       };
