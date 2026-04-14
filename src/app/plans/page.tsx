@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import PlansClient from "./PlansClient";
 import LegalFooter from "@/components/LegalFooter";
+
 import type { Database } from "@/lib/supabase/database.types";
 
 export type Plan = Database['public']['Tables']['plans']['Row'];

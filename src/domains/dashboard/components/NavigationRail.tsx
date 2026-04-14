@@ -82,13 +82,6 @@ export const GENERAL_ITEMS = [
     },
 ];
 
-export const LEGAL_ITEMS = [
-    { name: 'About Us', href: 'https://www.eddesk.in/about' },
-    { name: 'Contact Us', href: 'https://www.eddesk.in/contact' },
-    { name: 'Terms & Conditions', href: 'https://www.eddesk.in/terms' },
-    { name: 'Privacy Policy', href: 'https://www.eddesk.in/privacy' },
-    { name: 'Refund & Cancellation', href: 'https://www.eddesk.in/refund-cancellation' },
-];
 
 
 export default function NavigationRail({
@@ -104,151 +97,12 @@ export default function NavigationRail({
     type PanelControlState = 'expanded' | 'expand_on_hover' | 'collapsed';
     const [panelState, setPanelState] = useState<PanelControlState>('expand_on_hover');
     const [showPanelOptions, setShowPanelOptions] = useState(false);
-    const [showMoreOptions, setShowMoreOptions] = useState(false);
-    // maxVisibleItems = total items (screens + general) that fit 
-    const [maxVisibleItems, setMaxVisibleItems] = useState(Infinity);
-    const menuRef = useRef<HTMLDivElement>(null);
-    const moreMenuRef = useRef<HTMLDivElement>(null);
+    
+    // Refs
     const railRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-    // Close menus when clicking outside
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setShowPanelOptions(false);
-            }
-            if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
-                setShowMoreOptions(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    // Calculate capacity: how many items fit in the available nav content area
-    // (total height minus the space needed for More strip + Sidebar Control strip at the bottom)
-    useEffect(() => {
-        if (panelState === 'expanded') {
-            setMaxVisibleItems(Infinity);
-            return;
-        }
-
-        const calculateCapacity = () => {
-            if (railRef.current) {
-                const totalHeight = railRef.current.clientHeight;
-                const screensOverhead = 40; // pt-4 (16) + Screens label (24)
-                const generalOverhead = 53; // divider (17) + General label (24) + spacing => ~53
-                const itemHeight = 52;
-                const sidebarStripHeight = 56;
-                const moreStripHeight = 56;
-
-                // First, check capacity WITHOUT the More strip
-                const availableWithoutMore = totalHeight - sidebarStripHeight - screensOverhead;
-
-                // Let's see how many items we could fit in this ideal scenario
-                let maxPossibleWithoutMore = 0;
-                let remainingWithoutMore = availableWithoutMore;
-
-                // Screens take space
-                const screensFitWithoutMore = Math.floor(remainingWithoutMore / itemHeight);
-                if (screensFitWithoutMore >= totalScreens) {
-                    maxPossibleWithoutMore += totalScreens;
-                    remainingWithoutMore -= (totalScreens * itemHeight) + generalOverhead;
-
-                    if (remainingWithoutMore > 0) {
-                        maxPossibleWithoutMore += Math.floor(remainingWithoutMore / itemHeight);
-                    }
-                } else {
-                    maxPossibleWithoutMore = screensFitWithoutMore;
-                }
-
-                // If ALL items fit WITHOUT the More strip, then we don't need it!
-                if (maxPossibleWithoutMore >= totalItems) {
-                    setMaxVisibleItems(totalItems);
-                    return;
-                }
-
-                // If we get here, it means we MUST have the More strip.
-                // Recalculate capacity WITH the More strip taking up space at the bottom.
-                const availableWithMore = availableWithoutMore - moreStripHeight;
-                const maxScreensPossible = Math.floor(availableWithMore / itemHeight);
-
-                if (maxScreensPossible <= totalScreens) {
-                    // We can't even fit all screens
-                    setMaxVisibleItems(Math.max(1, maxScreensPossible));
-                } else {
-                    // We fit all screens, let's see how many General items fit
-                    const remainingForGeneral = availableWithMore - (totalScreens * itemHeight) - generalOverhead;
-
-                    if (remainingForGeneral > 0) {
-                        const maxGeneralPossible = Math.floor(remainingForGeneral / itemHeight);
-                        setMaxVisibleItems(totalScreens + maxGeneralPossible);
-                    } else {
-                        // We fit all screens, but not enough room for the General heading + 1 item
-                        setMaxVisibleItems(totalScreens);
-                    }
-                }
-            }
-        };
-
-        const observer = new ResizeObserver(calculateCapacity);
-        if (railRef.current) observer.observe(railRef.current);
-        calculateCapacity();
-        return () => observer.disconnect();
-    }, [panelState]);
-
-    const totalScreens = sortedScreens.length;
-    const totalConnect = CONNECT_ITEMS.length;
-    const totalGeneral = GENERAL_ITEMS.length;
-    const totalItems = totalScreens + totalConnect + totalGeneral;
-
-    const isOverflowing = totalItems > maxVisibleItems && panelState !== 'expanded';
-
-    let visibleScreens = sortedScreens;
-    let overflowScreens: TemplateScreen[] = [];
-    let visibleConnect = CONNECT_ITEMS;
-    let overflowConnect: typeof CONNECT_ITEMS = [];
-    let visibleGeneral = GENERAL_ITEMS;
-    let overflowGeneral: typeof GENERAL_ITEMS = [];
-
-    if (isOverflowing) {
-        let allowed = maxVisibleItems;
-        
-        // Screens take priority
-        if (totalScreens >= allowed) {
-            visibleScreens = sortedScreens.slice(0, allowed);
-            overflowScreens = sortedScreens.slice(allowed);
-            visibleConnect = [];
-            overflowConnect = CONNECT_ITEMS;
-            visibleGeneral = [];
-            overflowGeneral = GENERAL_ITEMS;
-        } else {
-            visibleScreens = sortedScreens;
-            overflowScreens = [];
-            allowed -= totalScreens;
-
-            // Connect takes priority over General
-            if (totalConnect >= allowed) {
-                visibleConnect = CONNECT_ITEMS.slice(0, allowed);
-                overflowConnect = CONNECT_ITEMS.slice(allowed);
-                visibleGeneral = [];
-                overflowGeneral = GENERAL_ITEMS;
-            } else {
-                visibleConnect = CONNECT_ITEMS;
-                overflowConnect = [];
-                allowed -= totalConnect;
-
-                // General takes whats left
-                if (totalGeneral >= allowed) {
-                    visibleGeneral = GENERAL_ITEMS.slice(0, allowed);
-                    overflowGeneral = GENERAL_ITEMS.slice(allowed);
-                } else {
-                    visibleGeneral = GENERAL_ITEMS;
-                    overflowGeneral = [];
-                }
-            }
-        }
-    }
+    const totalItems = sortedScreens.length + CONNECT_ITEMS.length + GENERAL_ITEMS.length;
 
     const widthClass = panelState === 'expanded'
         ? 'w-64'
@@ -277,10 +131,9 @@ export default function NavigationRail({
                 ref={railRef}
                 className={`absolute top-0 left-0 h-full backdrop-blur-xl transition-all duration-500 flex flex-col overflow-visible ${widthClass} ${shadowClass} z-50`}
             >
-                {/* ── Navigation Content (top-aligned, grows to fill, then pushes More+Control to bottom) ── */}
+                {/* ── Navigation Content (Scrollable Area) ── */}
                 <div
-                    className={`pt-4 no-scrollbar ${panelState === 'expanded' ? 'overflow-y-auto overflow-x-hidden flex-1' : 'overflow-visible'}`}
-                    style={panelState !== 'expanded' ? { flex: '1 1 0', minHeight: 0 } : undefined}
+                    className={`pt-4 no-scrollbar overflow-y-auto overflow-x-hidden flex-1`}
                 >
                     {/* Screens label */}
                     <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>
@@ -291,7 +144,7 @@ export default function NavigationRail({
 
                     {/* Screen items */}
                     <nav className="px-3.5 space-y-1">
-                        {visibleScreens.map((screen) => {
+                        {sortedScreens.map((screen) => {
                             const isActive = screen.key === selectedScreenKey;
                             return (
                                 <button
@@ -323,210 +176,83 @@ export default function NavigationRail({
                     </nav>
 
                     {/* Connect section */}
-                    {visibleConnect.length > 0 && (
-                        <>
-                            <div className="mx-3.5 my-3 border-t border-gray-100" />
-                            <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>
-                                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                    Connect
-                                </h3>
-                            </div>
-                            <nav className="px-3.5 space-y-1">
-                                {visibleConnect.map((item) => {
-                                    const isActive = item.key === selectedScreenKey;
-                                    return (
-                                        <button
-                                            key={item.key}
-                                            onClick={() => onSelectScreen(item.key)}
-                                            className={`w-full flex items-center rounded-xl text-[13px] font-semibold transition-all duration-300 relative group/item ${isActive
-                                                ? 'text-[#F54927] bg-[#F54927]/5'
-                                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/80'
-                                                } px-3.5 py-2.5 h-12`}
-                                        >
-                                            {isActive && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#F54927] rounded-r-full shadow-[0_0_12px_rgba(245,73,39,0.4)]" />
-                                            )}
-                                            <span className={`transition-all duration-300 flex-shrink-0 transform group-hover/item:scale-110 ${isActive ? "text-[#F54927]" : "text-gray-400"}`}>
-                                                {item.icon}
-                                            </span>
-                                            <span className={`ml-4 truncate ${textOpacityClass} transition-all duration-500 tracking-tight font-bold w-full text-left`}>
-                                                {item.label}
-                                            </span>
-                                            {isCollapsedMode && (
-                                                <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-800 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
-                                                    {item.label}
-                                                    <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-800" />
-                                                </div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </nav>
-                        </>
-                    )}
-
-                    {/* General section */}
-                    {visibleGeneral.length > 0 && (
-                        <>
-                            <div className="mx-3.5 my-3 border-t border-gray-100" />
-                            <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>
-                                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                    General
-                                </h3>
-                            </div>
-                            <nav className="px-3.5 space-y-1 pb-4">
-                                {visibleGeneral.map((item) => {
-                                    const isActive = item.key === selectedScreenKey;
-                                    return (
-                                        <button
-                                            key={item.key}
-                                            onClick={() => onSelectScreen(item.key)}
-                                            className={`w-full flex items-center rounded-xl text-[13px] font-semibold transition-all duration-300 relative group/item ${isActive
-                                                ? 'text-[#F54927] bg-[#F54927]/5'
-                                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/80'
-                                                } px-3.5 py-2.5 h-12`}
-                                        >
-                                            {isActive && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#F54927] rounded-r-full shadow-[0_0_12px_rgba(245,73,39,0.4)]" />
-                                            )}
-                                            <span className={`transition-all duration-300 flex-shrink-0 transform group-hover/item:scale-110 ${isActive ? "text-[#F54927]" : "text-gray-400"}`}>
-                                                {item.icon}
-                                            </span>
-                                            <span className={`ml-4 truncate ${textOpacityClass} transition-all duration-500 tracking-tight font-bold w-full text-left`}>
-                                                {item.label}
-                                            </span>
-                                            {isCollapsedMode && (
-                                                <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-800 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
-                                                    {item.label}
-                                                    <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-800" />
-                                                </div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </nav>
-                        </>
-                    )}
-                </div>
-
-                {/* ── More strip — only shown when overflowing, anchored above Sidebar Control ── */}
-                {isOverflowing && (
-                    <div className="border-t border-gray-100 flex-shrink-0" style={{ height: '56px' }}>
-                        <div className="px-3.5 h-full flex items-center relative" ref={moreMenuRef}>
-                            <button
-                                onClick={() => setShowMoreOptions(!showMoreOptions)}
-                                className={`w-full flex items-center rounded-xl text-[13px] font-semibold transition-all duration-300 relative group/item ${showMoreOptions ? 'text-[#F54927] bg-[#F54927]/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/80'} px-3.5 py-2.5 h-12`}
-                            >
-                                <span className={`transition-all duration-300 flex-shrink-0 transform group-hover/item:scale-110 ${showMoreOptions ? 'text-[#F54927]' : 'text-gray-400'}`}>
-                                    <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                                    </svg>
-                                </span>
-                                <span className={`ml-4 truncate ${textOpacityClass} transition-all duration-500 tracking-tight font-bold w-full text-left`}>
-                                    More
-                                </span>
-                                {isCollapsedMode && !showMoreOptions && (
-                                    <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-100 text-[#F54927] text-[11px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-100 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
-                                        More Options
-                                        <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-white rotate-45 border-l border-b border-gray-100" />
-                                    </div>
-                                )}
-                            </button>
-
-                            {showMoreOptions && (
-                                <div className="absolute bottom-full left-full ml-3 w-64 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-gray-100 py-2.5 z-[200] overflow-y-auto max-h-[80vh]">
-                                    {overflowScreens.length > 0 && (
-                                        <>
-                                            <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Screens</div>
-                                            {overflowScreens.map(screen => (
-                                                <button
-                                                    key={screen.key}
-                                                    onClick={() => { onSelectScreen(screen.key); setShowMoreOptions(false); }}
-                                                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors text-left group/popitem"
-                                                >
-                                                    <span className="text-gray-400 group-hover/popitem:text-[#F54927] transition-colors">
-                                                        <GetIcon slug={screen.screenslug} />
-                                                    </span>
-                                                    <span className="text-[13px] font-bold text-gray-700 capitalize group-hover/popitem:text-[#F54927] transition-colors">
-                                                        {screen.screenname ?? screen.screenslug}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                    {overflowConnect.length > 0 && (
-                                        <>
-                                            <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-t border-gray-50 mt-2 pt-3">Connect</div>
-                                            {overflowConnect.map(item => (
-                                                <button
-                                                    key={item.key}
-                                                    onClick={() => { onSelectScreen(item.key); setShowMoreOptions(false); }}
-                                                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors text-left group/popitem"
-                                                >
-                                                    <span className="text-gray-400 group-hover/popitem:text-[#F54927] transition-colors">
-                                                        {item.icon}
-                                                    </span>
-                                                    <span className="text-[13px] font-bold text-gray-700 group-hover/popitem:text-[#F54927] transition-colors">
-                                                        {item.label}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                    {overflowGeneral.length > 0 && (
-                                        <>
-                                            <div className={`px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest ${overflowScreens.length > 0 || overflowConnect.length > 0 ? 'border-t border-gray-50 mt-2 pt-3' : ''}`}>General</div>
-                                            {overflowGeneral.map(item => (
-                                                <button
-                                                    key={item.key}
-                                                    onClick={() => { onSelectScreen(item.key); setShowMoreOptions(false); }}
-                                                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors text-left group/popitem"
-                                                >
-                                                    <span className="text-gray-400 group-hover/popitem:text-[#F54927] transition-colors">
-                                                        {item.icon}
-                                                    </span>
-                                                    <span className="text-[13px] font-bold text-gray-700 group-hover/popitem:text-[#F54927] transition-colors">
-                                                        {item.label}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── Legal Links section ── */}
-                <div className="px-3.5 pb-2">
                     <div className="mx-3.5 my-3 border-t border-gray-100" />
                     <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            Legal
+                        <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                            Connect
                         </h3>
                     </div>
-                    <nav className="space-y-0.5">
-                        {LEGAL_ITEMS.map((item) => (
-                            <a
-                                key={item.name}
-                                href={item.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full flex items-center rounded-xl text-[12px] font-bold text-gray-500 hover:text-[#F54927] hover:bg-red-50 px-3.5 py-2 transition-all duration-300 h-9 relative group/item"
-                            >
-                                <span className={`truncate ${textOpacityClass} transition-all duration-500`}>
-                                    {item.name}
-                                </span>
-                                {isCollapsedMode && (
-                                    <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-[10px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-800 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
-                                        {item.name}
-                                        <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-800" />
-                                    </div>
-                                )}
-                            </a>
-                        ))}
+                    <nav className="px-3.5 space-y-1">
+                        {CONNECT_ITEMS.map((item) => {
+                            const isActive = item.key === selectedScreenKey;
+                            return (
+                                <button
+                                    key={item.key}
+                                    onClick={() => onSelectScreen(item.key)}
+                                    className={`w-full flex items-center rounded-xl text-[13px] font-semibold transition-all duration-300 relative group/item ${isActive
+                                        ? 'text-[#F54927] bg-[#F54927]/5'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/80'
+                                        } px-3.5 py-2.5 h-12`}
+                                >
+                                    {isActive && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#F54927] rounded-r-full shadow-[0_0_12px_rgba(245,73,39,0.4)]" />
+                                    )}
+                                    <span className={`transition-all duration-300 flex-shrink-0 transform group-hover/item:scale-110 ${isActive ? "text-[#F54927]" : "text-gray-400"}`}>
+                                        {item.icon}
+                                    </span>
+                                    <span className={`ml-4 truncate ${textOpacityClass} transition-all duration-500 tracking-tight font-bold w-full text-left`}>
+                                        {item.label}
+                                    </span>
+                                    {isCollapsedMode && (
+                                        <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-800 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
+                                            {item.label}
+                                            <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-800" />
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </nav>
+
+                    {/* General section */}
+                    <div className="mx-3.5 my-3 border-t border-gray-100" />
+                    <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>
+                        <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                            General
+                        </h3>
+                    </div>
+                    <nav className="px-3.5 space-y-1">
+                        {GENERAL_ITEMS.map((item) => {
+                            const isActive = item.key === selectedScreenKey;
+                            return (
+                                <button
+                                    key={item.key}
+                                    onClick={() => onSelectScreen(item.key)}
+                                    className={`w-full flex items-center rounded-xl text-[13px] font-semibold transition-all duration-300 relative group/item ${isActive
+                                        ? 'text-[#F54927] bg-[#F54927]/5'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/80'
+                                        } px-3.5 py-2.5 h-12`}
+                                >
+                                    {isActive && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#F54927] rounded-r-full shadow-[0_0_12px_rgba(245,73,39,0.4)]" />
+                                    )}
+                                    <span className={`transition-all duration-300 flex-shrink-0 transform group-hover/item:scale-110 ${isActive ? "text-[#F54927]" : "text-gray-400"}`}>
+                                        {item.icon}
+                                    </span>
+                                    <span className={`ml-4 truncate ${textOpacityClass} transition-all duration-500 tracking-tight font-bold w-full text-left`}>
+                                        {item.label}
+                                    </span>
+                                    {isCollapsedMode && (
+                                        <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded-lg opacity-0 pointer-events-none whitespace-nowrap z-[100] shadow-xl border border-gray-800 transition-all duration-200 translate-x-1 group-hover/item:translate-x-0 group-hover/item:opacity-100 ${panelState === 'expand_on_hover' ? 'group-hover/rail:hidden' : ''}`}>
+                                            {item.label}
+                                            <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 border-l border-b border-gray-800" />
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </nav>
+
                 </div>
 
                 {/* ── Sidebar Control — always at the bottom ── */}

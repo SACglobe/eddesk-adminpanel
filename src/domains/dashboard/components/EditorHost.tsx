@@ -19,7 +19,6 @@ import VisionMissionEditor from "./editors/VisionMissionEditor";
 import BoardMembersEditor from "./editors/BoardMembersEditor";
 import BoardMessageEditor from "./editors/BoardMessageEditor";
 import WhyChooseUsEditor from "./editors/WhyChooseUsEditor";
-import LegalFooter from "@/components/LegalFooter";
 import AdmissionInstructionEditor from "./editors/AdmissionInstructionEditor";
 import AcademicsListEditor from "./editors/AcademicsListEditor";
 import HighlightedAcademicsEditor from "./editors/HighlightedAcademicsEditor";
@@ -29,6 +28,7 @@ import HighlightedInfrastructureEditor from "./editors/HighlightedInfrastructure
 import HelpEditor from "./editors/HelpEditor";
 import FeedbackEditor from "./editors/FeedbackEditor";
 import AccountDetailsEditor from "./editors/AccountDetailsEditor";
+import LegalFooter from "@/components/LegalFooter";
 import { getEnrichedConfig } from "../utils/componentUtils";
 
 interface EditorHostProps {
@@ -379,8 +379,6 @@ export default function EditorHost({
                         </div>
                     )}
                 </div>
-
-                {/* Legal Footer for Compliance */}
                 <LegalFooter />
             </div>
         </div>
