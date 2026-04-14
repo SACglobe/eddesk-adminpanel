@@ -11,6 +11,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { getEnrichedConfig } from "@/domains/dashboard/utils/componentUtils";
 import { LoadingProvider } from "@/providers/LoadingProvider";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import TemplateScanner from "@/domains/dashboard/components/TemplateScanner";
 
 interface DashboardClientProps {
     initialData: AdminInitialData;
@@ -350,7 +351,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                 </div>
                                 <div className="px-1.5 space-y-0.5">
                                     <button
-                                        onClick={() => { handleSelectScreen('user-profile'); setIsProfileOpen(false); }}
+                                        onClick={() => { handleSelectScreen('account-details'); setIsProfileOpen(false); }}
                                         className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-bold text-gray-600 hover:text-[#F54927] hover:bg-red-50 transition-all group/item">
                                         Edit Profile
                                     </button>
@@ -544,7 +545,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                 <div className="relative">
                                     <button
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className={`w-full flex items-center justify-between p-2.5 rounded-[18px] transition-all duration-300 group/profile ${isProfileOpen || selectedScreenKey === 'user-profile'
+                                        className={`w-full flex items-center justify-between p-2.5 rounded-[18px] transition-all duration-300 group/profile ${isProfileOpen || selectedScreenKey === 'account-details'
                                             ? 'bg-white shadow-[0_4px_25px_rgba(0,0,0,0.06)] ring-1 ring-gray-100'
                                             : 'bg-gray-50/50 hover:bg-white hover:shadow-sm ring-1 ring-transparent hover:ring-gray-100'
                                             }`}
@@ -585,7 +586,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                             </div>
                                             <div className="p-2 space-y-1">
                                                 <button
-                                                    onClick={() => { handleSelectScreen('user-profile'); setIsProfileOpen(false); }}
+                                                    onClick={() => { handleSelectScreen('account-details'); setIsProfileOpen(false); }}
                                                     className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-[14px] font-black text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-all"
                                                 >
                                                     <div className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
@@ -763,6 +764,8 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                     </div>
                 </div>
             )}
+        {/* Template Scanner FAB */}
+        <TemplateScanner adminData={adminData} />
         </div>
         </LoadingProvider>
     );
