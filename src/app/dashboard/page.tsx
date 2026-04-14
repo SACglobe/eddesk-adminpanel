@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 import type { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
+import type { Database } from "@/lib/supabase/database.types";
+
+export type Plan = Database['public']['Tables']['plans']['Row'];
 
 export default async function DashboardPage() {
     const supabase = await createClient();
@@ -48,9 +51,14 @@ export default async function DashboardPage() {
     const now = new Date();
     const isExpired = sub?.enddate ? new Date(sub.enddate) < now : true;
 
-    if (sub?.status !== "active" || isExpired) {
-        redirect("/plans?status=required");
-    }
+    // Always fetch plans to support both required and voluntary (upgrade) modal scenarios
+    const { data: plans } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("isactive", true)
+        .order("price", { ascending: true });
+    
+    let availablePlans: Plan[] = plans || [];
 
     // 3. Deduplicate 
     // We deduplicate screens by slug to avoid redundant sidebar entries, 
@@ -80,5 +88,11 @@ export default async function DashboardPage() {
     typedData.templatescreens = Array.from(uniqueScreensMap.values());
 
     // 4. Render Client Component with initial data
-    return <DashboardClient initialData={typedData} />;
+    return (
+        <DashboardClient 
+            initialData={typedData} 
+            requiresSubscription={sub?.status !== "active" || isExpired}
+            availablePlans={availablePlans}
+        />
+    );
 }

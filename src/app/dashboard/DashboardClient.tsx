@@ -12,12 +12,17 @@ import { getEnrichedConfig } from "@/domains/dashboard/utils/componentUtils";
 import { LoadingProvider } from "@/providers/LoadingProvider";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import TemplateScanner from "@/domains/dashboard/components/TemplateScanner";
+import PlansModal from "@/domains/dashboard/components/subscription/PlansModal";
+import type { Plan } from "@/app/dashboard/page";
+import LegalFooter from "@/components/LegalFooter";
 
 interface DashboardClientProps {
     initialData: AdminInitialData;
+    requiresSubscription?: boolean;
+    availablePlans?: Plan[];
 }
 
-export default function DashboardClient({ initialData }: DashboardClientProps) {
+export default function DashboardClient({ initialData, requiresSubscription = false, availablePlans = [] }: DashboardClientProps) {
     const [adminData, setAdminData] = useState<AdminInitialData>(initialData);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMobileComponentListOpen, setIsMobileComponentListOpen] = useState(false);
@@ -290,6 +295,26 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         }
     };
 
+    useEffect(() => {
+        document.body.style.overflow = 'auto';
+        return () => { document.body.style.overflow = 'auto'; };
+    }, []);
+
+    if (requiresSubscription) {
+        return (
+            <LoadingProvider>
+                <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto">
+                    <PlansModal 
+                        initialPlans={availablePlans} 
+                        status="required"
+                        currentSubscription={adminData.subscriptions}
+                    />
+                    <LegalFooter />
+                </div>
+            </LoadingProvider>
+        );
+    }
+
     return (
         <LoadingProvider>
             <div className="h-screen flex flex-col bg-white overflow-hidden text-gray-900 font-sans selection:bg-red-100 selection:text-red-900">
@@ -403,6 +428,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                                 connectItem={connectItemSelected}
                                 schoolKey={school?.key ?? ""}
                                 adminData={adminData}
+                                availablePlans={availablePlans}
                                 onBack={() => setIsMobileMenuOpen(true)}
                                 onSearch={() => setIsSearchOpen(true)}
                                 allScreens={adminData?.templatescreens ?? []}
