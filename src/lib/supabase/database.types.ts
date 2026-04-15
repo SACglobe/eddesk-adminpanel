@@ -128,6 +128,7 @@ export interface Database {
           description: string | null;
           price: number | null;
           graceperiod: number | null;
+          billgenerationdate: number | null;
           isactive: boolean | null;
           createdat: string | null;
           updatedat: string | null;
@@ -139,6 +140,7 @@ export interface Database {
           description?: string | null;
           price?: number | null;
           graceperiod?: number | null;
+          billgenerationdate?: number | null;
           isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
@@ -150,6 +152,7 @@ export interface Database {
           description?: string | null;
           price?: number | null;
           graceperiod?: number | null;
+          billgenerationdate?: number | null;
           isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;

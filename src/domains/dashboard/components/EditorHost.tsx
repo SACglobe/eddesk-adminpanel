@@ -32,7 +32,9 @@ import HighlightedInfrastructureEditor from "./editors/HighlightedInfrastructure
 import HelpEditor from "./editors/HelpEditor";
 import FeedbackEditor from "./editors/FeedbackEditor";
 import AccountDetailsEditor from "./editors/AccountDetailsEditor";
+import PlanDetailsEditor from "./editors/PlanDetailsEditor";
 import { getEnrichedConfig } from "../utils/componentUtils";
+import type { Plan } from "@/app/dashboard/page";
 
 interface EditorHostProps {
     selectedComponent: TemplateComponent | null;
@@ -48,6 +50,7 @@ interface EditorHostProps {
     schoolKey?: string;
     onBack?: () => void;
     onSearch?: () => void;
+    availablePlans?: Plan[];
     allScreens?: TemplateScreen[];
     allowedHeroMediaType?: 'image' | 'video' | 'both';
     adminData?: any;
@@ -62,6 +65,7 @@ export default function EditorHost({
     schoolKey,
     onBack,
     onSearch,
+    availablePlans = [],
     allScreens,
     allowedHeroMediaType,
     adminData
@@ -145,6 +149,11 @@ export default function EditorHost({
                                 <FeedbackEditor adminData={adminData} />
                             ) : generalItem.key === 'account-details' ? (
                                 <AccountDetailsEditor adminData={adminData} />
+                            ) : generalItem.key === 'plan-details' ? (
+                                <PlanDetailsEditor 
+                                    adminData={adminData} 
+                                    availablePlans={availablePlans} 
+                                />
                             ) : (
                                 <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
                                     <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
@@ -393,9 +402,6 @@ export default function EditorHost({
                         </div>
                     )}
                 </div>
-
-                {/* Legal Footer for Compliance */}
-                <LegalFooter />
             </div>
         </div>
     );
