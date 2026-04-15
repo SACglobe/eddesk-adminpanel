@@ -141,7 +141,7 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
             const counts: Record<string, number> = {};
             try {
                 await Promise.all(Array.from(tasks.entries()).map(async ([key, task]) => {
-                    let query = supabase
+                    let query: any = supabase
                         // Cast to 'any' to bypass strict table name checks for dynamic discovery
                         .from(task.table as any)
                         .select("*", { count: 'exact', head: true })
