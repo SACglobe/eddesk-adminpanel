@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       // Fetch existing subscription to check for renewal
       const { data: existingSub } = await supabase
         .from("subscriptions")
-        .select("enddate, status")
+        .select("enddate, status, isactive")
         .eq("schoolkey", schoolKey)
         .single();
 
@@ -96,6 +96,7 @@ export async function POST(request: Request) {
         schoolkey: schoolKey,
         plankey: plan.key, // Use the UUID instead of the code
         status: "active",
+        isactive: true,
         startdate: startDate.toISOString(),
         enddate: endDate.toISOString(),
         updatedat: new Date().toISOString()

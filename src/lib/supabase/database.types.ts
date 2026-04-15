@@ -95,6 +95,7 @@ export interface Database {
           status: string | null;
           startdate: string | null;
           enddate: string | null;
+          isactive: boolean | null;
           createdat: string | null;
           updatedat: string | null;
         };
@@ -105,6 +106,7 @@ export interface Database {
           status?: string | null;
           startdate?: string | null;
           enddate?: string | null;
+          isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
         };
@@ -115,6 +117,7 @@ export interface Database {
           status?: string | null;
           startdate?: string | null;
           enddate?: string | null;
+          isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
         };

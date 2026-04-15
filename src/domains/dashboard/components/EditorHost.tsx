@@ -20,9 +20,7 @@ import BoardMembersEditor from "./editors/BoardMembersEditor";
 import BoardMessageEditor from "./editors/BoardMessageEditor";
 import WhyChooseUsEditor from "./editors/WhyChooseUsEditor";
 import LegalFooter from "@/components/LegalFooter";
-import AdmissionEnquiryList from "../../connect/components/AdmissionEnquiryList";
-import GeneralMessageList from "../../connect/components/GeneralMessageList";
-import CallbackRequestList from "../../connect/components/CallbackRequestList";
+import { AdmissionEnquiryList, GeneralMessageList, CallbackRequestList } from "../../connect/components";
 import AdmissionInstructionEditor from "./editors/AdmissionInstructionEditor";
 import AcademicsListEditor from "./editors/AcademicsListEditor";
 import HighlightedAcademicsEditor from "./editors/HighlightedAcademicsEditor";
@@ -306,9 +304,6 @@ export default function EditorHost({
                                                 }
                                                 if (code === "gallery") {
                                                     return <GalleryEditor component={comp} schoolKey={schoolKey} />;
-                                                }
-                                                if (code === "achievements" || code === "schoolachievements") {
-                                                    return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                                 }
                                                 if (code === "contactdetails") {
                                                     return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
