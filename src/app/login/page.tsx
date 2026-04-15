@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithEmail } from "@/domains/auth/queries";
 import { activateAccountAction } from "@/domains/auth/actions";
 import { createClient } from "@/lib/supabase/client";
 import BrandLogo from "@/components/BrandLogo";
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [email, setEmail] = useState("");
@@ -104,7 +104,7 @@ export default function LoginPage() {
         });
 
         return () => subscription.unsubscribe();
-    }, [hasSession]); // Dependencies ensure re-run if local session state changes
+    }, [hasSession, router]); // Dependencies ensure re-run if local session state changes
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
@@ -331,5 +331,20 @@ export default function LoginPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }
