@@ -95,6 +95,7 @@ export interface Database {
           status: string | null;
           startdate: string | null;
           enddate: string | null;
+          isactive: boolean | null;
           createdat: string | null;
           updatedat: string | null;
         };
@@ -105,6 +106,7 @@ export interface Database {
           status?: string | null;
           startdate?: string | null;
           enddate?: string | null;
+          isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
         };
@@ -115,6 +117,7 @@ export interface Database {
           status?: string | null;
           startdate?: string | null;
           enddate?: string | null;
+          isactive?: boolean | null;
           createdat?: string | null;
           updatedat?: string | null;
         };
@@ -417,6 +420,39 @@ export interface Database {
           time?: string | null;
           metadata?: Json | null;
           createdat?: string | null;
+        };
+        Relationships: [];
+      };
+      formsubmissions: {
+        Row: {
+          idx: number;
+          key: string;
+          schoolkey: string;
+          formtype: string;
+          payload: Json;
+          status: string;
+          createdat: string;
+          isactive: boolean;
+        };
+        Insert: {
+          idx?: number;
+          key?: string;
+          schoolkey: string;
+          formtype: string;
+          payload: Json;
+          status?: string;
+          createdat?: string;
+          isactive?: boolean;
+        };
+        Update: {
+          idx?: number;
+          key?: string;
+          schoolkey?: string;
+          formtype?: string;
+          payload?: Json;
+          status?: string;
+          createdat?: string;
+          isactive?: boolean;
         };
         Relationships: [];
       };
