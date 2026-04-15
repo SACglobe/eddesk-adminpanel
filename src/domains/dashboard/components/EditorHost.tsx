@@ -20,6 +20,9 @@ import BoardMembersEditor from "./editors/BoardMembersEditor";
 import BoardMessageEditor from "./editors/BoardMessageEditor";
 import WhyChooseUsEditor from "./editors/WhyChooseUsEditor";
 import LegalFooter from "@/components/LegalFooter";
+import AdmissionEnquiryList from "../../connect/components/AdmissionEnquiryList";
+import GeneralMessageList from "../../connect/components/GeneralMessageList";
+import CallbackRequestList from "../../connect/components/CallbackRequestList";
 import AdmissionInstructionEditor from "./editors/AdmissionInstructionEditor";
 import AcademicsListEditor from "./editors/AcademicsListEditor";
 import HighlightedAcademicsEditor from "./editors/HighlightedAcademicsEditor";
@@ -170,7 +173,7 @@ export default function EditorHost({
                             )}
                         </div>
                     ) : connectItem ? (
-                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <h1 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2 px-4 lg:px-0">
                                 {connectItem.label}
                             </h1>
@@ -184,25 +187,35 @@ export default function EditorHost({
                                         {connectItem.label} List
                                     </h3>
                                 </div>
-                                <div className="px-4 lg:px-6 py-12 flex flex-col items-center justify-center text-center">
-                                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-5">
-                                        {connectItem.icon}
-                                    </div>
-                                    <h2 className="text-lg font-black text-gray-900 tracking-tight">
-                                        Incoming {connectItem.label}
-                                    </h2>
-                                    <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">
-                                        This view will display a searchable, paginated list of all {connectItem.label.toLowerCase()} received through the portal.
-                                    </p>
+                                <div className="p-4 lg:p-6">
+                                    {connectItem.key === 'admission-enquiries' ? (
+                                        <AdmissionEnquiryList schoolKey={schoolKey || ""} />
+                                    ) : connectItem.key === 'general-messages' ? (
+                                        <GeneralMessageList schoolKey={schoolKey || ""} />
+                                    ) : connectItem.key === 'callback-requests' ? (
+                                        <CallbackRequestList schoolKey={schoolKey || ""} />
+                                    ) : (
+                                        <div className="py-12 flex flex-col items-center justify-center text-center">
+                                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-5">
+                                                {connectItem.icon}
+                                            </div>
+                                            <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                                                Incoming {connectItem.label}
+                                            </h2>
+                                            <p className="text-[14px] text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">
+                                                This view will display a searchable, paginated list of all {connectItem.label.toLowerCase()} received through the portal.
+                                            </p>
 
-                                    <div className="mt-8 flex gap-3">
-                                        <button className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-lg shadow-sm transition-all duration-150">
-                                            Refresh List
-                                        </button>
-                                        <button className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold rounded-lg transition-all duration-150">
-                                            Export Data
-                                        </button>
-                                    </div>
+                                            <div className="mt-8 flex gap-3">
+                                                <button className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-[13px] font-bold rounded-lg shadow-sm transition-all duration-150">
+                                                    Refresh List
+                                                </button>
+                                                <button className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold rounded-lg transition-all duration-150">
+                                                    Export Data
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -241,7 +254,8 @@ export default function EditorHost({
                                                 const config = getEnrichedConfig(comp);
 
                                                 // Determine if the component natively ignores config (singletons)
-                                                const isSingleton = ['contactdetails'].includes(code) || isHeroCode;
+                                                // Dynamic check based on componentregistry datatype ('single')
+                                                const isSingleton = (comp.componentregistry as any)?.datatype === 'single' || isHeroCode;
 
                                                 // A config is missing if it doesn't exist, is totally empty, or contains entirely null operational values (and isn't a singleton)
                                                 const isConfigMissing = !isSingleton && (!config || Object.keys(config).length === 0 || (

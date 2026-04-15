@@ -67,7 +67,7 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
             emptySlotsCount={0} // Singleton editor, no empty slots logic required.
             component={component}
         >
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-red-500/5 transition-all duration-300 flex flex-col md:flex-row gap-10">
+            <div className="group relative bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-red-500/5 transition-all duration-300 flex flex-col md:flex-row gap-10">
                 <div className="flex-1 space-y-6">
                     <div>
                         <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Primary Email</h4>

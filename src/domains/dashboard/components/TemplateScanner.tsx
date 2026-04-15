@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
 import { getEnrichedConfig } from "../utils/componentUtils";
+import { createClient } from "@/lib/supabase/client";
 
 interface TemplateScannerProps {
     adminData: AdminInitialData;
@@ -75,17 +76,142 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
         return adminData.templatescreens.sort((a, b) => (a.displayorder ?? 0) - (b.displayorder ?? 0));
     }, [adminData]);
 
+    // Live Inventory Discovery State
+    const [discoveryData, setDiscoveryData] = useState<Record<string, number>>({});
+    const [isDiscovering, setIsDiscovering] = useState(false);
+
+    // Context-Aware Filter Expansion (Implicit Filter Mapping)
+    const expandImplicitFilters = (code: string, screenSlug: string, explicitFilters: any = {}) => {
+        const c = code.toLowerCase();
+        let expanded = { ...(explicitFilters || {}) };
+
+        // 1. Unified Screenslug Injection (Shared Contextual Components)
+        const screenScopedComponents = [
+            'hero', 'videohero', 'herobanner', 'heroslider', 'herosection', 'heroslide',
+            'broadcast', 'schoolstats', 'stats', 'infrastructure', 'campusfeatures',
+            'infrastructurelist', 'events', 'monthwiseevents', 'monthwise_events'
+        ];
+        if (screenScopedComponents.some(key => c === key || c.startsWith(key) || c.endsWith(key))) {
+            expanded.screenslug = screenSlug;
+        }
+
+        // 2. High-Authority Singleton Designation Injection
+        if (c === 'principalmessage') {
+            expanded.designation = "Principal";
+        }
+        if (c === 'boardmembers' || c === 'boardmember') {
+            expanded.designation = "Board Member";
+        }
+
+        // 3. Content Type Preservation (Specialized Variants)
+        // If the editor logic requires a specific content type (e.g. Hero Video vs Image), 
+        // it should be in expanded filters if not already present in explicit config.
+
+        return expanded;
+    };
+
+    useEffect(() => {
+        const discoverInventory = async () => {
+            if (!adminData.schools?.key) return;
+            setIsDiscovering(true);
+            const supabase = createClient();
+            const schoolKey = adminData.schools.key;
+
+            // 1. Identify all unique discovery context (Table + Expanded Filters)
+            const tasks = new Map<string, { table: string, filters: any }>();
+            adminData.templatescreens.forEach(screen => {
+                screen.components?.forEach(comp => {
+                    const tableName = (comp.componentregistry as any)?.tablename;
+                    const config = getEnrichedConfig(comp);
+                    const code = comp.componentcode || "";
+                    
+                    // Inject Implicit Filters to mirror Editor logic
+                    const filters = expandImplicitFilters(code, screen.screenslug || "home", config.filters);
+                    
+                    if (tableName) {
+                        const key = `${tableName}::${JSON.stringify(filters || {})}`;
+                        if (!tasks.has(key)) {
+                            tasks.set(key, { table: tableName, filters });
+                        }
+                    }
+                });
+            });
+
+            // 2. Fetch counts for each unique context
+            const counts: Record<string, number> = {};
+            try {
+                await Promise.all(Array.from(tasks.entries()).map(async ([key, task]) => {
+                    let query = supabase
+                        .from(task.table)
+                        .select("*", { count: 'exact', head: true })
+                        .eq("schoolkey", schoolKey);
+                    
+                    // Apply Filters (Decision Matrix: Filter Scoping)
+                    if (task.filters) {
+                        if (typeof task.filters === 'object' && 'logic' in task.filters && 'conditions' in task.filters) {
+                            // Support structured FilterConfig (Mapping standard)
+                            task.filters.conditions.forEach((c: any) => {
+                                if (c.operator === 'equals') query = query.eq(c.field, c.value);
+                            });
+                        } else {
+                            // Support flat-object filters (Legacy standard)
+                            Object.entries(task.filters).forEach(([fKey, fVal]) => {
+                                if (fVal !== null && fVal !== undefined) {
+                                    query = query.eq(fKey, fVal);
+                                }
+                            });
+                        }
+                    }
+
+                    const { count, error } = await query;
+                    if (!error && count !== null) {
+                        counts[key] = count;
+                    }
+                }));
+                setDiscoveryData(counts);
+            } catch (err) {
+                console.error("Discovery Scan Failed:", err);
+            } finally {
+                setIsDiscovering(false);
+            }
+        };
+
+        if (isOpen) {
+            discoverInventory();
+        }
+    }, [adminData.schools?.key, isOpen]);
+
     const getComponentBlueprint = (code: string, config: any, screenSlug: string, component: TemplateComponent): ComponentBlueprint => {
         const c = code.toLowerCase();
-        const allowedCount = parseInt(String(config?.itemcount)) || (config?.selectionmethod === 'manual' ? (component.contentplacements?.length || 3) : 3) || 3;
+        const allowedCount = parseInt(String(config?.itemcount)) || (config?.selectionmethod === 'manual' ? (component.contentplacements?.length || 3) : 3) || 1;
         const method = config?.selectionmethod || 'auto';
+        
+        // Inject Implicit Filters
+        const filters = expandImplicitFilters(code, screenSlug, config?.filters);
         
         // Referential Integrity Audit (Filter-Aware)
         const contentRows = (component as any).content || [];
         const placements = component.contentplacements || [];
         const issues: { key: string; reason: string }[] = [];
+
+        // Determine mode based on Decision Matrix
+        const isSingleton = (component.componentregistry as any)?.datatype === 'single' || 
+                           c === "hero" || c.startsWith("hero") || c.endsWith("hero") || 
+                           ["videohero", "herobanner", "heroslider", "herosection", "heroslide"].includes(c) ||
+                           ["principalmessage", "boardmembersmessage", "board_message", "boardmessage", "broadcast", "schoolidentity", "visionmission", "contactdetails"].includes(c);
         
-        let validCount = 0;
+        const isAuto = method === 'auto';
+        const isManual = method === 'manual';
+
+        // 1. Inventory Calculation (Decision Matrix Aligned)
+        const tableName = (component.componentregistry as any)?.tablename;
+        const discoveryKey = tableName ? `${tableName}::${JSON.stringify(filters || {})}` : null;
+        const discoveredCount = discoveryKey ? (discoveryData[discoveryKey] ?? 0) : 0;
+        
+        // Final Create Count: For Singletons and Auto, the authoritative count is the database discovery count
+        const createdCount = (isSingleton || isAuto) ? discoveredCount : 0;
+        
+        let validCount = (isSingleton || isAuto) ? createdCount : 0;
         let mismatchedCount = 0;
         let orphanedCount = 0;
         
@@ -96,12 +222,10 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
                 orphanedCount++;
             } else {
                 let isMismatched = false;
-                // Check screenslug mismatch
                 if (record.screenslug && record.screenslug !== screenSlug) {
                     issues.push({ key: p.contentkey, reason: `Context Mismatch: Belongs to '${record.screenslug}', placed on '${screenSlug}'` });
                     isMismatched = true;
                 }
-                // Check contenttype for hero specific logic if applicable
                 if (c.includes("hero") && config?.filters?.contenttype && record.contenttype && record.contenttype !== config.filters.contenttype) {
                     issues.push({ key: p.contentkey, reason: `Type Mismatch: Found '${record.contenttype}', Config requires '${config.filters.contenttype}'` });
                     isMismatched = true;
@@ -109,23 +233,22 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
 
                 if (isMismatched) {
                     mismatchedCount++;
-                } else {
+                } else if (isManual) {
+                    // Only count valid placements for manual mode
                     validCount++;
                 }
             }
         });
 
-        // Inventory Calculation (Now based on VALID placements)
-        const createdCount = validCount;
         const inventory: ComponentBlueprint['inventory'] = {
             allowed: allowedCount,
-            created: createdCount,
-            status: createdCount > allowedCount ? 'over' : createdCount === allowedCount ? 'at-capacity' : 'under'
+            created: validCount,
+            status: validCount > allowedCount ? 'over' : validCount === allowedCount ? 'at-capacity' : 'under'
         };
 
         const integrity: ComponentBlueprint['integrity'] = {
             total: placements.length,
-            valid: validCount,
+            valid: isManual ? validCount : (contentRows.length > 0 ? contentRows.length : 0),
             mismatched: mismatchedCount,
             orphaned: orphanedCount,
             status: placements.length === 0 ? 'pristine' : (orphanedCount > 0 ? 'broken' : mismatchedCount > 0 ? 'compromised' : 'pristine'),
@@ -142,26 +265,30 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
         const getGovernance = (type: 'crud' | 'select' | 'singleton', screenName: string | null = null): ComponentBlueprint['governance'] => {
             const isEditable = (component as any).iseditable !== false;
             
-            // 1. Source Authority Logic
+            // 1. Source Authority Logic (Standardized Matrix)
             const sourceAuthority = {
                 editable: isEditable,
-                label: isEditable ? 'Direct CRUD' : 'Managed Source',
-                details: isEditable 
-                    ? 'Administrator has full write-access to the underlying database table.' 
-                    : 'The underlying data table is a curated inventory (Read-Only).'
+                label: isSingleton ? 'Direct Edit' : (isAuto ? 'Dynamic List' : 'Pinned Items'),
+                details: isSingleton 
+                    ? 'Singleton Architecture: Directly manages the single authoritative record in the content table.' 
+                    : (isAuto 
+                        ? 'Auto-Selection Logic: Records are automatically streamed based on school/screen filters.' 
+                        : 'Manual Selection Logic: Records are hand-picked from the global pool by the administrator.')
             };
 
             // 2. Distribution Logic
             const distribution: ComponentBlueprint['governance']['distribution'] = {
                 method: method as 'auto' | 'manual',
-                label: method === 'manual' ? 'Manual Selection' : 'Auto Stream',
-                details: method === 'manual' 
-                    ? 'Records are hand-picked from the pool by the administrator.' 
-                    : 'Records are automatically streamed based on configuration filters.'
+                label: isSingleton ? 'Singleton Unit' : (isAuto ? 'Auto Stream' : 'Manual Pointers'),
+                details: isSingleton 
+                    ? 'This unit ignores selection methods as it is a unique institutional parameter.' 
+                    : (isAuto 
+                        ? 'Fluid distribution based on database queries.' 
+                        : 'Point-to-point mapping via the placement registry.')
             };
 
             // Special Labeling for "Read-Only Standards"
-            if (!isEditable && method === 'auto') {
+            if (!isEditable && isAuto) {
                 sourceAuthority.label = 'Read-Only Standards';
             }
 
@@ -429,7 +556,7 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
             return {
                 type: "Institutional Identity",
                 functionalPurpose: "Manages core philosophical statements including the Mission, Vision, and Motto that define the school's heritage.",
-                tableName: "schoolidentity",
+                tableName: (component.componentregistry as any)?.tablename || "schoolidentity",
                 variantName: "Merged Static",
                 groupMetadata,
                 schemaVariables: ["motto", "vision", "mission", "philosophy", "history"],
@@ -541,10 +668,11 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
         }
 
         // Default
+        const registryTable = (component.componentregistry as any)?.tablename;
         return {
             type: "Universal Architecture Module",
             functionalPurpose: "A standard content container used for varied informational needs across the template screens.",
-            tableName: (config as any)?.tablename || "templatecontent",
+            tableName: registryTable || (config as any)?.tablename || "[UNDEFINED_TABLE]",
             variantName: (config as any)?.variant || "Default",
             groupMetadata,
             schemaVariables: ["key", "schoolkey", "content", "isactive"],
@@ -596,6 +724,8 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
                     config.selectionmethod === null
                 ));
 
+                const blueprint = getComponentBlueprint(code, config, screen.screenslug ?? "N/A", comp);
+
                 let status: ScanResult['status'] = 'ok';
                 let details = "Blueprint Verified";
 
@@ -605,6 +735,9 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
                 } else if (isConfigMissing) {
                     status = 'config-error';
                     details = "Template Config (MISSING_ENUMS)";
+                } else if (blueprint.tableName === "[UNDEFINED_TABLE]" || blueprint.tableName === "templatecontent") {
+                    status = 'config-error';
+                    details = "ABNORMAL_SOURCE_MAPPING";
                 }
 
                 results.push({
@@ -614,13 +747,13 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
                     code: comp.componentcode ?? "N/A",
                     status,
                     details,
-                    blueprint: getComponentBlueprint(code, config, screen.screenslug ?? "N/A", comp)
+                    blueprint
                 });
             });
         });
 
         return results;
-    }, [adminData]);
+    }, [adminData, discoveryData]);
 
     const filteredResults = scanResults.filter(r => {
         const query = searchQuery.toLowerCase();
@@ -1057,6 +1190,7 @@ function DeepCard({ result, onSelect }: { result: ScanResult, onSelect: () => vo
                 <div className="flex flex-col flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-1.5">
                         <span className="px-2.5 py-1 bg-neutral-900 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">{result.blueprint.type}</span>
+                        <span className="px-2 py-1 bg-[#F54927]/10 text-[#F54927] text-[10px] font-black rounded-lg uppercase tracking-wider border border-[#F54927]/20">{result.screenName}</span>
                         <div className={`w-1.5 h-1.5 rounded-full ${isError || result.blueprint.integrity.status !== 'pristine' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
                         {result.blueprint.integrity.status !== 'pristine' && (
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${result.blueprint.integrity.status === 'broken' ? 'bg-red-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.3)]' : 'bg-orange-500 text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]'}`}>
