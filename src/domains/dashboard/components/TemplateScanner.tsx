@@ -142,7 +142,7 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
             try {
                 await Promise.all(Array.from(tasks.entries()).map(async ([key, task]) => {
                     let query = supabase
-                        .from(task.table)
+                        .from(task.table as any)
                         .select("*", { count: 'exact', head: true })
                         .eq("schoolkey", schoolKey);
                     
