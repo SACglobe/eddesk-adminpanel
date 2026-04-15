@@ -139,7 +139,7 @@ export default function NavigationRail({
             >
                 {/* ── Navigation Content (Scrollable Area) ── */}
                 <div
-                    className={`pt-4 custom-scrollbar overflow-y-auto overflow-x-hidden flex-1`}
+                    className={`pt-4 custom-scrollbar overflow-y-auto overflow-x-hidden flex-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}
                 >
                     {/* Screens label */}
                     <div className={`px-5 pb-2 ${textOpacityClass} transition-opacity duration-300`}>

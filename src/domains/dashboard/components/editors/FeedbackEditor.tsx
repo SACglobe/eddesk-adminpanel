@@ -31,20 +31,26 @@ export default function FeedbackEditor({ adminData }: FeedbackEditorProps) {
 
         setIsSubmitting(true);
         
-        // Simulate DB insertion and Email sending
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        console.log("Feedback Submitted:", {
-            rating,
-            title: title || "General Feedback",
-            content,
-            email,
-            user: (adminData?.adminusers as any)?.fullname,
-            school: adminData?.schools?.name
-        });
+        try {
+            const response = await fetch("/api/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    rating,
+                    feedback: content,
+                    contactEmail: email
+                })
+            });
 
-        setIsSubmitting(false);
-        setIsSubmitted(true);
+            if (!response.ok) throw new Error("Failed to send feedback");
+            
+            setIsSubmitted(true);
+        } catch (err) {
+            console.error("Feedback error:", err);
+            alert("Failed to send feedback. Please try again or contact support.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (isSubmitted) {
