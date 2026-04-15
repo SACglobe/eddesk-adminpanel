@@ -183,7 +183,7 @@ export async function sendSubscriptionEmail(to: string, type: EmailType, data: E
                             <tr>
                               <td align="center">
                                 <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase;">Amount Paid</p>
-                                <h2 style="margin: 8px 0 0 0; color: #0f172a; font-size: 36px; font-weight: 900;">₹${data.amount.toLocaleString('en-IN')}</h2>
+                                <h2 style="margin: 8px 0 0 0; color: #0f172a; font-size: 36px; font-weight: 900;">₹${(data.amount || 0).toLocaleString('en-IN')}</h2>
                               </td>
                             </tr>
                           </table>
