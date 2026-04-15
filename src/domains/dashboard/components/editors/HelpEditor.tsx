@@ -33,20 +33,26 @@ export default function HelpEditor({ adminData }: HelpEditorProps) {
 
         setIsSending(true);
         
-        // Simulate sending delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        console.log("Support Request Sent:", {
-            to: "support@eddesk.in",
-            from: adminName,
-            replyTo,
-            school: schoolName,
-            subject,
-            message
-        });
+        try {
+            const response = await fetch("/api/help", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subject,
+                    message,
+                    contactEmail: replyTo
+                })
+            });
 
-        setIsSending(false);
-        setIsSent(true);
+            if (!response.ok) throw new Error("Failed to send help request");
+
+            setIsSent(true);
+        } catch (err) {
+            console.error("Support error:", err);
+            alert("Failed to send request. Please try again or contact support.");
+        } finally {
+            setIsSending(false);
+        }
     };
 
     if (isSent) {
