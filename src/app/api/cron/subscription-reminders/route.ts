@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendSubscriptionEmail } from "@/lib/email";
+import { sendSubscriptionEmail, type EmailType } from "@/lib/email";
 
 // Service role client
 const supabaseAdmin = createClient(
