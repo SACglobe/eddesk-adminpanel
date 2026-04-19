@@ -5,12 +5,13 @@ export async function POST(request: Request) {
   try {
     const { amount, planName, planKey } = await request.json();
 
-    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "").trim();
+    const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 
     if (!keyId || !keySecret) {
+      console.error("Payment Error: Razorpay credentials missing from environment.");
       return NextResponse.json(
-        { error: "Razorpay credentials not configured" },
+        { error: "Payment gateway credentials not configured correctly." },
         { status: 500 }
       );
     }

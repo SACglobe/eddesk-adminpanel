@@ -303,13 +303,17 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
     if (requiresSubscription) {
         return (
             <LoadingProvider>
-                <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto">
-                    <PlansModal 
-                        initialPlans={availablePlans} 
-                        status="required"
-                        currentSubscription={adminData.subscriptions}
-                    />
-                    <LegalFooter />
+                <div className="fixed inset-0 z-[9999] bg-slate-50 overflow-y-auto flex flex-col items-center">
+                    <div className="w-full flex-grow flex flex-col items-center">
+                        <PlansModal 
+                            initialPlans={availablePlans} 
+                            status="required"
+                            currentSubscription={adminData.subscriptions}
+                        />
+                    </div>
+                    <div className="w-full py-8 bg-white border-t border-gray-100 flex justify-center">
+                        <LegalFooter />
+                    </div>
                 </div>
             </LoadingProvider>
         );

@@ -7,11 +7,12 @@ export async function POST(request: Request) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planKey } = await request.json();
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 
     if (!keySecret) {
+      console.error("Payment Verification Error: Razorpay secret missing.");
       return NextResponse.json(
-        { error: "Razorpay secret not configured" },
+        { error: "Payment verification credentials not configured." },
         { status: 500 }
       );
     }
