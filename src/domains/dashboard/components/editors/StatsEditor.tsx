@@ -346,13 +346,15 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
                             </div>
 
                             <div className="p-6 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between">
-                                <button
-                                    onClick={() => { removeRecord(editingStat.key); setEditingStat(null); }}
-                                    className="px-5 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
-                                >
-                                    Delete
-                                </button>
-                                <div className="flex items-center gap-3">
+                                {stats.some((s: any) => s.key === editingStat.key) && (
+                                    <button
+                                        onClick={() => { removeRecord(editingStat.key); setEditingStat(null); }}
+                                        className="px-5 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                                    >
+                                        Delete
+                                    </button>
+                                )}
+                                <div className="flex items-center gap-3 ml-auto">
                                     <button
                                         onClick={() => setEditingStat(null)}
                                         className="px-6 py-3 text-[13px] font-bold text-gray-500 hover:text-gray-900 rounded-xl transition-all"

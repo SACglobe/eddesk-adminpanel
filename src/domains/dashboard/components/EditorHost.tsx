@@ -52,6 +52,7 @@ interface EditorHostProps {
     allScreens?: TemplateScreen[];
     allowedHeroMediaType?: 'image' | 'video' | 'both';
     adminData?: any;
+    onRefreshData?: () => Promise<void>;
 }
 
 export default function EditorHost({
@@ -66,7 +67,8 @@ export default function EditorHost({
     availablePlans = [],
     allScreens,
     allowedHeroMediaType,
-    adminData
+    adminData,
+    onRefreshData
 }: EditorHostProps) {
     const isGroup = activeComponentData?.isGroup;
     const groupName = activeComponentData?.groupName;
@@ -288,7 +290,7 @@ export default function EditorHost({
                                                 }
 
                                                 if (isHeroCode) {
-                                                    return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} />;
+                                                    return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "schoolstats") {
                                                     return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;

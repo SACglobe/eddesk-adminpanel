@@ -253,6 +253,7 @@ export default function ActivitiesEditor({ component, screen, schoolKey }: Activ
                         showDeleteConfirm={showDeleteConfirm}
                         setShowDeleteConfirm={setShowDeleteConfirm}
                         removeRecord={removeRecord}
+                        allActivities={allActivities}
                         schoolKey={schoolKey}
                     />
                 )}
@@ -403,7 +404,7 @@ function ActivityCard({ activity, onClick }: { activity: any; onClick?: () => vo
     );
 }
 
-function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config, handleFileSelect, pendingFile, pendingPreviewUrl, showDeleteConfirm, setShowDeleteConfirm, removeRecord, schoolKey }: any) {
+function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config, handleFileSelect, pendingFile, pendingPreviewUrl, showDeleteConfirm, setShowDeleteConfirm, removeRecord, allActivities, schoolKey }: any) {
     const [formData, setFormData] = useState(record);
 
     if (showDeleteConfirm) {
@@ -509,7 +510,7 @@ function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config,
                     </div>
 
                     <div className="p-8 lg:p-12 bg-gray-50/50 flex items-center justify-between border-t border-gray-100">
-                        {record.key ? (
+                        {allActivities.some((a: any) => a.key === record.key) ? (
                             <button
                                 onClick={() => setShowDeleteConfirm(true)}
                                 className="flex items-center gap-2 px-6 py-4 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
@@ -519,7 +520,7 @@ function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config,
                             </button>
                         ) : <div />}
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 ml-auto">
                             <button
                                 onClick={onClose}
                                 className="px-8 py-4 text-[13px] font-black text-gray-400 hover:text-gray-900 transition-all"

@@ -413,7 +413,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                     {leadership.some(l => l.key === editingItem.key) ? 'Update' : 'Add'} Board Member
                                 </h3>
                                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                    Manage profile details, message and signature
+                                    Manage profile details and message
                                 </p>
                             </div>
                             <button onClick={handleCloseModal} className="w-12 h-12 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-gray-400 hover:text-red-500 transition-all">
@@ -434,7 +434,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                             <h4 className="text-[20px] font-black text-gray-900 truncate px-2">{editingItem.name || "Full Name"}</h4>
                                             <p className="text-[13px] text-gray-500 font-medium line-clamp-3 italic px-4 mt-4">{editingItem.message || "Message content goes here..."}</p>
                                         </div>
-                                        {editingItem.signatureurl && <img src={editingItem.signatureurl} alt="" className="h-10 w-auto opacity-50 grayscale" />}
+                                        {/* {editingItem.signatureurl && <img src={editingItem.signatureurl} alt="" className="h-10 w-auto opacity-50 grayscale" />} */}
                                     </div>
                                 </div>
 
@@ -482,7 +482,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                                 aspectRatio="square"
                                             />
                                             
-                                            <MediaUpload
+                                            {/* <MediaUpload
                                                 value={editingItem.signature_url || ""}
                                                 type="image"
                                                 onChange={(url) => setEditingItem({ ...editingItem, signature_url: url })}
@@ -495,7 +495,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                                 label="Author Signature"
                                                 description="Upload a clear image of their signature (PNG preferred)"
                                                 aspectRatio="video"
-                                            />
+                                            /> */}
                                         </div>
                                     </div>
 
@@ -527,13 +527,15 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
 
                         {/* Footer */}
                         <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
-                            <button
-                                onClick={() => { if (confirm("Delete this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                            >
-                                Delete
-                            </button>
-                            <div className="flex gap-3">
+                            {leadership.some(l => l.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { if (confirm("Delete this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                    className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                >
+                                    Delete
+                                </button>
+                            )}
+                            <div className="flex gap-3 ml-auto">
                                 <button
                                     onClick={handleCloseModal}
                                     className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"

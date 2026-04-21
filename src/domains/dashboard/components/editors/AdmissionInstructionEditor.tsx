@@ -176,13 +176,15 @@ export default function AdmissionInstructionEditor({ component, schoolKey }: Adm
                         </div>
 
                         <div className="p-8 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                            <button
-                                onClick={() => { removeRecord(editingItem.key); setEditingItem(null); }}
-                                className="px-6 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 transition-all"
-                            >
-                                Delete Step
-                            </button>
-                            <div className="flex gap-4">
+                            {items.some(i => i.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { removeRecord(editingItem.key); setEditingItem(null); }}
+                                    className="px-6 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 transition-all"
+                                >
+                                    Delete Step
+                                </button>
+                            )}
+                            <div className="flex gap-4 ml-auto">
                                 <button onClick={() => setEditingItem(null)} className="px-8 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                 <button
                                     disabled={isSaving || !editingItem.title}

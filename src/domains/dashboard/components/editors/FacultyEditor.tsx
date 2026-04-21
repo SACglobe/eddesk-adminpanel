@@ -529,13 +529,15 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
 
                         {/* Footer Actions */}
                         <div className="p-8 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
-                            <button
-                                onClick={() => { if (confirm("Remove this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-8 py-3 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                            >
-                                Delete Profile
-                            </button>
-                            <div className="flex gap-4">
+                            {faculty.some(f => f.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { if (confirm("Remove this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                    className="px-8 py-3 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                >
+                                    Delete Profile
+                                </button>
+                            )}
+                            <div className="flex gap-4 ml-auto">
                                 <button
                                     onClick={handleCloseModal}
                                     className="px-8 py-3 text-[14px] font-black text-gray-400 hover:text-gray-900 transition-all"

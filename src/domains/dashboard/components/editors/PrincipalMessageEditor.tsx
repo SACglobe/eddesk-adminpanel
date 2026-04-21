@@ -232,7 +232,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
     return (
         <BaseEditor
             title="Principal's Message"
-            description="Manage the principal's message, profile photo, and official signature."
+            description="Manage the principal's message and profile photo."
             icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -254,14 +254,17 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                             <div
                                 key={`empty-${index}`}
                                 onClick={() => canEditSlot ? (isEditable ? handleAddNew() : setPickingForIndex(index)) : undefined}
-                                className={`p-10 border-2 border-dashed border-gray-100 rounded-[40px] flex flex-col items-center justify-center gap-4 text-gray-400 min-h-[300px] ${canEditSlot ? 'hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 cursor-pointer transition-all group' : 'opacity-70 bg-gray-50/30'}`}
+                                className={`p-8 border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center gap-4 text-gray-400 min-h-[300px] ${canEditSlot ? 'hover:border-red-200 hover:text-[#F54927] hover:bg-red-50/20 cursor-pointer transition-all group' : 'opacity-70 bg-gray-50/30'}`}
                             >
-                                <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors ${canEditSlot ? 'bg-gray-50 group-hover:bg-red-100' : 'bg-gray-100/50'}`}>
-                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${canEditSlot ? 'bg-gray-50 group-hover:bg-red-100' : 'bg-gray-100/50'}`}>
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                     </svg>
                                 </div>
-                                <p className="text-[18px] font-black tracking-tight italic">Set Principal Message Profile</p>
+                                <div className="text-center">
+                                    <p className="text-[14px] font-black tracking-tight">Slot {index + 1}</p>
+                                    <p className="text-[11px] font-medium text-gray-400">{isEditable ? "Set Principal Message" : "No Content"}</p>
+                                </div>
                             </div>
                         );
                     }
@@ -270,7 +273,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                         <div
                             key={item.key}
                             onClick={() => isEditable ? handleEditItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
-                            className={`group relative rounded-[40px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-500 flex flex-col items-center p-12 text-center min-h-[500px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
+                            className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-500 flex flex-col items-center p-12 text-center min-h-[500px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
                         >
                             <div className="w-40 h-40 rounded-full overflow-hidden mb-8 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">
                                 {item.imageurl ? (
@@ -297,11 +300,11 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                 </p>
                             </div>
 
-                            {item.signatureurl && (
+                            {/* {item.signatureurl && (
                                 <div className="mt-8 h-16 flex items-center justify-center">
                                     <img src={item.signatureurl} alt="Signature" className="h-full w-auto object-contain opacity-50 grayscale" />
                                 </div>
-                            )}
+                            )} */}
 
                             <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 z-10">
                                 {isEditable ? (
@@ -388,7 +391,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                         <h4 className="text-[22px] font-black text-gray-900 truncate px-2 leading-tight">{editingItem.name || "Full Name"}</h4>
                                         <div className="text-[13px] text-gray-500 font-medium line-clamp-4 italic px-2 mt-4 leading-relaxed whitespace-pre-wrap">{editingItem.message || "Message content goes here..."}</div>
                                     </div>
-                                    {editingItem.signatureurl && <img src={editingItem.signatureurl} alt="" className="h-12 w-auto opacity-50 grayscale" />}
+                                    {/* {editingItem.signatureurl && <img src={editingItem.signatureurl} alt="" className="h-12 w-auto opacity-50 grayscale" />} */}
                                 </div>
                             </div>
 
@@ -433,7 +436,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                             allowVideo={false}
                                             aspectRatio="square"
                                         />
-                                        <MediaUpload
+                                        {/* <MediaUpload
                                             value={editingItem.signatureurl || ""}
                                             type="image"
                                             onChange={(url) => setEditingItem({ ...editingItem, signatureurl: url })}
@@ -447,7 +450,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                             description="Scanned transparent signature"
                                             allowVideo={false}
                                             aspectRatio="any"
-                                        />
+                                        /> */}
                                     </div>
 
                                     <div className="space-y-2">
@@ -476,13 +479,15 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                         </div>
 
                         <div className="p-8 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between">
-                            <button
-                                onClick={() => { if (confirm("Delete this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                            >
-                                Delete
-                            </button>
-                            <div className="flex gap-4">
+                            {leadership.some(l => l.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { if (confirm("Delete this profile?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                    className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                >
+                                    Delete
+                                </button>
+                            )}
+                            <div className="flex gap-4 ml-auto">
                                 <button onClick={handleCloseModal} className="px-8 py-4 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                 <button
                                     disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingImageFile)}

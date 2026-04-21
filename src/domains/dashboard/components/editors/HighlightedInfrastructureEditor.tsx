@@ -379,13 +379,15 @@ export default function HighlightedInfrastructureEditor({ component, schoolKey }
                         </div>
 
                         <div className="p-8 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between px-10">
-                            <button
-                                onClick={() => { if (confirm("Delete this facility?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-6 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 transition-all"
-                            >
-                                Delete Feature
-                            </button>
-                            <div className="flex gap-4">
+                            {infrastructure.some(i => i.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { if (confirm("Delete this facility?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                    className="px-6 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 transition-all"
+                                >
+                                    Delete Feature
+                                </button>
+                            )}
+                            <div className="flex gap-4 ml-auto">
                                 <button onClick={handleCloseModal} className="px-8 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                 <button
                                     disabled={isSaving || !editingItem.title}

@@ -557,13 +557,15 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                             </div>
                         </div>
                         <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
-                            <button
-                                onClick={() => { if (confirm("Delete this facility?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                            >
-                                Delete
-                            </button>
-                            <div className="flex gap-3">
+                            {facilities.some(f => f.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { if (confirm("Delete this facility?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                    className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                >
+                                    Delete
+                                </button>
+                            )}
+                            <div className="flex gap-3 ml-auto">
                                 <button
                                     onClick={handleCloseModal}
                                     className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"

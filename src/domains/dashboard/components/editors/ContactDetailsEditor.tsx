@@ -267,7 +267,7 @@ export default function ContactDetailsEditor({ component, schoolKey }: ContactDe
                         </div>
 
                         <div className="p-6 border-t border-gray-50 bg-gray-50/30 flex items-center justify-end">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 ml-auto">
                                 <button
                                     onClick={() => setEditingDetails(null)}
                                     className="px-6 py-3 text-[13px] font-bold text-gray-500 hover:text-gray-900 rounded-xl transition-all"

@@ -607,15 +607,17 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
 
                             {/* Standard Action Footer */}
                             <div className="px-12 py-8 bg-gray-50/30 flex items-center justify-between border-t border-gray-100">
-                                <button
-                                    onClick={() => { if (confirm("Archive this event?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                    className="px-6 py-4 text-[13px] font-black text-gray-400 hover:text-red-600 rounded-2xl transition-all active:scale-95 flex items-center gap-3"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Archive Entry</span>
-                                </button>
+                                {events.some(e => e.key === editingItem.key) && (
+                                    <button
+                                        onClick={() => { if (confirm("Archive this event?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                        className="px-6 py-4 text-[13px] font-black text-gray-400 hover:text-red-600 rounded-2xl transition-all active:scale-95 flex items-center gap-3"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Archive Entry</span>
+                                    </button>
+                                )}
 
-                                <div className="flex gap-4">
+                                <div className="flex gap-4 ml-auto">
                                     <button
                                         onClick={handleCloseModal}
                                         className="px-8 py-4 text-[13px] font-black text-gray-500 hover:text-gray-900 transition-all rounded-2xl"

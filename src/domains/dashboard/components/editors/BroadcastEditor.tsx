@@ -420,14 +420,16 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
 
                                     {/* Action Footer */}
                                     <div className="p-6 md:p-7 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between flex-shrink-0">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowDeleteConfirm(true)}
-                                            className="px-5 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                        >
-                                            Delete
-                                        </button>
-                                        <div className="flex items-center gap-3">
+                                        {broadcasts.some(b => b.key === editingBroadcast.key) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDeleteConfirm(true)}
+                                                className="px-5 py-3 text-[13px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
+                                        <div className="flex items-center gap-3 ml-auto">
                                             <button
                                                 type="button"
                                                 onClick={() => setEditingBroadcast(null)}

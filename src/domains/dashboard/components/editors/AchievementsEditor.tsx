@@ -530,13 +530,15 @@ function AchievementModal({ record, onClose, onSave, isSaving, isUploading, conf
                     </div>
                 </div>
                 <div className="p-6 bg-gray-50/50 flex items-center justify-between border-t border-gray-50">
-                    <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                    >
-                        Delete
-                    </button>
-                    <div className="flex gap-3">
+                    {allAchievements.some((a: any) => a.key === record.key) && (
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                        >
+                            Delete
+                        </button>
+                    )}
+                    <div className="flex gap-3 ml-auto">
                         <button
                             onClick={onClose}
                             className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all"

@@ -395,13 +395,15 @@ export default function AcademicsListEditor({ component, schoolKey }: AcademicsL
                             </div>
                         </div>
                         <div className="p-10 bg-neutral-50/50 flex items-center justify-between border-t border-gray-100">
-                            <button
-                                onClick={() => { if (confirm("Delete this academic record?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
-                                className="px-8 py-4 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all active:scale-95"
-                            >
-                                Delete Record
-                            </button>
-                            <div className="flex gap-4">
+                            {academics.some(f => f.key === editingItem.key) && (
+                                <button
+                                    onClick={() => { if (confirm("Delete this academic record?")) { removeRecord(editingItem.key); handleCloseModal(); } }}
+                                    className="px-8 py-4 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all active:scale-95"
+                                >
+                                    Delete Record
+                                </button>
+                            )}
+                            <div className="flex gap-4 ml-auto">
                                 <button
                                     onClick={handleCloseModal}
                                     className="px-8 py-4 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all active:scale-95"

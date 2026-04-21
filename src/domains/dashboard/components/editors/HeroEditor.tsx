@@ -2,6 +2,7 @@
 import { generateId } from '@/lib/generateId';
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useLoading } from "@/providers/LoadingProvider";
 import BaseEditor from "./BaseEditor";
 import { useComponentData, getInitialValuesFromFilters } from "@/domains/dashboard/hooks/useComponentData";
 import { uploadFile } from "@/lib/supabase/storage";
@@ -16,11 +17,12 @@ interface HeroEditorProps {
     screen: TemplateScreen;
     schoolKey: string;
     allScreens: TemplateScreen[];
-    activeComponentData?: any;
     allowedMediaType?: 'image' | 'video' | 'both';
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType }: HeroEditorProps) {
+export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType, onRefreshData }: HeroEditorProps) {
+    const { setLoading } = useLoading();
     const supabase = createClient();
     const tableName = (component.componentregistry as any)?.tablename;
     const initialItems = (component as any).content || [];
@@ -75,6 +77,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [isUpdatingSetting, setIsUpdatingSetting] = useState(false);
+    const [updatingType, setUpdatingType] = useState<string | null>(null);
 
     // Deferred upload: holds the raw File and a local blob URL for preview before publish
     const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -273,7 +276,12 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
     };
 
     async function updateSchoolMediaSetting(type: 'image' | 'video' | 'both') {
+        if (isUpdatingSetting) return;
+
         setIsUpdatingSetting(true);
+        setUpdatingType(type);
+        setLoading(true);
+
         try {
             const { data: schoolData, error: fetchError } = await supabase
                 .from('schools')
@@ -300,12 +308,19 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
             if (updateError) throw updateError;
             
-            window.location.reload(); 
+            // If refresh callback exists, use it instead of reload for smoother UX
+            if (onRefreshData) {
+                await onRefreshData();
+            } else {
+                window.location.reload(); 
+            }
         } catch (err: any) {
             console.error("Failed to update school setting:", err);
             alert("Failed to update section setting: " + err.message);
         } finally {
             setIsUpdatingSetting(false);
+            setUpdatingType(null);
+            setLoading(false);
         }
     }
 
@@ -324,8 +339,8 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                             ? "bg-white text-gray-900 shadow-sm" 
                             : "text-gray-400 hover:text-gray-600"} ${isUpdatingSetting ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                        {isUpdatingSetting && isActive ? (
-                            <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                        {isUpdatingSetting && updatingType === type ? (
+                            <div className="w-3 h-3 border-2 border-[#F54927] border-t-transparent rounded-full animate-spin mx-auto" />
                         ) : type}
                     </button>
                 );
@@ -543,7 +558,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                     </div>
 
                     {/* Mobile Delete */}
-                    {!isFixedMode && (
+                    {!isFixedMode && slides.some(s => s.key === editingSlide.key) && (
                         <button
                             onClick={() => {
                                 if (confirm("Delete this slide?")) {
@@ -843,13 +858,15 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                 </div>
 
                                 <div className="p-8 border-t border-gray-50 bg-white sticky bottom-0 z-20 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                                    <button
-                                        onClick={() => { if (confirm('Delete slide?')) { removeRecord(editingSlide.key); handleCancel(); } }}
-                                        className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                                    >
-                                        Delete
-                                    </button>
-                                    <div className="flex items-center gap-3">
+                                    {slides.some(s => s.key === editingSlide.key) && (
+                                        <button
+                                            onClick={() => { if (confirm('Delete slide?')) { removeRecord(editingSlide.key); handleCancel(); } }}
+                                            className="px-6 py-3.5 text-[13px] font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
+                                    <div className="flex items-center gap-3 ml-auto">
                                         <button onClick={handleCancel} className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                         <button
                                             disabled={isUploading || isSaving || (!editingSlide.mediaurl && !pendingFile)}

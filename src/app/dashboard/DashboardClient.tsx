@@ -254,6 +254,41 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
 
     const school = adminData?.schools;
 
+    // Refresh data without page reload
+    const refreshAdminData = async () => {
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc("get_admin_initial_data");
+
+        if (!error && data) {
+            const typedData = data as AdminInitialData;
+            
+            // Re-apply deduplication logic from page.tsx to keep mapping consistent
+            const uniqueScreensMap = new Map<string, TemplateScreen>();
+            typedData.templatescreens?.forEach(screen => {
+                const slug = screen.screenslug ?? '';
+                if (!uniqueScreensMap.has(slug)) {
+                    if (screen.components) {
+                        const uniqueComponents = new Map<string, TemplateComponent>();
+                        screen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
+                        screen.components = Array.from(uniqueComponents.values());
+                    }
+                    uniqueScreensMap.set(slug, screen);
+                } else {
+                    const existingScreen = uniqueScreensMap.get(slug)!;
+                    if (screen.components && existingScreen.components) {
+                        const uniqueComponents = new Map<string, TemplateComponent>();
+                        existingScreen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
+                        screen.components.forEach((comp: TemplateComponent) => uniqueComponents.set(comp.key, comp));
+                        existingScreen.components = Array.from(uniqueComponents.values());
+                    }
+                }
+            });
+            typedData.templatescreens = Array.from(uniqueScreensMap.values());
+            
+            setAdminData(typedData);
+        }
+    };
+
     // Handle screen selection
     const handleSelectScreen = (key: string) => {
         const isGeneral = GENERAL_ITEMS.some(item => item.key === key);
@@ -433,6 +468,7 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
                                 onSearch={() => setIsSearchOpen(true)}
                                 allScreens={adminData?.templatescreens ?? []}
                                 allowedHeroMediaType={adminData?.schools?.componentvariants?.[selectedScreen?.screenslug || '']?.hero as 'image' | 'video' | 'both' | undefined}
+                                onRefreshData={refreshAdminData}
                             />
                         </div>
                     </div>

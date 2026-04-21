@@ -184,7 +184,7 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
 
     const getComponentBlueprint = (code: string, config: any, screenSlug: string, component: TemplateComponent): ComponentBlueprint => {
         const c = code.toLowerCase();
-        const allowedCount = parseInt(String(config?.itemcount)) || (config?.selectionmethod === 'manual' ? (component.contentplacements?.length || 3) : 3) || 1;
+        let allowedCount = parseInt(String(config?.itemcount)) || (config?.selectionmethod === 'manual' ? (component.contentplacements?.length || 3) : 3) || 1;
         const method = config?.selectionmethod || 'auto';
         
         // Inject Implicit Filters
@@ -200,6 +200,14 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
                            c === "hero" || c.startsWith("hero") || c.endsWith("hero") || 
                            ["videohero", "herobanner", "heroslider", "herosection", "heroslide"].includes(c) ||
                            ["principalmessage", "boardmembersmessage", "board_message", "boardmessage", "broadcast", "schoolidentity", "visionmission", "contactdetails"].includes(c);
+        
+        // Override Hero allowed count if in Video mode
+        if (c.includes("hero")) {
+            const allowedType = config?.variant || adminData.schools.componentvariants?.[screenSlug]?.hero || "both";
+            if (allowedType === 'video') {
+                allowedCount = 1;
+            }
+        }
         
         const isAuto = method === 'auto';
         const isManual = method === 'manual';

@@ -329,13 +329,15 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                             </div>
 
                             <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50/80 flex justify-between items-center rounded-b-[28px]">
-                                <button
-                                    onClick={() => { removeRecord(editingResult.key); setEditingResult(null); }}
-                                    className="px-5 py-3 text-[13px] font-black text-red-500 hover:text-white hover:bg-red-500 shadow-sm border border-red-100 hover:border-transparent rounded-xl transition-all active:scale-95 bg-white"
-                                >
-                                    Delete
-                                </button>
-                                <div className="flex items-center gap-3">
+                                {results.some(r => r.key === editingResult.key) && (
+                                    <button
+                                        onClick={() => { if (confirm("Are you sure you want to delete this record?")) { removeRecord(editingResult.key); setEditingResult(null); } }}
+                                        className="px-5 py-3 text-[13px] font-black text-red-500 hover:text-white hover:bg-red-500 shadow-sm border border-red-100 hover:border-transparent rounded-xl transition-all active:scale-95 bg-white"
+                                    >
+                                        Delete
+                                    </button>
+                                )}
+                                <div className="flex items-center gap-3 ml-auto">
                                     <button
                                         onClick={() => setEditingResult(null)}
                                         className="px-5 py-3 text-[13px] font-bold text-gray-500 hover:text-gray-900 rounded-xl transition-all hover:bg-white border border-transparent hover:border-gray-200 active:scale-95"
