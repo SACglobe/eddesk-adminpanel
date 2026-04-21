@@ -19,6 +19,7 @@ interface HeroEditorProps {
     allScreens: TemplateScreen[];
     allowedMediaType?: 'image' | 'video' | 'both';
     onRefreshData?: () => Promise<void>;
+    activeComponentData?: any;
 }
 
 export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType, onRefreshData }: HeroEditorProps) {
