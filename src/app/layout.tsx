@@ -10,6 +10,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "EdDesk Admin",
   description: "EdDesk School Website CMS Admin Panel",
+  icons: {
+    icon: "/logo-icon.png",
+    apple: "/logo-icon.png",
+  },
 };
 
 export default function RootLayout({

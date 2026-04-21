@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithEmail } from "@/domains/auth/queries";
 import { activateAccountAction } from "@/domains/auth/actions";
 import { createClient } from "@/lib/supabase/client";
 import BrandLogo from "@/components/BrandLogo";
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isSettingPassword, setIsSettingPassword] = useState(false);
@@ -19,12 +20,45 @@ export default function LoginPage() {
     const [hasSession, setHasSession] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    // 0. Handle email pre-fill from query parameters
+    useEffect(() => {
+        const paramEmail = searchParams.get("email");
+        if (paramEmail) setEmail(paramEmail);
+    }, [searchParams]);
+
     useEffect(() => {
         const supabase = createClient();
 
+        const checkUserStatus = async (user: any) => {
+            if (!user) return;
+            
+            const { data, error: statusError } = await supabase
+                .from("adminusers")
+                .select("status")
+                .eq("authuserid", user.id)
+                .single();
+
+            if (statusError) {
+                console.error("Error fetching user status:", statusError);
+                return;
+            }
+
+            if (data?.status === "pending") {
+                // Force password setup view if user hasn't completed activation
+                setIsSettingPassword(true);
+            } else if (data?.status === "confirmed") {
+                // Already activated, move to dashboard
+                router.push("/dashboard");
+                router.refresh();
+            }
+        };
+
         // 1. Initial session check
         supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
-            if (session) setHasSession(true);
+            if (session) {
+                setHasSession(true);
+                checkUserStatus(session.user);
+            }
         });
 
         // 2. Automate session activation for invited users
@@ -43,7 +77,10 @@ export default function LoginPage() {
                     access_token: accessToken,
                     refresh_token: refreshToken
                 }).then(({ data, error: sessionError }: { data: any, error: any }) => {
-                    if (data.session) setHasSession(true);
+                    if (data.session) {
+                        setHasSession(true);
+                        checkUserStatus(data.session.user);
+                    }
                     if (sessionError) console.error("Auto session activation failed:", sessionError);
                 });
             }
@@ -53,6 +90,7 @@ export default function LoginPage() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
             if (session) {
                 setHasSession(true);
+                checkUserStatus(session.user);
             } else if (event === "SIGNED_OUT") {
                 setHasSession(false);
             }
@@ -66,7 +104,7 @@ export default function LoginPage() {
         });
 
         return () => subscription.unsubscribe();
-    }, [hasSession]); // Dependencies ensure re-run if local session state changes
+    }, [hasSession, router]); // Dependencies ensure re-run if local session state changes
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
@@ -293,5 +331,20 @@ export default function LoginPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }

@@ -223,14 +223,14 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-slate-50/95 backdrop-blur-md flex flex-col items-center justify-center p-4 overflow-y-auto">
+    <div className="w-full relative bg-slate-50/95 backdrop-blur-md flex flex-col items-center justify-start p-4">
       {/* Razorpay Script */}
       <Script 
         src="https://checkout.razorpay.com/v1/checkout.js" 
         onLoad={() => setIsRazorpayLoaded(true)}
       />
 
-      <div className="w-full max-w-6xl mx-auto py-12 relative">
+      <div className="w-full max-w-6xl mx-auto py-8 md:py-12 relative">
         {onClose && status !== "required" && (
           <button 
             onClick={onClose}

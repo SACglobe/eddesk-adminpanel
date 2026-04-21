@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendSubscriptionEmail } from "@/lib/email";
+import { sendSubscriptionEmail, type EmailType } from "@/lib/email";
 
 // Service role client
 const supabaseAdmin = createClient(
@@ -10,20 +10,17 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
   try {
-    // 1. Basic security check (Optional but recommended for Vercel Cron)
     const authHeader = request.headers.get('authorization');
     if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       // return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      // Note: During initial setup, we might allow bypass if CRON_SECRET is not yet set
     }
 
-    // 2. Fetch all relevant subscriptions with school and plan details
     const { data: subs, error: subsError } = await supabaseAdmin
       .from("subscriptions")
       .select(`
         *,
-        schools (name, email),
-        plans (name, graceperiod)
+        schools (key, name, email, slug, customdomain),
+        plans (key, name, graceperiod, billgenerationdate)
       `)
       .eq('status', 'active');
 
@@ -37,14 +34,7 @@ export async function GET(request: Request) {
     for (const sub of (subs || [])) {
       if (!sub.schools?.email || !sub.enddate) continue;
 
-      const endDate = new Date(sub.enddate);
-      endDate.setHours(0, 0, 0, 0);
-
-      // Calculations in IST context (assuming database dates are stored or intended as local)
-      // Difference in days: (Expiry - Today)
-      const diffTime = endDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+      const billDay = sub.plans?.billgenerationdate || 1;
       const gracePeriod = sub.plans?.graceperiod || 1;
       const schoolEmail = sub.schools.email;
       const schoolName = sub.schools?.name ?? "School";
@@ -53,26 +43,56 @@ export async function GET(request: Request) {
       const emailData = {
         schoolName,
         planName,
-        amount: 0, // Not needed for reminders
+        amount: 0,
         date: new Date().toLocaleDateString('en-IN')
       };
 
-      // Email 1: 5 days before expiration
-      if (diffDays === 5) {
-        await sendSubscriptionEmail(schoolEmail, 'REMINDER', emailData);
+      // Scenario 1-6 are based on billgenerationdate (relative to month cycles)
+      // Scenario 7 is based on absolute enddate + 6 days
+
+      let triggerType: EmailType | null = null;
+
+      // Helper for day-of-month matching with offsets
+      const checkDay = (offset: number) => {
+        const target = new Date(today);
+        target.setDate(today.getDate() - offset);
+        return target.getDate() === billDay;
+      };
+
+      if (checkDay(-5)) triggerType = 'REMINDER_5_DAY';
+      else if (checkDay(0)) triggerType = 'BILL_GENERATED';
+      else if (checkDay(1)) triggerType = 'BILL_PENDING';
+      else if (checkDay(gracePeriod - 2)) triggerType = 'GRACE_WARNING_2_DAY';
+      else if (checkDay(gracePeriod + 1)) triggerType = 'SHUTDOWN_NOTICE';
+      else if (checkDay(gracePeriod + 10)) triggerType = 'LAPSED_NOTICE';
+
+      if (triggerType) {
+        // Double check status before sending (if needed)
+        await sendSubscriptionEmail(schoolEmail, triggerType, emailData);
         sentCount++;
-      } 
-      // Email 2: Exactly on expiration (Start of Grace Period)
-      else if (diffDays === 0) {
-        await sendSubscriptionEmail(schoolEmail, 'GRACE_PERIOD', {
+      }
+
+      // Scenario 7: Internal Escalation (+6 days after enddate)
+      const endDate = new Date(sub.enddate);
+      endDate.setHours(0, 0, 0, 0);
+      const diffTime = today.getTime() - endDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 6) {
+        // Fetch extra school details (Phone/Address)
+        const { data: contact } = await supabaseAdmin
+          .from('contactdetails')
+          .select('phone, address')
+          .eq('schoolkey', sub.schoolkey)
+          .single();
+
+        await sendSubscriptionEmail('support@eddesk.in', 'SUPPORT_ESCALATION', {
           ...emailData,
-          date: `${gracePeriod} days` // Inform about grace duration
+          customerDomain: sub.schools.customdomain || sub.schools.slug || "No domain",
+          date: endDate.toLocaleDateString('en-IN'), // Expiration date
+          paymentId: contact?.phone || "No Phone",
+          orderId: contact?.address || "No Address"
         });
-        sentCount++;
-      } 
-      // Email 3: Exactly at the end of the Grace Period
-      else if (diffDays === -gracePeriod) {
-        await sendSubscriptionEmail(schoolEmail, 'FINAL_EXPIRY', emailData);
         sentCount++;
       }
     }
