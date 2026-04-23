@@ -287,7 +287,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                             : "inset-6 md:inset-12 lg:inset-24 flex items-center justify-center p-4 pointer-events-none"
                     }`}>
                         <div 
-                            className={`bg-white shadow-2xl overflow-hidden animate-in duration-300 flex pointer-events-auto ${
+                            className={`bg-white shadow-2xl overflow-hidden animate-in duration-300 flex flex-col pointer-events-auto ${
                                 isMobile 
                                     ? "w-full h-full flex-col" 
                                     : "w-full max-w-4xl max-h-full rounded-[32px] zoom-in-95"
@@ -396,6 +396,7 @@ export default function BroadcastEditor({ component, screen, schoolKey }: Broadc
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Expiry Date</label>
                                             <input
                                                 type="date"
+                                                min={new Date().toISOString().split("T")[0]}
                                                 value={editingBroadcast.expiresat ? new Date(editingBroadcast.expiresat).toISOString().split("T")[0] : ""}
                                                 onChange={e => setEditingBroadcast({ ...editingBroadcast, expiresat: e.target.value ? new Date(e.target.value).toISOString() : null })}
                                                 className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[18px] focus:bg-white focus:border-[#F54927]/20 transition-all text-[14px] font-bold outline-none"

@@ -178,7 +178,18 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
     };
 
     const handleSave = async () => {
-        if (!editingItem.title || (hasImage && !editingItem.imageurl && !pendingFile)) return;
+        if (!editingItem.title?.trim()) {
+            alert("Please enter a facility name.");
+            return;
+        }
+        if (!editingItem.description?.trim()) {
+            alert("Please provide a description.");
+            return;
+        }
+        if (hasImage && !editingItem.imageurl && !pendingFile) {
+            alert("Please upload a facility photo.");
+            return;
+        }
         setIsSaving(true);
         try {
             let finalItem = { ...editingItem };
@@ -573,7 +584,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (hasImage && !editingItem.imageurl && !pendingFile)}
+                                    disabled={isSaving || isUploading}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

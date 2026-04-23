@@ -192,7 +192,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                 // Upload Signature if pending
                 if (pendingSignatureFile) {
                     const uploadedUrl = await uploadFile(pendingSignatureFile, schoolKey, "principal");
-                    finalItem.signature_url = uploadedUrl;
+                    finalItem.signatureurl = uploadedUrl;
                 }
             } catch (err) {
                 console.error("Upload failed:", err);
@@ -395,87 +395,91 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-12 space-y-10 no-scrollbar">
-                                <section className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-6">
+                        <div className="flex-1 overflow-y-auto p-12 no-scrollbar">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                                <div className="lg:col-span-7 space-y-10">
+                                    <section className="space-y-8">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Full Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={editingItem.name || ""}
+                                                    onChange={e => setEditingItem({ ...editingItem, name: e.target.value })}
+                                                    className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none shadow-inner"
+                                                    placeholder="e.g. Dr. Jane Smith"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Designation</label>
+                                                <input
+                                                    type="text"
+                                                    value={editingItem.designation || ""}
+                                                    onChange={e => setEditingItem({ ...editingItem, designation: e.target.value })}
+                                                    className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none shadow-inner"
+                                                    placeholder="Principal"
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Full Name</label>
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Quote (Heading)</label>
                                             <input
                                                 type="text"
-                                                value={editingItem.name || ""}
-                                                onChange={e => setEditingItem({ ...editingItem, name: e.target.value })}
+                                                value={editingItem.quote || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, quote: e.target.value })}
                                                 className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none shadow-inner"
-                                                placeholder="e.g. Dr. Jane Smith"
+                                                placeholder="A short punchy quote or heading..."
                                             />
                                         </div>
+
                                         <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Designation</label>
-                                            <input
-                                                type="text"
-                                                value={editingItem.designation || ""}
-                                                onChange={e => setEditingItem({ ...editingItem, designation: e.target.value })}
-                                                className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none shadow-inner"
-                                                placeholder="Principal"
+                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Full Message</label>
+                                            <textarea
+                                                value={editingItem.message || ""}
+                                                onChange={e => setEditingItem({ ...editingItem, message: e.target.value })}
+                                                rows={10}
+                                                className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[32px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none resize-none no-scrollbar shadow-inner"
+                                                placeholder="Write the full message from the principal..."
                                             />
                                         </div>
-                                    </div>
+                                    </section>
+                                </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <MediaUpload
-                                            value={editingItem.imageurl || ""}
-                                            type="image"
-                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
-                                            onFileSelect={handleImageSelect}
-                                            isStaged={!!pendingImageFile}
-                                            stagedPreviewUrl={pendingImagePreviewUrl}
-                                            isExternalUploading={isUploading}
-                                            schoolKey={schoolKey}
-                                            category="principal"
-                                            label="Principal Photo"
-                                            description="High-quality professional headshot"
-                                            allowVideo={false}
-                                            aspectRatio="square"
-                                        />
-                                        {/* <MediaUpload
-                                            value={editingItem.signatureurl || ""}
-                                            type="image"
-                                            onChange={(url) => setEditingItem({ ...editingItem, signatureurl: url })}
-                                            onFileSelect={handleSignatureSelect}
-                                            isStaged={!!pendingSignatureFile}
-                                            stagedPreviewUrl={pendingSignaturePreviewUrl}
-                                            isExternalUploading={isUploading}
-                                            schoolKey={schoolKey}
-                                            category="principal"
-                                            label="Official Signature"
-                                            description="Scanned transparent signature"
-                                            allowVideo={false}
-                                            aspectRatio="any"
-                                        /> */}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Quote (Heading)</label>
-                                        <input
-                                            type="text"
-                                            value={editingItem.quote || ""}
-                                            onChange={e => setEditingItem({ ...editingItem, quote: e.target.value })}
-                                            className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none shadow-inner"
-                                            placeholder="A short punchy quote or heading..."
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Full Message</label>
-                                        <textarea
-                                            value={editingItem.message || ""}
-                                            onChange={e => setEditingItem({ ...editingItem, message: e.target.value })}
-                                            rows={8}
-                                            className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent rounded-[32px] focus:bg-white focus:border-red-100 transition-all text-[15px] font-bold outline-none resize-none no-scrollbar shadow-inner"
-                                            placeholder="Write the full message from the principal..."
-                                        />
-                                    </div>
-                                </section>
+                                <div className="lg:col-span-5 space-y-8">
+                                    <MediaUpload
+                                        value={editingItem.imageurl || ""}
+                                        type="image"
+                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                        onFileSelect={handleImageSelect}
+                                        isStaged={!!pendingImageFile}
+                                        stagedPreviewUrl={pendingImagePreviewUrl}
+                                        isExternalUploading={isUploading}
+                                        schoolKey={schoolKey}
+                                        category="principal"
+                                        label="Principal Photo"
+                                        description="High-quality professional headshot"
+                                        allowVideo={false}
+                                        aspectRatio="square"
+                                    />
+                                    {/* <MediaUpload
+                                        value={editingItem.signatureurl || ""}
+                                        type="image"
+                                        onChange={(url) => setEditingItem({ ...editingItem, signatureurl: url })}
+                                        onFileSelect={handleSignatureSelect}
+                                        isStaged={!!pendingSignatureFile}
+                                        stagedPreviewUrl={pendingSignaturePreviewUrl}
+                                        isExternalUploading={isUploading}
+                                        schoolKey={schoolKey}
+                                        category="principal"
+                                        label="Official Signature"
+                                        description="Scanned transparent signature"
+                                        allowVideo={false}
+                                        aspectRatio="any"
+                                    /> */}
+                                </div>
                             </div>
+                        </div>
                         </div>
 
                         <div className="p-8 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between">

@@ -109,7 +109,22 @@ export default function ActivitiesEditor({ component, screen, schoolKey }: Activ
     }, [pendingPreviewUrl]);
 
     const handleSave = async (data: any) => {
-        if (!data.title) return;
+        if (!data.title?.trim()) {
+            alert("Please enter an activity title.");
+            return;
+        }
+        if (!data.tag?.trim()) {
+            alert("Please enter a category or tag.");
+            return;
+        }
+        if (!data.description?.trim()) {
+            alert("Please provide a short description.");
+            return;
+        }
+        if (!data.imageurl && !pendingFile) {
+            alert("Please upload an activity media file.");
+            return;
+        }
 
         try {
             let finalRecord = { ...data };
@@ -528,7 +543,7 @@ function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config,
                                 Discard
                             </button>
                             <button
-                                disabled={isSaving || isUploading || (!formData.imageurl && !pendingFile) || !formData.title}
+                                disabled={isSaving || isUploading}
                                 onClick={() => onSave(formData)}
                                 className="px-10 py-4 bg-[#111827] text-white text-[14px] font-black rounded-[20px] hover:bg-black transition-all shadow-xl disabled:opacity-30 disabled:grayscale flex items-center gap-3 h-[60px]"
                             >

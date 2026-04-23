@@ -21,6 +21,8 @@ interface MediaUploadProps {
     isStaged?: boolean;
     stagedPreviewUrl?: string | null;
     isExternalUploading?: boolean;
+    layout?: "vertical" | "horizontal";
+    placeholder?: string;
 }
 
 export default function MediaUpload({
@@ -38,7 +40,9 @@ export default function MediaUpload({
     onFileSelect,
     isStaged = false,
     stagedPreviewUrl,
-    isExternalUploading = false
+    isExternalUploading = false,
+    layout = "vertical",
+    placeholder
 }: MediaUploadProps) {
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
@@ -137,8 +141,8 @@ export default function MediaUpload({
                 </div>
             )}
 
-            <div className="space-y-4">
-                <div className={`relative ${aspectClasses[aspectRatio]} rounded-[24px] overflow-hidden bg-gray-50 border-2 border-gray-100 shadow-inner group`}>
+            <div className={layout === "horizontal" ? "flex flex-col md:flex-row gap-6" : "space-y-4"}>
+                <div className={`relative ${aspectClasses[aspectRatio]} rounded-[24px] overflow-hidden bg-gray-50 border-2 border-gray-100 shadow-inner group flex-shrink-0 ${layout === "horizontal" ? "w-full md:w-48" : ""}`}>
                     {effectivePreviewUrl ? (
                         <>
                             {type === "video" ? (
@@ -151,15 +155,24 @@ export default function MediaUpload({
                                     playsInline 
                                 />
                             ) : (
-                                <img src={effectivePreviewUrl} alt="" className="w-full h-full object-cover" />
+                                <img 
+                                    src={effectivePreviewUrl} 
+                                    alt="" 
+                                    className="w-full h-full object-cover" 
+                                    onError={(e) => {
+                                        if (placeholder) {
+                                            (e.target as HTMLImageElement).src = placeholder;
+                                        }
+                                    }}
+                                />
                             )}
                             
                             {/* Staged Badge */}
                             {currentIsStaged && (
-                                <div className="absolute top-4 left-4 right-4 z-20">
-                                    <div className="bg-[#F59E0B] text-white px-4 py-2 rounded-full shadow-lg flex items-center justify-center gap-2 animate-in slide-in-from-top-4 duration-300">
-                                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.1em]">New File Staged — Uploads on Publish</span>
+                                <div className={`absolute ${layout === 'horizontal' ? 'top-2 left-2 right-2' : 'top-4 left-4 right-4'} z-20`}>
+                                    <div className={`${layout === 'horizontal' ? 'px-2 py-1' : 'px-4 py-2'} bg-[#F59E0B] text-white rounded-full shadow-lg flex items-center justify-center gap-2 animate-in slide-in-from-top-4 duration-300`}>
+                                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                                        <span className={`${layout === 'horizontal' ? 'text-[8px]' : 'text-[10px]'} font-black uppercase tracking-[0.1em]`}>{layout === 'horizontal' ? 'Staged' : 'New File Staged — Uploads on Publish'}</span>
                                     </div>
                                 </div>
                             )}
@@ -175,84 +188,92 @@ export default function MediaUpload({
                         </>
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-300">
-                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-50">
-                                <ImageIcon className="w-8 h-8" />
-                            </div>
-                            <p className="text-[11px] font-black uppercase tracking-widest">No Media Preview</p>
+                            {placeholder ? (
+                                <img src={placeholder} alt="Placeholder" className="w-full h-full object-cover opacity-50" />
+                            ) : (
+                                <>
+                                    <div className={`${layout === 'horizontal' ? 'w-10 h-10' : 'w-16 h-16'} rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-50`}>
+                                        <ImageIcon className={`${layout === 'horizontal' ? 'w-5 h-5' : 'w-8 h-8'}`} />
+                                    </div>
+                                    <p className={`${layout === 'horizontal' ? 'text-[8px]' : 'text-[11px]'} font-black uppercase tracking-widest`}>No Preview</p>
+                                </>
+                            )}
                         </div>
                     )}
                     
                     {isUploading && (
-                        <div className="absolute inset-0 bg-[#111827]/60 backdrop-blur-[2px] z-[30] flex flex-col items-center justify-center gap-3">
-                            <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                            <p className="text-white text-[11px] font-black uppercase tracking-widest">Uploading...</p>
+                        <div className="absolute inset-0 bg-[#111827]/60 backdrop-blur-[2px] z-[30] flex flex-col items-center justify-center gap-3 text-center p-2">
+                            <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                            <p className="text-white text-[9px] font-black uppercase tracking-widest">Uploading...</p>
                         </div>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <input
-                            type="file"
-                            id={`media-upload-${category}-${schoolKey}`}
-                            className="hidden"
-                            accept={allowVideo && allowImage ? "image/*,video/*" : allowVideo ? "video/mp4,video/webm,video/ogg,video/quicktime" : "image/jpeg,image/png,image/gif,image/webp"}
-                            onChange={handleFileSelect}
-                            disabled={isUploading}
-                        />
-                        <label
-                            htmlFor={`media-upload-${category}-${schoolKey}`}
-                            className={`w-full h-full min-h-[110px] border-2 border-dashed rounded-[24px] flex flex-col items-center justify-center gap-3 transition-all cursor-pointer relative overflow-hidden group ${isUploading ? 'opacity-50 pointer-events-none' : 'bg-gray-50 border-gray-100 hover:border-[#F59E0B]/40 hover:bg-[#F59E0B]/5'}`}
-                        >
-                            <div className={`w-10 h-10 rounded-full shadow-sm flex items-center justify-center transition-colors ${currentIsStaged ? 'bg-[#F59E0B] text-white' : 'bg-white text-gray-400 group-hover:text-[#F59E0B]'}`}>
-                                {currentIsStaged ? <Check className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
-                            </div>
-                            <div className="text-center px-4">
-                                <p className={`text-[11px] font-black uppercase tracking-wider ${currentIsStaged ? 'text-[#F59E0B]' : 'text-gray-500'}`}>
-                                    {currentIsStaged ? 'File Selected' : (value ? 'Change Media' : 'Upload File')}
-                                </p>
-                                {currentIsStaged && (
-                                    <p className="text-[9px] font-bold text-[#F59E0B]/70 uppercase tracking-widest mt-1">Staged — will upload on publish</p>
-                                )}
-                            </div>
-                        </label>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Or Paste URL</label>
-                            <div className="relative group">
-                                <input
-                                    type="text"
-                                    value={value}
-                                    onChange={e => onChange(e.target.value, type)}
-                                    className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-100 transition-all text-[13px] font-bold outline-none shadow-inner"
-                                    placeholder="https://..."
-                                />
-                                <ExternalLink className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-red-400 transition-colors" />
-                            </div>
+                <div className={`flex-1 flex flex-col gap-4 ${layout === 'horizontal' ? 'justify-center' : ''}`}>
+                    <div className={`grid grid-cols-1 ${layout === 'horizontal' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-4`}>
+                        <div>
+                            <input
+                                type="file"
+                                id={`media-upload-${category}-${schoolKey}`}
+                                className="hidden"
+                                accept={allowVideo && allowImage ? "image/*,video/*" : allowVideo ? "video/mp4,video/webm,video/ogg,video/quicktime" : "image/jpeg,image/png,image/gif,image/webp"}
+                                onChange={handleFileSelect}
+                                disabled={isUploading}
+                            />
+                            <label
+                                htmlFor={`media-upload-${category}-${schoolKey}`}
+                                className={`w-full h-full min-h-[110px] border-2 border-dashed rounded-[24px] flex flex-col items-center justify-center gap-3 transition-all cursor-pointer relative overflow-hidden group ${isUploading ? 'opacity-50 pointer-events-none' : 'bg-gray-50 border-gray-100 hover:border-[#F59E0B]/40 hover:bg-[#F59E0B]/5'}`}
+                            >
+                                <div className={`w-10 h-10 rounded-full shadow-sm flex items-center justify-center transition-colors ${currentIsStaged ? 'bg-[#F59E0B] text-white' : 'bg-white text-gray-400 group-hover:text-[#F59E0B]'}`}>
+                                    {currentIsStaged ? <Check className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                                </div>
+                                <div className="text-center px-4">
+                                    <p className={`text-[11px] font-black uppercase tracking-wider ${currentIsStaged ? 'text-[#F59E0B]' : 'text-gray-500'}`}>
+                                        {currentIsStaged ? 'File Selected' : (value ? 'Change Media' : 'Upload File')}
+                                    </p>
+                                    {currentIsStaged && (
+                                        <p className="text-[9px] font-bold text-[#F59E0B]/70 uppercase tracking-widest mt-1">Staged — will upload on publish</p>
+                                    )}
+                                </div>
+                            </label>
                         </div>
-                        {!allowVideo && (
-                            <div className="py-3 px-4 bg-gray-100/50 rounded-[16px] flex items-center gap-2 border border-gray-100">
-                                <ImageIcon className="w-4 h-4 text-gray-400" />
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Image only</span>
-                            </div>
-                        )}
-                        {!allowImage && (
-                            <div className="py-3 px-4 bg-gray-100/50 rounded-[16px] flex items-center gap-2 border border-gray-100">
-                                <Video className="w-4 h-4 text-gray-400" />
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Video only</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
 
-                {error && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-xl">
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                        <p className="text-[11px] font-bold text-red-500">{error}</p>
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Or Paste URL</label>
+                                <div className="relative group">
+                                    <input
+                                        type="text"
+                                        value={value}
+                                        onChange={e => onChange(e.target.value, type)}
+                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-100 transition-all text-[13px] font-bold outline-none shadow-inner"
+                                        placeholder="https://..."
+                                    />
+                                    <ExternalLink className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-red-400 transition-colors" />
+                                </div>
+                            </div>
+                            {!allowVideo && layout !== 'horizontal' && (
+                                <div className="py-3 px-4 bg-gray-100/50 rounded-[16px] flex items-center gap-2 border border-gray-100">
+                                    <ImageIcon className="w-4 h-4 text-gray-400" />
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Image only</span>
+                                </div>
+                            )}
+                            {!allowImage && layout !== 'horizontal' && (
+                                <div className="py-3 px-4 bg-gray-100/50 rounded-[16px] flex items-center gap-2 border border-gray-100">
+                                    <Video className="w-4 h-4 text-gray-400" />
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Video only</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}
+
+                    {error && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-xl">
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                            <p className="text-[11px] font-bold text-red-500">{error}</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

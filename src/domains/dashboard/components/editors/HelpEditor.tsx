@@ -166,12 +166,25 @@ export default function HelpEditor({ adminData }: HelpEditorProps) {
 
                     {/* Footer Actions */}
                     <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-50">
-                        <div className="flex items-center gap-2 text-[12px] text-gray-400 font-medium">
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                setSubject("");
+                                setMessage("");
+                            }}
+                            className="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-400 hover:text-gray-600 transition-all flex items-center gap-2"
+                            disabled={isSending}
+                        >
+                            Cancel
+                        </button>
+                        
+                        <div className="flex-1 flex items-center gap-2 text-[12px] text-gray-400 font-medium px-4">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Your school details ({schoolName}) will be attached.
                         </div>
+
                         <button 
                             type="submit"
                             disabled={isSending || !subject || !message}

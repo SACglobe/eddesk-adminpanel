@@ -59,22 +59,15 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
                             <p className="text-[13px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Personal Identity & Access</p>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => setIsEditingProfile(!isEditingProfile)}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${isEditingProfile ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-                    >
-                        {isEditingProfile ? (
-                            <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                Save Changes
-                            </>
-                        ) : (
-                            <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                Edit Profile
-                            </>
-                        )}
-                    </button>
+                    {!isEditingProfile && (
+                        <button 
+                            onClick={() => setIsEditingProfile(true)}
+                            className="px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-50 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            Edit Profile
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-8 lg:p-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-12">
@@ -85,73 +78,30 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
                     <DetailItem label="Account Status" value={admin?.status} isEditing={false} badge="Active" color="emerald" />
                     <DetailItem label="Member Since" value={admin?.createdat ? new Date(admin.createdat).toLocaleDateString() : 'N/A'} isEditing={false} />
                 </div>
+
+                {isEditingProfile && (
+                    <div className="px-8 lg:px-12 py-6 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
+                        <button 
+                            onClick={() => setIsEditingProfile(false)}
+                            className="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-400 hover:text-gray-600 transition-all flex items-center gap-2"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={() => setIsEditingProfile(false)}
+                            className="px-8 py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            Save Changes
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* 3. School Profile Section */}
-            <div className="bg-white border border-gray-100 rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-                <div className="px-8 lg:px-12 py-8 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-gray-50/50 to-white">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center p-3">
-                            {school?.logo_url ? (
-                                <img src={school.logo_url} alt={school.name} className="max-w-full max-h-full object-contain" />
-                            ) : (
-                                <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                            )}
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-black text-gray-900 tracking-tight">Institutional Profile</h2>
-                            <p className="text-[13px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">School Settings & Compliance</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => setIsEditingSchool(!isEditingSchool)}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${isEditingSchool ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-                    >
-                        {isEditingSchool ? (
-                            <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                Save Changes
-                            </>
-                        ) : (
-                            <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                Edit Information
-                            </>
-                        )}
-                    </button>
-                </div>
-
-                <div className="p-8 lg:p-12 space-y-12">
-                    {/* Basic Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-12">
-                        <DetailItem label="School Name" value={school?.name} isEditing={isEditingSchool} />
-                        <DetailItem label="Custom Domain" value={school?.customdomain} isEditing={false} color="blue" />
-                        <DetailItem label="Portal Slug" value={school?.slug} isEditing={false} />
-                        <DetailItem label="Contact Email" value={school?.email} isEditing={isEditingSchool} />
-                        <DetailItem label="Contact Phone" value={school?.phone} isEditing={isEditingSchool} />
-                        <DetailItem label="Website Status" value="Online" isEditing={false} badge="Published" color="emerald" />
-                    </div>
-
-                    <div className="h-[1px] bg-gray-50 w-full" />
-
-                    {/* Address / Location Section */}
-                    <div>
-                        <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-8">Location & Logistics</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <DetailItem label="Address" value={school?.address} isEditing={isEditingSchool} />
-                            <DetailItem label="City" value={school?.city} isEditing={isEditingSchool} />
-                            <DetailItem label="State / Province" value={school?.state} isEditing={isEditingSchool} />
-                            <DetailItem label="Postal Code" value={school?.postal_code} isEditing={isEditingSchool} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Support Disclaimer */}
             <div className="flex justify-center pb-8">
                 <p className="text-[12px] text-gray-400 font-medium flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Some sensitive fields (Email, Role, Domain, Billing) can only be updated by contacting EdDesk Support.
+                    Some sensitive fields (Email, Role, Billing) can only be updated by contacting EdDesk Support.
                 </p>
             </div>
         </div>

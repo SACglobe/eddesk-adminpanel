@@ -24,14 +24,6 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
     const itemCount = config?.itemcount ? parseInt(config.itemcount) : 10;
     const router = useRouter();
 
-    const effectiveMediaType = useMemo(() => {
-        const type = config?.variant || config?.mediatype;
-        if (!type) return "image";
-        const lowType = type.toLowerCase();
-        if (lowType === "video" || lowType === "videos") return "video";
-        return "image";
-    }, [config?.variant, config?.mediatype]);
-
     const filters = useMemo(() => ({
         ...(config?.filters || {})
     }), [config?.filters]);
@@ -190,7 +182,6 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
             quote: "",
             imageurl: "",
             signatureurl: "",
-            contenttype: config?.mediatype === "video" ? "video" : "image",
             isactive: true,
             displayorder: displayOrder || leadership.length + 1
         };
@@ -198,7 +189,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
     };
 
     const handleSave = async () => {
-        if (!editingItem.name || (!editingItem.photo_url && !pendingPhotoFile)) return;
+        if (!editingItem.name || (!editingItem.imageurl && !pendingPhotoFile)) return;
         setIsSaving(true);
         try {
             let finalItem = { ...editingItem };
@@ -208,13 +199,13 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                 // Upload Photo if pending
                 if (pendingPhotoFile) {
                     const uploadedUrl = await uploadFile(pendingPhotoFile, schoolKey, "leadership");
-                    finalItem.photo_url = uploadedUrl;
+                    finalItem.imageurl = uploadedUrl;
                 }
 
                 // Upload Signature if pending
                 if (pendingSignatureFile) {
                     const uploadedUrl = await uploadFile(pendingSignatureFile, schoolKey, "leadership");
-                    finalItem.signature_url = uploadedUrl;
+                    finalItem.signatureurl = uploadedUrl;
                 }
             } catch (err) {
                 console.error("Upload failed:", err);
@@ -300,18 +291,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                             {/* Avatar */}
                             <div className="w-24 h-24 rounded-full bg-gray-50 overflow-hidden mb-5 border-4 border-gray-50 group-hover:border-red-50 transition-colors shadow-inner flex-shrink-0">
                                 {item.imageurl ? (
-                                    item.contenttype === 'video' ? (
-                                        <video 
-                                            src={item.imageurl} 
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                                            autoPlay 
-                                            loop 
-                                            muted 
-                                            playsInline 
-                                        />
-                                    ) : (
-                                        <img src={item.imageurl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                    )
+                                    <img src={item.imageurl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gray-50 text-gray-300 group-hover:text-[#F54927]/60 transition-colors">
                                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -367,14 +347,13 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-3 no-scrollbar">
-                            {leadership.filter((item: any) => item.contenttype === effectiveMediaType).length === 0 ? (
+                            {leadership.length === 0 ? (
                                 <div className="col-span-2 py-20 text-center">
-                                    <p className="text-gray-400 font-bold">No {effectiveMediaType} members found.</p>
-                                    <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new {effectiveMediaType} content first.</p>
+                                    <p className="text-gray-400 font-bold">No members found.</p>
+                                    <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new content first.</p>
                                 </div>
                             ) : (
                                 leadership
-                                    .filter((item: any) => item.contenttype === effectiveMediaType)
                                     .map((item: any) => (
                                         <button
                                             key={item.key}
@@ -383,11 +362,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                         >
                                             <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-200">
                                                 {item.imageurl ? (
-                                                    item.contenttype === 'video' ? (
-                                                        <video src={item.imageurl} className="w-full h-full object-cover" muted />
-                                                    ) : (
-                                                        <img src={item.imageurl} alt="" className="w-full h-full object-cover" />
-                                                    )
+                                                    <img src={item.imageurl} alt="" className="w-full h-full object-cover" />
                                                 ) : <div className="w-full h-full bg-gray-50" />}
                                             </div>
                                             <div className="min-w-0">
@@ -466,37 +441,20 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                         </div>
 
                                         {/* Upload Zones */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <MediaUpload
-                                                value={editingItem.photo_url || ""}
-                                                type="image"
-                                                onChange={(url) => setEditingItem({ ...editingItem, photo_url: url })}
-                                                onFileSelect={handlePhotoSelect}
-                                                isStaged={!!pendingPhotoFile}
-                                                stagedPreviewUrl={pendingPhotoPreviewUrl}
-                                                isExternalUploading={isUploading}
-                                                schoolKey={schoolKey}
-                                                category="leadership"
-                                                label="Profile Photo"
-                                                description="Upload a high-quality professional headshot"
-                                                aspectRatio="square"
-                                            />
-                                            
-                                            {/* <MediaUpload
-                                                value={editingItem.signature_url || ""}
-                                                type="image"
-                                                onChange={(url) => setEditingItem({ ...editingItem, signature_url: url })}
-                                                onFileSelect={handleSignatureSelect}
-                                                isStaged={!!pendingSignatureFile}
-                                                stagedPreviewUrl={pendingSignaturePreviewUrl}
-                                                isExternalUploading={isUploading}
-                                                schoolKey={schoolKey}
-                                                category="leadership"
-                                                label="Author Signature"
-                                                description="Upload a clear image of their signature (PNG preferred)"
-                                                aspectRatio="video"
-                                            /> */}
-                                        </div>
+                                        <MediaUpload
+                                            value={editingItem.imageurl || ""}
+                                            type="image"
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onFileSelect={handlePhotoSelect}
+                                            isStaged={!!pendingPhotoFile}
+                                            stagedPreviewUrl={pendingPhotoPreviewUrl}
+                                            isExternalUploading={isUploading}
+                                            schoolKey={schoolKey}
+                                            category="leadership"
+                                            label="Profile Photo"
+                                            description="Upload a high-quality professional headshot"
+                                            aspectRatio="square"
+                                        />
                                     </div>
 
                                     <div className="space-y-6">
@@ -543,7 +501,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.photo_url && !pendingPhotoFile)}
+                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingPhotoFile)}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

@@ -110,7 +110,14 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
     }, [pendingPreviewUrl]);
 
     const handleSave = async () => {
-        if (!editingRecord.title || (!editingRecord.imageurl && !pendingFile)) return;
+        if (!editingRecord.title?.trim()) {
+            alert("Please enter an achievement title.");
+            return;
+        }
+        if (!editingRecord.imageurl && !pendingFile) {
+            alert("Please upload an achievement photo.");
+            return;
+        }
 
         try {
             let finalRecord = { ...editingRecord };
@@ -546,7 +553,7 @@ function AchievementModal({ record, onClose, onSave, isSaving, isUploading, conf
                             Cancel
                         </button>
                         <button
-                            disabled={isSaving || isUploading || (!formData.imageurl && !pendingFile)}
+                            disabled={isSaving || isUploading}
                             onClick={() => onSave()}
                             className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                         >

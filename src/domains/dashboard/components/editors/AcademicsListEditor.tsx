@@ -155,7 +155,18 @@ export default function AcademicsListEditor({ component, schoolKey }: AcademicsL
     };
 
     const handleSave = async () => {
-        if (!editingItem.title) return;
+        if (!editingItem.title?.trim()) {
+            alert("Please enter a title.");
+            return;
+        }
+        if (!editingItem.subtitle?.trim()) {
+            alert("Please enter a subtitle or grade range.");
+            return;
+        }
+        if (!editingItem.description?.trim()) {
+            alert("Please provide a description.");
+            return;
+        }
         setIsSaving(true);
         try {
             // Sanitize data

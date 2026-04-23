@@ -31,6 +31,7 @@ import HelpEditor from "./editors/HelpEditor";
 import FeedbackEditor from "./editors/FeedbackEditor";
 import AccountDetailsEditor from "./editors/AccountDetailsEditor";
 import PlanDetailsEditor from "./editors/PlanDetailsEditor";
+import SchoolDetailsEditor from "./editors/SchoolDetailsEditor";
 import { getEnrichedConfig } from "../utils/componentUtils";
 import type { Plan } from "@/app/dashboard/page";
 
@@ -149,6 +150,8 @@ export default function EditorHost({
                                 <FeedbackEditor adminData={adminData} />
                             ) : generalItem.key === 'account-details' ? (
                                 <AccountDetailsEditor adminData={adminData} />
+                            ) : generalItem.key === 'school-details' ? (
+                                <SchoolDetailsEditor adminData={adminData} />
                             ) : generalItem.key === 'plan-details' ? (
                                 <PlanDetailsEditor 
                                     adminData={adminData} 

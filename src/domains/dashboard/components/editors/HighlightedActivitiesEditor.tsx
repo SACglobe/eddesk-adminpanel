@@ -179,7 +179,22 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
     };
 
     const handleSave = async () => {
-        if (!editingItem.title || (!isIconVariant && !editingItem.imageurl && !pendingFile)) return;
+        if (!editingItem.title?.trim()) {
+            alert("Please enter an activity title.");
+            return;
+        }
+        if (!editingItem.subtitle?.trim()) {
+            alert("Please enter a category or subtitle.");
+            return;
+        }
+        if (!editingItem.description?.trim()) {
+            alert("Please enter a detailed overview.");
+            return;
+        }
+        if (!isIconVariant && !editingItem.imageurl && !pendingFile) {
+            alert("Please upload a featured visual.");
+            return;
+        }
         setIsSaving(true);
         try {
             let finalItem = { ...editingItem };
@@ -305,7 +320,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
                                             <div className="w-6 h-6 rounded-full bg-red-50 text-[#F54927] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
                                                 <Check className="w-3.5 h-3.5" />
                                             </div>
-                                            <span className="text-[14px] font-black text-gray-600 leading-tight">{point.text || point}</span>
+                                            <span className="text-[14px] font-black text-gray-600 leading-tight">{typeof point === 'object' ? point.text : point}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -443,7 +458,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
                                                     <div className="w-5 h-5 rounded-full bg-red-50 text-[#F54927] flex items-center justify-center shrink-0">
                                                         <Check className="w-3 h-3" />
                                                     </div>
-                                                    <span className="text-[10px] font-black text-gray-600 truncate">{point.text || point || "Feature"}</span>
+                                                    <span className="text-[10px] font-black text-gray-600 truncate">{(typeof point === 'object' ? point.text : point) || "Feature"}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -585,7 +600,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!isIconVariant && !editingItem.imageurl && !pendingFile)}
+                                    disabled={isSaving || isUploading}
                                     onClick={handleSave}
                                     className={`
                                         px-12 py-4 text-[14px] font-black rounded-[20px] shadow-xl transition-all active:scale-[0.97] flex items-center gap-3 h-[60px]

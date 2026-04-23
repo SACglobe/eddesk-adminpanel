@@ -141,7 +141,14 @@ export default function HighlightedInfrastructureEditor({ component, schoolKey }
     };
 
     const handleSaveItem = async () => {
-        if (!editingItem.title) return;
+        if (!editingItem.title?.trim()) {
+            alert("Please enter a title.");
+            return;
+        }
+        if (!editingItem.description?.trim()) {
+            alert("Please provide a description.");
+            return;
+        }
 
         try {
             setIsSaving(true);
@@ -390,7 +397,7 @@ export default function HighlightedInfrastructureEditor({ component, schoolKey }
                             <div className="flex gap-4 ml-auto">
                                 <button onClick={handleCloseModal} className="px-8 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                 <button
-                                    disabled={isSaving || !editingItem.title}
+                                    disabled={isSaving}
                                     onClick={handleSaveItem}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50"
                                 >
