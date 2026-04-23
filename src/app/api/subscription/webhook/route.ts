@@ -3,13 +3,10 @@ import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { sendSubscriptionEmail } from "@/lib/email";
 
-// Use service role key for backend operations to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(request: Request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const body = await request.text();
     const signature = request.headers.get("x-razorpay-signature");

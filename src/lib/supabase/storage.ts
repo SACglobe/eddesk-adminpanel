@@ -1,6 +1,6 @@
 import { createClient } from "./client";
 
-export type StorageCategory = "events" | "achievements" | "students" | "banners" | "schoolachievements" | "leadership" | "schoolidentity" | "gallery" | "principal" | "infrastructure" | "faculty" | "testimonials" | "activities" | "academics";
+export type StorageCategory = "events" | "achievements" | "students" | "banners" | "schoolachievements" | "leadership" | "schoolidentity" | "school-branding" | "gallery" | "principal" | "infrastructure" | "faculty" | "testimonials" | "activities" | "academics";
 
 /**
  * Uploads a file to Supabase Storage with a structured path.
