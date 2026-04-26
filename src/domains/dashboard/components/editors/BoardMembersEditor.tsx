@@ -463,7 +463,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey, onRef
                                             label="Profile Photo"
                                             description="Upload a high-quality professional headshot"
                                             aspectRatio="square"
-                                            showPlaceholderCheckbox={true}
+                                            showPlaceholderCheckbox={false}
                                             isPlaceholderActive={!!editingItem._usePlaceholder}
                                             onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />

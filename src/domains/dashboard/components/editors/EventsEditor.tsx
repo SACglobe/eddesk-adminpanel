@@ -438,7 +438,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                         label="Event Banner"
                                         description="Upload a photo for this event"
                                         aspectRatio="video"
-                                        showPlaceholderCheckbox={true}
+                                        showPlaceholderCheckbox={false}
                                         isPlaceholderActive={!!editingItem._usePlaceholder}
                                         onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         allowVideo={config?.mediatype !== "image"}

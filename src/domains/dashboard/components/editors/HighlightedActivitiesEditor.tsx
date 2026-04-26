@@ -539,7 +539,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey, onRe
                                                 label="Featured Photo"
                                                 description="Upload a high-impact photo for this activity"
                                                 aspectRatio="video"
-                                                showPlaceholderCheckbox={true}
+                                                showPlaceholderCheckbox={false}
                                                 isPlaceholderActive={!!editingItem._usePlaceholder}
                                                 onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                             />

@@ -551,7 +551,7 @@ export default function GalleryEditor({ component, schoolKey, onRefreshData }: G
                                     allowVideo={effectiveMediaType === "video"}
                                     allowImage={effectiveMediaType === "image"}
                                     lockType={true}
-                                    showPlaceholderCheckbox={true}
+                                    showPlaceholderCheckbox={false}
                                     isPlaceholderActive={!!editingItem._usePlaceholder}
                                     onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, url: active ? "" : editingItem.url })}
                                 />

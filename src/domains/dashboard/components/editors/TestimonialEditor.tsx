@@ -411,7 +411,7 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
                                         label="Author Photo"
                                         description="Upload a photo of the author"
                                         aspectRatio="square"
-                                        showPlaceholderCheckbox={true}
+                                        showPlaceholderCheckbox={false}
                                         isPlaceholderActive={!!editingItem._usePlaceholder}
                                         onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, authorimage: active ? "" : editingItem.authorimage })}
                                     />

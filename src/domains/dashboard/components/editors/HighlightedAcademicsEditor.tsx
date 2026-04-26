@@ -545,7 +545,7 @@ export default function HighlightedAcademicsEditor({ component, schoolKey, onRef
                                                 label="Academic Visual"
                                                 description="Upload a high-quality photo or graphic"
                                                 aspectRatio="video"
-                                                showPlaceholderCheckbox={true}
+                                                showPlaceholderCheckbox={false}
                                                 isPlaceholderActive={!!editingItem._usePlaceholder}
                                                 onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                             />

@@ -529,7 +529,7 @@ export default function FacultyEditor({ component, schoolKey, onRefreshData }: F
                                             label="Profile Portrait"
                                             description="Upload a high-quality headshot"
                                             aspectRatio="portrait"
-                                            showPlaceholderCheckbox={true}
+                                            showPlaceholderCheckbox={false}
                                             isPlaceholderActive={editingItem._usePlaceholder || (!editingItem.imageurl && !pendingFile)}
                                             onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />

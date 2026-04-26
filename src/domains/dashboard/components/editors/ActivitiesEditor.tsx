@@ -514,7 +514,7 @@ function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config,
                                 allowVideo={true}
                                 allowImage={true}
                                 aspectRatio="16:10"
-                                showPlaceholderCheckbox={true}
+                                showPlaceholderCheckbox={false}
                                 isPlaceholderActive={!!formData._usePlaceholder}
                                 onPlaceholderToggle={(active) => setFormData({ ...formData, _usePlaceholder: active, imageurl: active ? "" : formData.imageurl })}
                             />

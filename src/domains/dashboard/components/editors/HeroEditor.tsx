@@ -831,7 +831,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                             allowVideo={isVideoVariant}
                                             allowImage={!isVideoVariant}
                                             aspectRatio="video"
-                                            showPlaceholderCheckbox={true}
+                                            showPlaceholderCheckbox={false}
                                             isPlaceholderActive={!!editingSlide._usePlaceholder}
                                             onPlaceholderToggle={(active) => setEditingSlide({ ...editingSlide, _usePlaceholder: active, mediaurl: active ? "" : editingSlide.mediaurl })}
                                         />

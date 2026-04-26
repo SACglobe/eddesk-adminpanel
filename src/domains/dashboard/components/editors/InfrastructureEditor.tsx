@@ -516,7 +516,7 @@ export default function InfrastructureEditor({ component, schoolKey, onRefreshDa
                                             allowVideo={config?.mediatype !== "image"}
                                             allowImage={config?.mediatype !== "video"}
                                             aspectRatio="video"
-                                            showPlaceholderCheckbox={true}
+                                            showPlaceholderCheckbox={false}
                                             isPlaceholderActive={!!editingItem._usePlaceholder}
                                             onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />
