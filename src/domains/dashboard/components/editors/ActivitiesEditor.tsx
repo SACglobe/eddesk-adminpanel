@@ -51,10 +51,16 @@ export default function ActivitiesEditor({ component, screen, schoolKey, onRefre
     const [isUpdatingConfig, setIsUpdatingConfig] = useState(false);
     const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
 
-    const placements = useMemo(() => {
+    const [placements, setPlacements] = useState<ComponentPlacement[]>(() => {
         return (component.contentplacements || [])
             .filter((p: ComponentPlacement) => p.isactive !== false)
             .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0));
+    });
+
+    useEffect(() => {
+        setPlacements((component.contentplacements || [])
+            .filter((p: ComponentPlacement) => p.isactive !== false)
+            .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
     }, [component.contentplacements]);
 
     // 3. Map activities to slots
@@ -169,10 +175,25 @@ export default function ActivitiesEditor({ component, screen, schoolKey, onRefre
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
         setIsUpdatingConfig(true);
+        // Optimistic update for instant UI feedback
+        const optimisticPlacement: ComponentPlacement = {
+            key: `temp-${Date.now()}`,
+            schoolkey: schoolKey,
+            templatecomponentkey: component.key,
+            componentcode: component.componentcode || 'activitieslist',
+            contenttable: tableName,
+            contentkey: recordKey,
+            displayorder: pickingForIndex + 1,
+            isactive: true,
+        } as any;
+        setPlacements(prev => {
+            const next = prev.filter(p => p.displayorder !== optimisticPlacement.displayorder);
+            return [...next, optimisticPlacement].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
+        });
+        setPickingForIndex(null);
         try {
             const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
-            
-            const response = await upsertComponentData('componentplacement', {
+            await upsertComponentData('componentplacement', {
                 key: existingPlacement?.key || undefined,
                 schoolkey: schoolKey,
                 templatecomponentkey: component.key,
@@ -182,14 +203,11 @@ export default function ActivitiesEditor({ component, screen, schoolKey, onRefre
                 displayorder: pickingForIndex + 1,
                 isactive: true
             }, schoolKey);
-            
-            if (response.success && response.data) {
-                onRefreshData?.();
-            }
-            
-            setPickingForIndex(null);
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
+            // Rollback optimistic update
+            setPlacements((component.contentplacements || []).filter((p: ComponentPlacement) => p.isactive !== false).sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
         } finally {
             setIsUpdatingConfig(false);
         }

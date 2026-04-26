@@ -54,6 +54,7 @@ interface EditorHostProps {
     allowedHeroMediaType?: 'image' | 'video' | 'both';
     adminData?: any;
     onRefreshData?: () => Promise<void>;
+    onSchoolUpdated?: (updatedSchool: any) => void;
 }
 
 export default function EditorHost({
@@ -69,7 +70,8 @@ export default function EditorHost({
     allScreens,
     allowedHeroMediaType,
     adminData,
-    onRefreshData
+    onRefreshData,
+    onSchoolUpdated
 }: EditorHostProps) {
     const isGroup = activeComponentData?.isGroup;
     const groupName = activeComponentData?.groupName;
@@ -151,7 +153,7 @@ export default function EditorHost({
                             ) : generalItem.key === 'account-details' ? (
                                 <AccountDetailsEditor adminData={adminData} />
                             ) : generalItem.key === 'school-details' ? (
-                                <SchoolDetailsEditor adminData={adminData} onRefreshData={onRefreshData} />
+                                <SchoolDetailsEditor adminData={adminData} onRefreshData={onRefreshData} onSchoolUpdated={onSchoolUpdated} />
                             ) : generalItem.key === 'plan-details' ? (
                                 <PlanDetailsEditor 
                                     adminData={adminData} 

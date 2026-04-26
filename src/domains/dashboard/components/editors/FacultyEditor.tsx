@@ -94,10 +94,25 @@ export default function FacultyEditor({ component, schoolKey, onRefreshData }: F
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
         setIsUpdating(true);
+        // Optimistically update local placements for instant UI feedback
+        const optimisticPlacement: ComponentPlacement = {
+            key: `temp-${Date.now()}`,
+            schoolkey: schoolKey,
+            templatecomponentkey: component.key,
+            componentcode: component.componentcode || 'faculty',
+            contenttable: tableName,
+            contentkey: recordKey,
+            displayorder: pickingForIndex + 1,
+            isactive: true,
+        } as any;
+        setPlacements(prev => {
+            const next = prev.filter(p => p.displayorder !== optimisticPlacement.displayorder);
+            return [...next, optimisticPlacement].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
+        });
+        setPickingForIndex(null);
         try {
             const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
-            
-            const response = await upsertComponentData('componentplacement', {
+            await upsertComponentData('componentplacement', {
                 key: existingPlacement?.key || undefined,
                 schoolkey: schoolKey,
                 templatecomponentkey: component.key,
@@ -107,15 +122,11 @@ export default function FacultyEditor({ component, schoolKey, onRefreshData }: F
                 displayorder: pickingForIndex + 1,
                 isactive: true
             }, schoolKey);
-            
-            if (response.success && response.data) {
-                onRefreshData?.();
-            }
-            
-            setPickingForIndex(null);
             onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
+            // Rollback optimistic update on error
+            setPlacements((component.contentplacements || []).filter((p: ComponentPlacement) => p.isactive !== false).sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
         } finally {
             setIsUpdating(false);
         }

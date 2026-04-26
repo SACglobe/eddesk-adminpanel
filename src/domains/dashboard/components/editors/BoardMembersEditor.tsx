@@ -116,10 +116,26 @@ export default function BoardMembersEditor({ component, screen, schoolKey, onRef
         if (pickingForIndex === null) return;
         setIsUpdating(true);
 
+        // Optimistic update for instant UI feedback
+        const optimisticPlacement: ComponentPlacement = {
+            key: `temp-${Date.now()}`,
+            schoolkey: schoolKey,
+            templatecomponentkey: component.key,
+            componentcode: 'boardmembers',
+            contenttable: tableName,
+            contentkey: recordKey,
+            displayorder: pickingForIndex + 1,
+            isactive: true,
+        } as any;
+        setPlacements(prev => {
+            const next = prev.filter(p => p.displayorder !== optimisticPlacement.displayorder);
+            return [...next, optimisticPlacement].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
+        });
+        setPickingForIndex(null);
+
         try {
             const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
-
-            const response = await upsertComponentData('componentplacement', {
+            await upsertComponentData('componentplacement', {
                 key: existingPlacement?.key || undefined,
                 schoolkey: schoolKey,
                 templatecomponentkey: component.key,
@@ -129,20 +145,11 @@ export default function BoardMembersEditor({ component, screen, schoolKey, onRef
                 displayorder: pickingForIndex + 1,
                 isactive: true
             }, schoolKey);
-
-            if (response.success && response.data) {
-                const newPlacement = response.data as unknown as ComponentPlacement;
-                setPlacements(prev => {
-                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
-                    next.push(newPlacement);
-                    return next.sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
-                });
-            }
-
-            setPickingForIndex(null);
             onRefreshData?.();
         } catch (err) {
             console.error(err);
+            // Rollback optimistic update
+            setPlacements((component.contentplacements || []).filter((p: ComponentPlacement) => p.isactive !== false).sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
         } finally {
             setIsUpdating(false);
         }

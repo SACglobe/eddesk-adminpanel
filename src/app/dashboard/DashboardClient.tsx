@@ -473,6 +473,12 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
                                 allScreens={adminData?.templatescreens ?? []}
                                 allowedHeroMediaType={adminData?.schools?.componentvariants?.[selectedScreen?.screenslug || '']?.hero as 'image' | 'video' | 'both' | undefined}
                                 onRefreshData={refreshAdminData}
+                                onSchoolUpdated={(updatedSchool) => {
+                                    setAdminData(prev => ({
+                                        ...prev,
+                                        schools: { ...prev.schools, ...updatedSchool }
+                                    }));
+                                }}
                             />
                         </div>
                     </div>

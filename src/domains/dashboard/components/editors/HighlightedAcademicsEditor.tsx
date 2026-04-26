@@ -107,10 +107,25 @@ export default function HighlightedAcademicsEditor({ component, schoolKey, onRef
 
     const handleSelectRecordFromIndex = async (slotIndex: number, recordKey: string) => {
         setIsUpdating(true);
+        // Optimistic update for instant UI feedback
+        const optimisticPlacement: ComponentPlacement = {
+            key: `temp-${Date.now()}`,
+            schoolkey: schoolKey,
+            templatecomponentkey: component.key,
+            componentcode: component.componentcode || 'highlightedacademics',
+            contenttable: tableName,
+            contentkey: recordKey,
+            displayorder: slotIndex,
+            isactive: true,
+        } as any;
+        setPlacements(prev => {
+            const next = prev.filter(p => p.displayorder !== optimisticPlacement.displayorder);
+            return [...next, optimisticPlacement].sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
+        });
+        setPickingForIndex(null);
         try {
             const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === slotIndex);
-            
-            const response = await upsertComponentData('componentplacement', {
+            await upsertComponentData('componentplacement', {
                 key: existingPlacement?.key || undefined,
                 schoolkey: schoolKey,
                 templatecomponentkey: component.key,
@@ -120,20 +135,11 @@ export default function HighlightedAcademicsEditor({ component, schoolKey, onRef
                 displayorder: slotIndex,
                 isactive: true
             }, schoolKey);
-            
-            if (response.success && response.data) {
-                const newPlacement = response.data as unknown as ComponentPlacement;
-                setPlacements(prev => {
-                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
-                    next.push(newPlacement);
-                    return next.sort((a,b) => (a.displayorder || 0) - (b.displayorder || 0));
-                });
-            }
-            
-            setPickingForIndex(null);
             onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
+            // Rollback
+            setPlacements((component.contentplacements || []).filter((p: ComponentPlacement) => p.isactive !== false).sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
         } finally {
             setIsUpdating(false);
         }

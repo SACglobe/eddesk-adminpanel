@@ -9,9 +9,10 @@ import { updateSchoolDetails } from "@/domains/dashboard/actions";
 interface SchoolDetailsEditorProps {
     adminData: AdminInitialData;
     onRefreshData?: () => Promise<void>;
+    onSchoolUpdated?: (updatedSchool: any) => void;
 }
 
-export default function SchoolDetailsEditor({ adminData, onRefreshData }: SchoolDetailsEditorProps) {
+export default function SchoolDetailsEditor({ adminData, onRefreshData, onSchoolUpdated }: SchoolDetailsEditorProps) {
     const school = adminData?.schools as any;
     const [isEditingSchool, setIsEditingSchool] = useState(false);
     const [formData, setFormData] = useState(school);
@@ -78,9 +79,15 @@ export default function SchoolDetailsEditor({ adminData, onRefreshData }: School
 
                 if (!response.success) throw new Error(response.error);
                 
-                // Refresh global admin data to ensure consistency across the app
+                // Immediately update the parent's adminData.schools so the header
+                // name/logo update without waiting for a full page refresh
+                if (onSchoolUpdated && response.data) {
+                    onSchoolUpdated(response.data);
+                }
+
+                // Refresh global admin data to ensure full consistency
                 if (onRefreshData) {
-                    await onRefreshData();
+                    onRefreshData(); // fire and forget — don't await, UI is already updated
                 }
                 
                 // Reset staged states
