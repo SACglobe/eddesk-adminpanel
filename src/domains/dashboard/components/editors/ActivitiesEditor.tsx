@@ -184,12 +184,6 @@ export default function ActivitiesEditor({ component, screen, schoolKey, onRefre
             }, schoolKey);
             
             if (response.success && response.data) {
-                const newPlacement = response.data as unknown as ComponentPlacement;
-                setPlacements(prev => {
-                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
-                    next.push(newPlacement);
-                    return next.sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
-                });
                 onRefreshData?.();
             }
             
@@ -209,7 +203,6 @@ export default function ActivitiesEditor({ component, screen, schoolKey, onRefre
         try {
             const response = await deleteComponentData('componentplacement', placement.key, schoolKey);
             if (response.success) {
-                setPlacements(prev => prev.filter(p => p.key !== placement.key));
                 onRefreshData?.();
             }
         } catch (err) {

@@ -23,7 +23,7 @@ export default function AchievementsEditor({ component, screen, schoolKey, onRef
     const selectionMethod = config.selectionmethod || "auto"; 
     const itemCount = config.itemcount ? parseInt(String(config.itemcount)) : null;
     const filters = useMemo(() => {
-        const rawFilters = config.filters || {};
+        const rawFilters = (config.filters as any) || {};
         if (rawFilters.conditions) {
             return {
                 ...rawFilters,
