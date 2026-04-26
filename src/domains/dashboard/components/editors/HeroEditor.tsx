@@ -20,13 +20,15 @@ interface HeroEditorProps {
     allowedMediaType?: 'image' | 'video' | 'both';
     onRefreshData?: () => Promise<void>;
     activeComponentData?: any;
+    adminData?: any;
 }
 
-export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType, onRefreshData }: HeroEditorProps) {
+export default function HeroEditor({ component, screen, schoolKey, allScreens, activeComponentData, allowedMediaType, onRefreshData, adminData }: HeroEditorProps) {
     const { setLoading } = useLoading();
     const supabase = createClient();
     const tableName = (component.componentregistry as any)?.tablename;
     const initialItems = (component as any).content || [];
+    const customDomain = adminData?.schools?.customdomain || "";
 
     const config = component.config as any;
     const isEditable = component.iseditable;
@@ -252,13 +254,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
     // handlePublish: upload pending file if any, then save record to DB
     const handlePublish = async () => {
+        if (!editingSlide.mediaurl && !pendingFile && !editingSlide._usePlaceholder) return;
         let finalSlide = { ...editingSlide };
         if (pendingFile) {
             setIsUploading(true);
             setUploadError(null);
             try {
                 const url = await uploadFile(pendingFile, schoolKey, "banners");
-                finalSlide = { ...finalSlide, mediaurl: url };
+                finalSlide = { ...finalSlide, mediaurl: url, _usePlaceholder: false };
             } catch (err: any) {
                 setUploadError("Upload failed: " + err.message);
                 setIsUploading(false);
@@ -267,7 +270,30 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                 setIsUploading(false);
             }
         }
-        saveRecord(finalSlide);
+
+        const { _usePlaceholder, ...dataToSave } = finalSlide;
+
+        // Ensure URLs are complete if they only contain slugs
+        if (dataToSave.primarybuttonurl && !dataToSave.primarybuttonurl.includes('.') && customDomain) {
+            let slug = dataToSave.primarybuttonurl;
+            if (slug === 'home') {
+                slug = '/';
+            } else {
+                slug = slug.startsWith('/') ? slug : `/${slug}`;
+            }
+            dataToSave.primarybuttonurl = `${customDomain}${slug}`;
+        }
+        if (dataToSave.secondarybuttonurl && !dataToSave.secondarybuttonurl.includes('.') && customDomain) {
+            let slug = dataToSave.secondarybuttonurl;
+            if (slug === 'home') {
+                slug = '/';
+            } else {
+                slug = slug.startsWith('/') ? slug : `/${slug}`;
+            }
+            dataToSave.secondarybuttonurl = `${customDomain}${slug}`;
+        }
+
+        saveRecord(dataToSave);
         // Cleanup blob URL
         if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
         setPendingFile(null);
@@ -492,7 +518,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                             />
                             <div className="relative">
                                 <select
-                                    value={editingSlide.primarybuttonurl || ""}
+                                    value={(() => {
+                                        const url = editingSlide.primarybuttonurl || "";
+                                        if (url.includes(customDomain) && customDomain) {
+                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                            return slug === "" ? "home" : slug;
+                                        }
+                                        return url;
+                                    })()}
                                     onChange={e => setEditingSlide({ ...editingSlide, primarybuttonurl: e.target.value })}
                                     className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer"
                                 >
@@ -517,7 +550,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                             />
                             <div className="relative">
                                 <select
-                                    value={editingSlide.secondarybuttonurl || ""}
+                                    value={(() => {
+                                        const url = editingSlide.secondarybuttonurl || "";
+                                        if (url.includes(customDomain) && customDomain) {
+                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                            return slug === "" ? "home" : slug;
+                                        }
+                                        return url;
+                                    })()}
                                     onChange={e => setEditingSlide({ ...editingSlide, secondarybuttonurl: e.target.value })}
                                     className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer"
                                 >
@@ -779,7 +819,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                         <MediaUpload
                                             value={editingSlide.mediaurl || ""}
                                             type={editingSlide.contenttype || (isVideoVariant ? "video" : "image")}
-                                            onChange={(url: string) => setEditingSlide({ ...editingSlide, mediaurl: url })}
+                                            onChange={(url: string) => setEditingSlide({ ...editingSlide, mediaurl: url, _usePlaceholder: false })}
                                             onFileSelect={handleFileSelect}
                                             isStaged={!!pendingFile}
                                             stagedPreviewUrl={pendingPreviewUrl}
@@ -791,6 +831,9 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                             allowVideo={isVideoVariant}
                                             allowImage={!isVideoVariant}
                                             aspectRatio="video"
+                                            showPlaceholderCheckbox={true}
+                                            isPlaceholderActive={!!editingSlide._usePlaceholder}
+                                            onPlaceholderToggle={(active) => setEditingSlide({ ...editingSlide, _usePlaceholder: active, mediaurl: active ? "" : editingSlide.mediaurl })}
                                         />
                                     </div>
 
@@ -807,7 +850,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                             />
                                             <div className="relative">
                                                 <select
-                                                    value={editingSlide.primarybuttonurl || ""}
+                                                    value={(() => {
+                                                        const url = editingSlide.primarybuttonurl || "";
+                                                        if (url.includes(customDomain) && customDomain) {
+                                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                                            return slug === "" ? "home" : slug;
+                                                        }
+                                                        return url;
+                                                    })()}
                                                     onChange={e => setEditingSlide({ ...editingSlide, primarybuttonurl: e.target.value })}
                                                     className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer focus:border-red-100 focus:ring-1 focus:ring-red-100 transition-all"
                                                 >
@@ -830,7 +880,14 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                             />
                                             <div className="relative">
                                                 <select
-                                                    value={editingSlide.secondarybuttonurl || ""}
+                                                    value={(() => {
+                                                        const url = editingSlide.secondarybuttonurl || "";
+                                                        if (url.includes(customDomain) && customDomain) {
+                                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                                            return slug === "" ? "home" : slug;
+                                                        }
+                                                        return url;
+                                                    })()}
                                                     onChange={e => setEditingSlide({ ...editingSlide, secondarybuttonurl: e.target.value })}
                                                     className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer focus:border-red-100 focus:ring-1 focus:ring-red-100 transition-all"
                                                 >
@@ -870,7 +927,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                     <div className="flex items-center gap-3 ml-auto">
                                         <button onClick={handleCancel} className="px-6 py-3 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-all">Cancel</button>
                                         <button
-                                            disabled={isUploading || isSaving || (!editingSlide.mediaurl && !pendingFile)}
+                                            disabled={isUploading || isSaving || (!editingSlide.mediaurl && !pendingFile && !editingSlide._usePlaceholder)}
                                             onClick={handlePublish}
                                             className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                         >

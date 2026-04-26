@@ -157,3 +157,37 @@ export async function updateComponentConfig(
     revalidatePath("/dashboard");
     return { success: true, data: result };
 }
+
+/**
+ * Update School Details
+ */
+export async function updateSchoolDetails(
+    schoolKey: string,
+    data: any
+) {
+    const supabase = await createClient();
+
+    // 1. Session check
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Unauthorized");
+
+    // 2. Execution
+    const { data: result, error } = await supabase
+        .from('schools')
+        .update({
+            ...data,
+            updatedat: new Date().toISOString()
+        })
+        .eq('key', schoolKey)
+        .select()
+        .single();
+
+    if (error) {
+        console.error(`Error updating school details:`, error);
+        return { success: false, error: error.message };
+    }
+
+    // 3. Cache bust
+    revalidatePath("/dashboard");
+    return { success: true, data: result };
+}

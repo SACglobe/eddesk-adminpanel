@@ -16,9 +16,10 @@ import { createClient } from "@/lib/supabase/client";
 interface HighlightedAcademicsEditorProps {
     component: TemplateComponent;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function HighlightedAcademicsEditor({ component, schoolKey }: HighlightedAcademicsEditorProps) {
+export default function HighlightedAcademicsEditor({ component, schoolKey, onRefreshData }: HighlightedAcademicsEditorProps) {
     const config = useMemo(() => getEnrichedConfig(component), [component]);
     const isIconVariant = useMemo(() => config?.variant === 'bulletintextwithicon', [config?.variant]);
     const isEditable = component.iseditable;
@@ -130,7 +131,7 @@ export default function HighlightedAcademicsEditor({ component, schoolKey }: Hig
             }
             
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
         } finally {
@@ -191,7 +192,7 @@ export default function HighlightedAcademicsEditor({ component, schoolKey }: Hig
             alert("Please enter a detailed overview.");
             return;
         }
-        if (!isIconVariant && !editingItem.imageurl && !pendingFile) {
+        if (!isIconVariant && !editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder) {
             alert("Please upload high-impact media.");
             return;
         }
@@ -213,8 +214,8 @@ export default function HighlightedAcademicsEditor({ component, schoolKey }: Hig
             }
 
             // Sanitize data: strip UI-only properties
-            const { isSkeleton, _isSkeleton, ...dataToSave } = finalItem;
-            const response = await saveRecord(dataToSave);
+            const { _usePlaceholder, isSkeleton, _isSkeleton, ...recordToSave } = finalItem;
+            const response = await saveRecord(recordToSave);
             
             // If we came from an empty slot (Manual Mode), auto-place it
             if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && (response as any).data) {
@@ -528,16 +529,19 @@ export default function HighlightedAcademicsEditor({ component, schoolKey }: Hig
                                             <MediaUpload
                                                 value={editingItem.imageurl || ""}
                                                 type="image"
-                                                onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                                onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                                 onFileSelect={handleFileSelect}
                                                 isStaged={!!pendingFile}
                                                 stagedPreviewUrl={pendingPreviewUrl}
                                                 isExternalUploading={isUploading}
                                                 schoolKey={schoolKey}
                                                 category="academics"
-                                                label="Featured Visual"
-                                                description="Upload a high-impact photo for this section"
+                                                label="Academic Visual"
+                                                description="Upload a high-quality photo or graphic"
                                                 aspectRatio="video"
+                                                showPlaceholderCheckbox={true}
+                                                isPlaceholderActive={!!editingItem._usePlaceholder}
+                                                onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                             />
                                         </div>
                                     </section>

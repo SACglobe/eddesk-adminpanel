@@ -134,10 +134,11 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
     };
 
     const handleSave = async () => {
-        if (!editingItem.title || (!editingItem.imageurl && !pendingFile)) return;
+        if (!editingItem.title || (!editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder)) return;
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -427,7 +428,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                     <MediaUpload
                                         value={editingItem.imageurl || ""}
                                         type="image"
-                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                        onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                         onFileSelect={handleFileSelect}
                                         isStaged={!!pendingFile}
                                         stagedPreviewUrl={pendingPreviewUrl}
@@ -435,10 +436,13 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                         schoolKey={schoolKey}
                                         category="events"
                                         label="Event Banner"
-                                        description="Upload a high-quality photo of the event"
+                                        description="Upload a photo for this event"
+                                        aspectRatio="video"
+                                        showPlaceholderCheckbox={true}
+                                        isPlaceholderActive={!!editingItem._usePlaceholder}
+                                        onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         allowVideo={config?.mediatype !== "image"}
                                         allowImage={config?.mediatype !== "video"}
-                                        aspectRatio="video"
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
@@ -470,7 +474,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
+                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder)}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

@@ -13,9 +13,10 @@ interface ActivitiesEditorProps {
     component: TemplateComponent;
     screen: TemplateScreen;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function ActivitiesEditor({ component, screen, schoolKey }: ActivitiesEditorProps) {
+export default function ActivitiesEditor({ component, screen, schoolKey, onRefreshData }: ActivitiesEditorProps) {
     const isEditable = component.iseditable;
     const config = component.config || {};
     const tableName = (component.componentregistry as any)?.tablename || config.datasource || "activities";
@@ -121,13 +122,14 @@ export default function ActivitiesEditor({ component, screen, schoolKey }: Activ
             alert("Please provide a short description.");
             return;
         }
-        if (!data.imageurl && !pendingFile) {
-            alert("Please upload an activity media file.");
+        if (!data.imageurl && !pendingFile && !data._usePlaceholder) {
+            alert("Please provide an activity image.");
             return;
         }
 
         try {
-            let finalRecord = { ...data };
+            const { _usePlaceholder, ...dataToSave } = data;
+            let finalRecord = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -170,7 +172,7 @@ export default function ActivitiesEditor({ component, screen, schoolKey }: Activ
         try {
             const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
             
-            await upsertComponentData('componentplacement', {
+            const response = await upsertComponentData('componentplacement', {
                 key: existingPlacement?.key || undefined,
                 schoolkey: schoolKey,
                 templatecomponentkey: component.key,
@@ -180,6 +182,16 @@ export default function ActivitiesEditor({ component, screen, schoolKey }: Activ
                 displayorder: pickingForIndex + 1,
                 isactive: true
             }, schoolKey);
+            
+            if (response.success && response.data) {
+                const newPlacement = response.data as unknown as ComponentPlacement;
+                setPlacements(prev => {
+                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
+                    next.push(newPlacement);
+                    return next.sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0));
+                });
+                onRefreshData?.();
+            }
             
             setPickingForIndex(null);
         } catch (err) {
@@ -195,7 +207,11 @@ export default function ActivitiesEditor({ component, screen, schoolKey }: Activ
 
         setIsUpdatingConfig(true);
         try {
-            await deleteComponentData('componentplacement', placement.key, schoolKey);
+            const response = await deleteComponentData('componentplacement', placement.key, schoolKey);
+            if (response.success) {
+                setPlacements(prev => prev.filter(p => p.key !== placement.key));
+                onRefreshData?.();
+            }
         } catch (err) {
             console.error("Failed to delete placement:", err);
         } finally {
@@ -475,7 +491,7 @@ function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config,
                             <MediaUpload
                                 value={formData.imageurl || ""}
                                 type={formData.contenttype || "image"}
-                                onChange={(url) => setFormData({ ...formData, imageurl: url })}
+                                onChange={(url) => setFormData({ ...formData, imageurl: url, _usePlaceholder: false })}
                                 onFileSelect={handleFileSelect}
                                 isStaged={!!pendingFile}
                                 stagedPreviewUrl={pendingPreviewUrl}
@@ -487,6 +503,9 @@ function ActivityModal({ record, onClose, onSave, isSaving, isUploading, config,
                                 allowVideo={true}
                                 allowImage={true}
                                 aspectRatio="16:10"
+                                showPlaceholderCheckbox={true}
+                                isPlaceholderActive={!!formData._usePlaceholder}
+                                onPlaceholderToggle={(active) => setFormData({ ...formData, _usePlaceholder: active, imageurl: active ? "" : formData.imageurl })}
                             />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

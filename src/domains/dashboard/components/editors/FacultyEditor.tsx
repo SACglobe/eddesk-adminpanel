@@ -14,9 +14,10 @@ import { uploadFile } from "@/lib/supabase/storage";
 interface FacultyEditorProps {
     component: TemplateComponent;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function FacultyEditor({ component, schoolKey }: FacultyEditorProps) {
+export default function FacultyEditor({ component, schoolKey, onRefreshData }: FacultyEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
     const tableName = (component.componentregistry as any)?.tablename;
@@ -117,7 +118,7 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
             }
             
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
         } finally {
@@ -135,7 +136,7 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
             if (response.success) {
                 setPlacements(prev => prev.filter(p => p.key !== placement.key));
             }
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to delete placement:", err);
         } finally {
@@ -163,10 +164,11 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
     };
 
     const handleSave = async () => {
-        if (!editingItem.name || (!editingItem.imageurl && !pendingFile)) return;
+        if (!editingItem.name || (!editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder)) return;
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -511,16 +513,19 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
                                         <MediaUpload
                                             value={editingItem.imageurl || ""}
                                             type="image"
-                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                             onFileSelect={handleFileSelect}
                                             isStaged={!!pendingFile}
                                             stagedPreviewUrl={pendingPreviewUrl}
                                             isExternalUploading={isUploading}
                                             schoolKey={schoolKey}
                                             category="faculty"
-                                            label="Profile Photo"
+                                            label="Profile Portrait"
                                             description="Upload a high-quality headshot"
-                                            aspectRatio="square"
+                                            aspectRatio="portrait"
+                                            showPlaceholderCheckbox={true}
+                                            isPlaceholderActive={editingItem._usePlaceholder || (!editingItem.imageurl && !pendingFile)}
+                                            onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />
                                     </div>
                                 </section>
@@ -545,7 +550,7 @@ export default function FacultyEditor({ component, schoolKey }: FacultyEditorPro
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
+                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder)}
                                     onClick={handleSave}
                                     className={`
                                         px-12 py-4 text-[14px] font-black rounded-[20px] shadow-xl transition-all active:scale-[0.97] flex items-center gap-3 h-[60px]

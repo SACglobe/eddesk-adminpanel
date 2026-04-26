@@ -14,9 +14,10 @@ import { Image as ImageIcon, Video, Plus, Trash2, Edit3, X, Check, ExternalLink,
 interface GalleryEditorProps {
     component: TemplateComponent;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function GalleryEditor({ component, schoolKey }: GalleryEditorProps) {
+export default function GalleryEditor({ component, schoolKey, onRefreshData }: GalleryEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
     const tableName = (component.componentregistry as any)?.tablename;
@@ -181,6 +182,7 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
             });
 
             setPickingForIndex(null);
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
         } finally {
@@ -199,7 +201,10 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
             // Optimistically remove from local state
             setLocalPlacements(prev => prev.filter(p => p.key !== placement.key));
 
-            await deleteComponentData('componentplacement', placement.key, schoolKey);
+            const response = await deleteComponentData('componentplacement', placement.key, schoolKey);
+            if (response.success) {
+                onRefreshData?.();
+            }
         } catch (err) {
             console.error("Failed to delete placement:", err);
             // Rollback: remove from deleted set and restore
@@ -226,10 +231,11 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
     };
 
     const handleSave = async () => {
-        if (!editingItem.url && !pendingFile) return;
+        if (!editingItem.url && !pendingFile && !editingItem._usePlaceholder) return;
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
             
             // Upload pending file if any
             if (pendingFile) {
@@ -533,7 +539,7 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                                 <MediaUpload
                                     value={editingItem.url}
                                     type={editingItem.contenttype as any}
-                                    onChange={handleMediaChange}
+                                    onChange={(url) => setEditingItem({ ...editingItem, url, _usePlaceholder: false })}
                                     onFileSelect={handleFileSelect}
                                     isStaged={!!pendingFile}
                                     stagedPreviewUrl={pendingPreviewUrl}
@@ -545,6 +551,9 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                                     allowVideo={effectiveMediaType === "video"}
                                     allowImage={effectiveMediaType === "image"}
                                     lockType={true}
+                                    showPlaceholderCheckbox={true}
+                                    isPlaceholderActive={!!editingItem._usePlaceholder}
+                                    onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, url: active ? "" : editingItem.url })}
                                 />
 
                                 <div className="space-y-6">
@@ -606,7 +615,7 @@ export default function GalleryEditor({ component, schoolKey }: GalleryEditorPro
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.url && !pendingFile)}
+                                    disabled={isSaving || isUploading || (!editingItem.url && !pendingFile && !editingItem._usePlaceholder)}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

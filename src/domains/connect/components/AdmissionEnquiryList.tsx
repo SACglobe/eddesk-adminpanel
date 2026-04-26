@@ -137,7 +137,7 @@ export default function AdmissionEnquiryList({ schoolKey }: AdmissionEnquiryList
                         return (
                             <div 
                                 key={enq.key}
-                                className="group bg-white border border-gray-100 rounded-[28px] hover:border-red-100 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 overflow-hidden"
+                                className="group bg-white border border-gray-100 rounded-[28px] hover:border-red-100 hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300"
                             >
                                 <div className="flex flex-col lg:flex-row lg:items-center p-5 lg:p-4 lg:px-6 gap-6">
                                     {/* Student Info */}

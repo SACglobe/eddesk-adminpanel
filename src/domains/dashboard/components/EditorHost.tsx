@@ -151,7 +151,7 @@ export default function EditorHost({
                             ) : generalItem.key === 'account-details' ? (
                                 <AccountDetailsEditor adminData={adminData} />
                             ) : generalItem.key === 'school-details' ? (
-                                <SchoolDetailsEditor adminData={adminData} />
+                                <SchoolDetailsEditor adminData={adminData} onRefreshData={onRefreshData} />
                             ) : generalItem.key === 'plan-details' ? (
                                 <PlanDetailsEditor 
                                     adminData={adminData} 
@@ -293,10 +293,10 @@ export default function EditorHost({
                                                 }
 
                                                 if (isHeroCode) {
-                                                    return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} onRefreshData={onRefreshData} />;
+                                                    return <HeroEditor component={comp} screen={selectedScreen!} activeComponentData={activeComponentData} schoolKey={schoolKey} allScreens={allScreens || []} allowedMediaType={allowedHeroMediaType} onRefreshData={onRefreshData} adminData={adminData} />;
                                                 }
-                                                if (code === "schoolstats") {
-                                                    return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                if (code === "schoolstats" || code === "stats") {
+                                                    return <StatsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "broadcast") {
                                                     return <BroadcastEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
@@ -305,10 +305,10 @@ export default function EditorHost({
                                                     return <AcademicResultsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                                 }
                                                 if (code === "schoolachievements") {
-                                                    return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                    return <AchievementsEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "gallery") {
-                                                    return <GalleryEditor component={comp} schoolKey={schoolKey} />;
+                                                    return <GalleryEditor component={comp} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "contactdetails") {
                                                     return <ContactDetailsEditor component={comp} schoolKey={schoolKey} />;
@@ -319,23 +319,23 @@ export default function EditorHost({
                                                     }
                                                     return <EventsEditor component={comp} schoolKey={schoolKey} />;
                                                 }
-                                                if (code === "faculty") {
-                                                    return <FacultyEditor component={comp} schoolKey={schoolKey} />;
+                                                if (code === "faculty" || code === "management") {
+                                                    return <FacultyEditor component={comp} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "testimonial") {
                                                     return <TestimonialEditor component={comp} schoolKey={schoolKey} />;
                                                 }
                                                 if (code === "leadership" || code === "principalmessage") {
-                                                    return <PrincipalMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                    return <PrincipalMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "infrastructure" || code === "campusfeatures" || code === "infrastructurelist") {
-                                                    return <InfrastructureEditor component={comp} schoolKey={schoolKey} />;
+                                                    return <InfrastructureEditor component={comp} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "visionmission" || code === "schoolidentity") {
                                                     return <VisionMissionEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
                                                 }
                                                 if (code === "boardmembers") {
-                                                    return <BoardMembersEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                    return <BoardMembersEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "boardmembersmessage" || code === "board_message" || code === "boardmessage") {
                                                     return <BoardMessageEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
@@ -350,13 +350,13 @@ export default function EditorHost({
                                                     return <AcademicsListEditor component={comp} schoolKey={schoolKey} />;
                                                 }
                                                 if (code === "highlightedacademics") {
-                                                    return <HighlightedAcademicsEditor component={comp} schoolKey={schoolKey} />;
+                                                    return <HighlightedAcademicsEditor component={comp} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "activitieslist") {
-                                                    return <ActivitiesEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} />;
+                                                    return <ActivitiesEditor component={comp} screen={selectedScreen!} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "highlightedactivites") {
-                                                    return <HighlightedActivitiesEditor component={comp} schoolKey={schoolKey} />;
+                                                    return <HighlightedActivitiesEditor component={comp} schoolKey={schoolKey} onRefreshData={onRefreshData} />;
                                                 }
                                                 if (code === "highlightedinfrastructure") {
                                                     return <HighlightedInfrastructureEditor component={comp} schoolKey={schoolKey} />;

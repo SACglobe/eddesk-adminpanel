@@ -15,9 +15,10 @@ interface PrincipalMessageEditorProps {
     component: TemplateComponent;
     screen: TemplateScreen;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function PrincipalMessageEditor({ component, screen, schoolKey }: PrincipalMessageEditorProps) {
+export default function PrincipalMessageEditor({ component, screen, schoolKey, onRefreshData }: PrincipalMessageEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
     const tableName = (component.componentregistry as any)?.tablename || "leadership";
@@ -128,7 +129,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
             }
 
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error(err);
         } finally {
@@ -146,7 +147,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey }:
             if (response.success) {
                 setPlacements(prev => prev.filter(p => p.key !== placement.key));
             }
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error(err);
         } finally {

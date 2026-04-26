@@ -15,9 +15,10 @@ interface BoardMembersEditorProps {
     component: TemplateComponent;
     screen: TemplateScreen;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function BoardMembersEditor({ component, screen, schoolKey }: BoardMembersEditorProps) {
+export default function BoardMembersEditor({ component, screen, schoolKey, onRefreshData }: BoardMembersEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
     const tableName = (component.componentregistry as any)?.tablename || "leadership";
@@ -139,7 +140,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
             }
 
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error(err);
         } finally {
@@ -157,7 +158,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
             if (response.success) {
                 setPlacements(prev => prev.filter(p => p.key !== placement.key));
             }
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error(err);
         } finally {
@@ -189,10 +190,11 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
     };
 
     const handleSave = async () => {
-        if (!editingItem.name || (!editingItem.imageurl && !pendingPhotoFile)) return;
+        if (!editingItem.name || (!editingItem.imageurl && !pendingPhotoFile && !editingItem._usePlaceholder)) return;
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
 
             setIsUploading(true);
             try {
@@ -444,7 +446,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                         <MediaUpload
                                             value={editingItem.imageurl || ""}
                                             type="image"
-                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                             onFileSelect={handlePhotoSelect}
                                             isStaged={!!pendingPhotoFile}
                                             stagedPreviewUrl={pendingPhotoPreviewUrl}
@@ -454,6 +456,9 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                             label="Profile Photo"
                                             description="Upload a high-quality professional headshot"
                                             aspectRatio="square"
+                                            showPlaceholderCheckbox={true}
+                                            isPlaceholderActive={!!editingItem._usePlaceholder}
+                                            onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />
                                     </div>
 
@@ -501,7 +506,7 @@ export default function BoardMembersEditor({ component, screen, schoolKey }: Boa
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingPhotoFile)}
+                                    disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingPhotoFile && !editingItem._usePlaceholder)}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

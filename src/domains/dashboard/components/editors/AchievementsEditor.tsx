@@ -13,15 +13,27 @@ interface AchievementsEditorProps {
     component: TemplateComponent;
     screen: TemplateScreen;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function AchievementsEditor({ component, screen, schoolKey }: AchievementsEditorProps) {
+export default function AchievementsEditor({ component, screen, schoolKey, onRefreshData }: AchievementsEditorProps) {
     const isEditable = component.iseditable;
     const config = component.config || {};
     const tableName = (component.componentregistry as any)?.tablename;
     const selectionMethod = config.selectionmethod || "auto"; 
     const itemCount = config.itemcount ? parseInt(String(config.itemcount)) : null;
-    const filters = useMemo(() => (config.filters || {}), [config.filters]) as any;
+    const filters = useMemo(() => {
+        const rawFilters = config.filters || {};
+        if (rawFilters.conditions) {
+            return {
+                ...rawFilters,
+                conditions: rawFilters.conditions.filter((c: any) => c.field !== 'contenttype')
+            };
+        }
+        const f = { ...rawFilters };
+        delete f.contenttype;
+        return f;
+    }, [config.filters]);
 
     const effectiveMediaType = useMemo(() => {
         const type = config?.variant || config?.mediatype;
@@ -65,33 +77,48 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
     const [isUpdatingConfig, setIsUpdatingConfig] = useState(false);
     const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
 
-    const placements = useMemo(() => {
+    const [placements, setPlacements] = useState<ComponentPlacement[]>(() => {
         return (component.contentplacements || [])
             .filter((p: ComponentPlacement) => p.isactive !== false)
             .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0));
+    });
+
+    useEffect(() => {
+        setPlacements((component.contentplacements || [])
+            .filter((p: ComponentPlacement) => p.isactive !== false)
+            .sort((a: ComponentPlacement, b: ComponentPlacement) => (a.displayorder || 0) - (b.displayorder || 0)));
     }, [component.contentplacements]);
 
     // 3. Map achievements to slots for Selector/Auto mode
     const slots = useMemo(() => {
-        // Manual mode: Map placements to actual records
-        if (itemCount) {
+        if (isEditable) {
+            // Source Screen: Show all achievements + fill empty slots up to itemCount
+            const result = [...allAchievements];
+            const limit = itemCount || (result.length + 1);
+            
+            if (result.length < limit) {
+                const start = result.length;
+                for (let i = start; i < limit; i++) {
+                    result.push({ isSlot: true, index: i, displayorder: i + 1 });
+                }
+            }
+            return result;
+        }
+
+        // Selector Screen: Manual Mode
+        if (selectionMethod === "manual") {
             const result = [];
-            for (let i = 0; i < itemCount; i++) {
-                // Find placement for this slot (displayorder is 1-indexed)
+            const limit = itemCount || 4;
+            for (let i = 0; i < limit; i++) {
                 const placement = placements.find((p: ComponentPlacement) => p.displayorder === i + 1);
                 const record = placement ? allAchievements.find((a: any) => a.key === placement.contentkey) : null;
                 result.push(record || { isSlot: true, index: i, displayorder: i + 1 });
             }
             return result;
         }
-        
-        // Auto mode or Default: Strictly itemCount slots
-        const limit = itemCount || allAchievements.length;
-        const result = [];
-        for (let i = 0; i < limit; i++) {
-            result.push(allAchievements.find((a: any) => a.displayorder === i + 1) || { isSlot: true, index: i, displayorder: i + 1 });
-        }
-        return result;
+
+        // Selector Screen: Auto Mode
+        return itemCount ? allAchievements.slice(0, itemCount) : allAchievements;
     }, [isEditable, selectionMethod, itemCount, allAchievements, placements]);
 
     // 4. Modal state for Full Editor
@@ -109,18 +136,20 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
         };
     }, [pendingPreviewUrl]);
 
-    const handleSave = async () => {
-        if (!editingRecord.title?.trim()) {
+    const handleSave = async (data?: any) => {
+        const recordToSave = data || editingRecord;
+        if (!recordToSave?.title?.trim()) {
             alert("Please enter an achievement title.");
             return;
         }
-        if (!editingRecord.imageurl && !pendingFile) {
+        if (!recordToSave.imageurl && !pendingFile && !recordToSave._usePlaceholder) {
             alert("Please upload an achievement photo.");
             return;
         }
 
         try {
-            let finalRecord = { ...editingRecord };
+            const { _usePlaceholder, ...dataToSave } = recordToSave;
+            let finalRecord = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -161,10 +190,9 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
         if (pickingForIndex === null) return;
         setIsUpdatingConfig(true);
         try {
-            // Find existing placement for this slot to update it, or create new
             const existingPlacement = placements.find((p: ComponentPlacement) => p.displayorder === pickingForIndex + 1);
             
-            await upsertComponentData('componentplacement', {
+            const response = await upsertComponentData('componentplacement', {
                 key: existingPlacement?.key || undefined,
                 schoolkey: schoolKey,
                 templatecomponentkey: component.key,
@@ -174,6 +202,17 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
                 displayorder: pickingForIndex + 1,
                 isactive: true
             }, schoolKey);
+            
+            if (response.success && response.data) {
+                const newPlacement = response.data as unknown as ComponentPlacement;
+                setPlacements(prev => {
+                    const next = prev.filter(p => p.displayorder !== newPlacement.displayorder);
+                    next.push(newPlacement);
+                    return next.sort((a,b) => (a.displayorder || 0) - (b.displayorder || 0));
+                });
+                // Bubble up the change to refresh adminData
+                onRefreshData?.();
+            }
             
             setPickingForIndex(null);
         } catch (err) {
@@ -189,7 +228,11 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
 
         setIsUpdatingConfig(true);
         try {
-            await deleteComponentData('componentplacement', placement.key, schoolKey);
+            const response = await deleteComponentData('componentplacement', placement.key, schoolKey);
+            if (response.success) {
+                setPlacements(prev => prev.filter(p => p.key !== placement.key));
+                onRefreshData?.();
+            }
         } catch (err) {
             console.error("Failed to delete placement:", err);
         } finally {
@@ -235,7 +278,6 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
                                             title: "", 
                                             year: new Date().getFullYear(),
                                             displayorder: index + 1,
-                                            contenttype: config?.mediatype === "video" ? "video" : "image",
                                             isactive: true 
                                         });
                                     }}
@@ -355,14 +397,14 @@ export default function AchievementsEditor({ component, screen, schoolKey }: Ach
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-                            {allAchievements.filter((rec: any) => rec.contenttype === effectiveMediaType).length === 0 ? (
+                            {allAchievements.filter((rec: any) => (rec.contenttype || 'image') === effectiveMediaType).length === 0 ? (
                                 <div className="py-20 text-center">
                                     <p className="text-gray-400 font-bold">No {effectiveMediaType} achievements found.</p>
                                     <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest leading-loose">Switch to Source Screen to create<br/>new {effectiveMediaType} content first.</p>
                                 </div>
                             ) : (
                                 allAchievements
-                                    .filter((rec: any) => rec.contenttype === effectiveMediaType)
+                                    .filter((rec: any) => (rec.contenttype || 'image') === effectiveMediaType)
                                     .map((rec: any) => (
                                     <button
                                         key={rec.key}
@@ -410,7 +452,7 @@ function AchievementCard({ achievement, onClick }: { achievement: any; onClick?:
         >
             <div className="aspect-[16/10] bg-gray-50 overflow-hidden relative">
                 {achievement.imageurl ? (
-                    achievement.contenttype === 'video' ? (
+                    (achievement.contenttype || 'image') === 'video' ? (
                         <div className="relative w-full h-full">
                             <video 
                                 src={achievement.imageurl} 
@@ -484,7 +526,7 @@ function AchievementModal({ record, onClose, onSave, isSaving, isUploading, conf
                     <MediaUpload
                         value={formData.imageurl || ""}
                         type="image"
-                        onChange={(url) => setFormData({ ...formData, imageurl: url })}
+                        onChange={(url) => setFormData({ ...formData, imageurl: url, _usePlaceholder: false })}
                         onFileSelect={handleFileSelect}
                         isStaged={!!pendingFile}
                         stagedPreviewUrl={pendingPreviewUrl}
@@ -496,6 +538,9 @@ function AchievementModal({ record, onClose, onSave, isSaving, isUploading, conf
                         allowVideo={config?.mediatype !== "image"}
                         allowImage={config?.mediatype !== "video"}
                         aspectRatio="video"
+                        showPlaceholderCheckbox={true}
+                        isPlaceholderActive={!!formData._usePlaceholder}
+                        onPlaceholderToggle={(active) => setFormData({ ...formData, _usePlaceholder: active, imageurl: active ? "" : formData.imageurl })}
                     />
                     <div className="space-y-2">
                         <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Title</label>
@@ -554,7 +599,7 @@ function AchievementModal({ record, onClose, onSave, isSaving, isUploading, conf
                         </button>
                         <button
                             disabled={isSaving || isUploading}
-                            onClick={() => onSave()}
+                            onClick={() => onSave(formData)}
                             className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                         >
                             {isSaving || isUploading ? (

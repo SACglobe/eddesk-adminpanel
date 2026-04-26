@@ -133,10 +133,11 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
     };
 
     const handleSave = async () => {
-        if (!editingItem.message || (!editingItem.authorimage && !pendingFile)) return;
+        if (!editingItem.message || (!editingItem.authorimage && !pendingFile && !editingItem._usePlaceholder)) return;
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -400,7 +401,7 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
                                     <MediaUpload
                                         value={editingItem.authorimage || ""}
                                         type="image"
-                                        onChange={(url) => setEditingItem({ ...editingItem, authorimage: url })}
+                                        onChange={(url) => setEditingItem({ ...editingItem, authorimage: url, _usePlaceholder: false })}
                                         onFileSelect={handleFileSelect}
                                         isStaged={!!pendingFile}
                                         stagedPreviewUrl={pendingPreviewUrl}
@@ -410,6 +411,9 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
                                         label="Author Photo"
                                         description="Upload a photo of the author"
                                         aspectRatio="square"
+                                        showPlaceholderCheckbox={true}
+                                        isPlaceholderActive={!!editingItem._usePlaceholder}
+                                        onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, authorimage: active ? "" : editingItem.authorimage })}
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">
@@ -441,7 +445,7 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
                                     Cancel
                                 </button>
                                 <button
-                                    disabled={isSaving || isUploading || (!editingItem.authorimage && !pendingFile)}
+                                    disabled={isSaving || isUploading || (!editingItem.authorimage && !pendingFile && !editingItem._usePlaceholder)}
                                     onClick={handleSave}
                                     className="px-10 py-3.5 bg-[#111827] text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl disabled:opacity-50 flex items-center gap-3 h-[52px]"
                                 >

@@ -23,6 +23,10 @@ interface MediaUploadProps {
     isExternalUploading?: boolean;
     layout?: "vertical" | "horizontal";
     placeholder?: string;
+    showPlaceholderCheckbox?: boolean;
+    isPlaceholderActive?: boolean;
+    onPlaceholderToggle?: (active: boolean) => void;
+    placeholderExplicitActive?: boolean;
 }
 
 export default function MediaUpload({
@@ -42,8 +46,13 @@ export default function MediaUpload({
     stagedPreviewUrl,
     isExternalUploading = false,
     layout = "vertical",
-    placeholder
+    placeholder,
+    showPlaceholderCheckbox = false,
+    isPlaceholderActive = false,
+    onPlaceholderToggle,
+    placeholderExplicitActive
 }: MediaUploadProps) {
+    const isExplicitPlaceholder = placeholderExplicitActive ?? isPlaceholderActive;
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
     const [internalUploading, setInternalUploading] = useState(false);
@@ -240,16 +249,33 @@ export default function MediaUpload({
 
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Or Paste URL</label>
+                                <div className="flex items-center justify-between pl-1">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Or Paste URL</label>
+                                    {showPlaceholderCheckbox && (
+                                        <label className="flex items-center gap-2 cursor-pointer group/check">
+                                            <div className="relative flex items-center justify-center">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={isExplicitPlaceholder}
+                                                    onChange={(e) => onPlaceholderToggle?.(e.target.checked)}
+                                                    className="peer appearance-none w-4 h-4 rounded border-2 border-gray-200 checked:bg-red-500 checked:border-red-500 transition-all cursor-pointer" 
+                                                />
+                                                <Check className="absolute w-3 h-3 text-white scale-0 peer-checked:scale-100 transition-transform pointer-events-none" />
+                                            </div>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover/check:text-gray-600 transition-colors">Use Placeholder</span>
+                                        </label>
+                                    )}
+                                </div>
                                 <div className="relative group">
                                     <input
                                         type="text"
                                         value={value}
                                         onChange={e => onChange(e.target.value, type)}
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-100 transition-all text-[13px] font-bold outline-none shadow-inner"
-                                        placeholder="https://..."
+                                        className={`w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-100 transition-all text-[13px] font-bold outline-none shadow-inner ${isExplicitPlaceholder ? 'opacity-40 pointer-events-none' : ''}`}
+                                        placeholder={isExplicitPlaceholder ? "Placeholder active" : "https://..."}
+                                        disabled={isExplicitPlaceholder}
                                     />
-                                    <ExternalLink className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-red-400 transition-colors" />
+                                    <ExternalLink className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-red-400 transition-colors ${isExplicitPlaceholder ? 'opacity-0' : ''}`} />
                                 </div>
                             </div>
                             {!allowVideo && layout !== 'horizontal' && (

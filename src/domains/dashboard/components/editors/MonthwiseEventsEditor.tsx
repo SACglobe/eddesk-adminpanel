@@ -155,10 +155,11 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
     };
 
     const handleSave = async () => {
-        if (!editingItem.title || (!editingItem.imageurl && !pendingFile)) return;
+        if (!editingItem.title || (!editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder)) return;
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -559,7 +560,7 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                         <MediaUpload
                                             value={editingItem.imageurl || ""}
                                             type="image"
-                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                             onFileSelect={handleFileSelect}
                                             isStaged={!!pendingFile}
                                             stagedPreviewUrl={pendingPreviewUrl}
@@ -567,8 +568,11 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                             schoolKey={schoolKey}
                                             category="events"
                                             label="Event Banner"
-                                            description="Upload a high-quality photo for the event"
+                                            description="Upload a photo for this event"
                                             aspectRatio="video"
+                                            showPlaceholderCheckbox={true}
+                                            isPlaceholderActive={!!editingItem._usePlaceholder}
+                                            onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />
                                     </div>
 
@@ -625,7 +629,7 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                         Cancel
                                     </button>
                                     <button
-                                        disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile)}
+                                        disabled={isSaving || isUploading || (!editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder)}
                                         onClick={handleSave}
                                         className="px-12 py-4 bg-neutral-900 text-white text-[14px] font-black rounded-2xl hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 flex items-center gap-3 min-w-[200px] justify-center"
                                     >

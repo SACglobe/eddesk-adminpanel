@@ -16,9 +16,10 @@ import { uploadFile } from "@/lib/supabase/storage";
 interface InfrastructureEditorProps {
     component: TemplateComponent;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function InfrastructureEditor({ component, schoolKey }: InfrastructureEditorProps) {
+export default function InfrastructureEditor({ component, schoolKey, onRefreshData }: InfrastructureEditorProps) {
     const config = component.config as any;
     const isEditable = component.iseditable;
     const tableName = (component.componentregistry as any)?.tablename;
@@ -132,7 +133,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             }
             
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
         } finally {
@@ -150,7 +151,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             if (response.success) {
                 setPlacements(prev => prev.filter(p => p.key !== placement.key));
             }
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to delete placement:", err);
         } finally {
@@ -186,13 +187,14 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
             alert("Please provide a description.");
             return;
         }
-        if (hasImage && !editingItem.imageurl && !pendingFile) {
+        if (hasImage && !editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder) {
             alert("Please upload a facility photo.");
             return;
         }
         setIsSaving(true);
         try {
-            let finalItem = { ...editingItem };
+            const { _usePlaceholder, ...dataToSave } = editingItem;
+            let finalItem = { ...dataToSave };
 
             if (pendingFile) {
                 setIsUploading(true);
@@ -496,7 +498,7 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                         <MediaUpload
                                             value={editingItem.imageurl || ""}
                                             type="image"
-                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                            onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                             onFileSelect={handleFileSelect}
                                             isStaged={!!pendingFile}
                                             stagedPreviewUrl={pendingPreviewUrl}
@@ -508,6 +510,9 @@ export default function InfrastructureEditor({ component, schoolKey }: Infrastru
                                             allowVideo={config?.mediatype !== "image"}
                                             allowImage={config?.mediatype !== "video"}
                                             aspectRatio="video"
+                                            showPlaceholderCheckbox={true}
+                                            isPlaceholderActive={!!editingItem._usePlaceholder}
+                                            onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />
                                     </div>
                                 )}

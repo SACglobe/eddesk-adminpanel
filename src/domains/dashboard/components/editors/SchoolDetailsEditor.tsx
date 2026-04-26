@@ -4,17 +4,25 @@ import { useState, useEffect } from "react";
 import { AdminInitialData } from "@/domains/auth/types";
 import MediaUpload from "@/components/ui/MediaUpload";
 import { uploadFile } from "@/lib/supabase/storage";
-import { createClient } from "@/lib/supabase/client";
+import { updateSchoolDetails } from "@/domains/dashboard/actions";
 
 interface SchoolDetailsEditorProps {
     adminData: AdminInitialData;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function SchoolDetailsEditor({ adminData }: SchoolDetailsEditorProps) {
+export default function SchoolDetailsEditor({ adminData, onRefreshData }: SchoolDetailsEditorProps) {
     const school = adminData?.schools as any;
     const [isEditingSchool, setIsEditingSchool] = useState(false);
     const [formData, setFormData] = useState(school);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Keep formData in sync with adminData when it refreshes
+    useEffect(() => {
+        if (adminData?.schools) {
+            setFormData(adminData.schools);
+        }
+    }, [adminData?.schools]);
 
     // Staged upload state
     const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -37,7 +45,6 @@ export default function SchoolDetailsEditor({ adminData }: SchoolDetailsEditorPr
     const handleSave = async () => {
         if (isEditingSchool) {
             setIsSaving(true);
-            const supabase = createClient();
             
             try {
                 let finalData = { ...formData };
@@ -57,22 +64,24 @@ export default function SchoolDetailsEditor({ adminData }: SchoolDetailsEditorPr
                     }
                 }
 
-                // Update the school record in Supabase
-                const { error } = await supabase
-                    .from("schools")
-                    .update({
-                        name: finalData.name,
-                        email: finalData.email,
-                        phone: finalData.phone,
-                        address: finalData.address,
-                        city: finalData.city,
-                        state: finalData.state,
-                        postal_code: finalData.postal_code,
-                        logourl: finalData.logourl
-                    })
-                    .eq("key", school.key);
+                // Update the school record via Server Action
+                const response = await updateSchoolDetails(school.key, {
+                    name: finalData.name,
+                    email: finalData.email,
+                    phone: finalData.phone,
+                    address: finalData.address,
+                    city: finalData.city,
+                    state: finalData.state,
+                    postal_code: finalData.postal_code,
+                    logourl: finalData.logourl
+                });
 
-                if (error) throw error;
+                if (!response.success) throw new Error(response.error);
+                
+                // Refresh global admin data to ensure consistency across the app
+                if (onRefreshData) {
+                    await onRefreshData();
+                }
                 
                 // Reset staged states
                 setPendingFile(null);
@@ -80,8 +89,6 @@ export default function SchoolDetailsEditor({ adminData }: SchoolDetailsEditorPr
                 setIsEditingSchool(false);
                 alert("School details updated successfully!");
                 
-                // Refresh page or update parent state if needed
-                // window.location.reload(); 
             } catch (err) {
                 console.error("Save failed:", err);
                 alert("Failed to save changes. Please try again.");

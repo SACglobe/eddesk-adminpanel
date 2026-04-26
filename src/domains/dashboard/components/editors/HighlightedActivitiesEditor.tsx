@@ -16,9 +16,10 @@ import { createClient } from "@/lib/supabase/client";
 interface HighlightedActivitiesEditorProps {
     component: TemplateComponent;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function HighlightedActivitiesEditor({ component, schoolKey }: HighlightedActivitiesEditorProps) {
+export default function HighlightedActivitiesEditor({ component, schoolKey, onRefreshData }: HighlightedActivitiesEditorProps) {
     const config = useMemo(() => getEnrichedConfig(component), [component]);
     const isIconVariant = useMemo(() => config?.variant === 'bulletintextwithicon', [config?.variant]);
     const isEditable = component.iseditable;
@@ -130,7 +131,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
             }
             
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
         } finally {
@@ -191,7 +192,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
             alert("Please enter a detailed overview.");
             return;
         }
-        if (!isIconVariant && !editingItem.imageurl && !pendingFile) {
+        if (!isIconVariant && !editingItem.imageurl && !pendingFile && !editingItem._usePlaceholder) {
             alert("Please upload a featured visual.");
             return;
         }
@@ -212,8 +213,8 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
                 }
             }
 
-            const { isSkeleton, _isSkeleton, ...dataToSave } = finalItem;
-            const response = await saveRecord(dataToSave);
+            const { _usePlaceholder, isSkeleton, _isSkeleton, ...recordToSave } = finalItem;
+            const response = await saveRecord(recordToSave);
             
             if (config?.selectionmethod !== "auto" && targetSlotIndex !== null && (response as any).data) {
                 const recordKey = (response as any).data.key;
@@ -522,7 +523,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
                                             <MediaUpload
                                                 value={editingItem.imageurl || ""}
                                                 type="image"
-                                                onChange={(url) => setEditingItem({ ...editingItem, imageurl: url })}
+                                                onChange={(url) => setEditingItem({ ...editingItem, imageurl: url, _usePlaceholder: false })}
                                                 onFileSelect={handleFileSelect}
                                                 isStaged={!!pendingFile}
                                                 stagedPreviewUrl={pendingPreviewUrl}
@@ -532,6 +533,9 @@ export default function HighlightedActivitiesEditor({ component, schoolKey }: Hi
                                                 label="Featured Photo"
                                                 description="Upload a high-impact photo for this activity"
                                                 aspectRatio="video"
+                                                showPlaceholderCheckbox={true}
+                                                isPlaceholderActive={!!editingItem._usePlaceholder}
+                                                onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                             />
                                         </div>
                                     </section>

@@ -14,9 +14,10 @@ interface StatsEditorProps {
     component: TemplateComponent;
     screen: TemplateScreen;
     schoolKey: string;
+    onRefreshData?: () => Promise<void>;
 }
 
-export default function StatsEditor({ component, screen, schoolKey }: StatsEditorProps) {
+export default function StatsEditor({ component, screen, schoolKey, onRefreshData }: StatsEditorProps) {
     const tableName = (component.componentregistry as any)?.tablename;
     
     const config = component.config as any;
@@ -84,7 +85,7 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
             }
             
             setPickingForIndex(null);
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to update placement:", err);
         } finally {
@@ -102,7 +103,7 @@ export default function StatsEditor({ component, screen, schoolKey }: StatsEdito
             if (response.success) {
                 setPlacements(prev => prev.filter(p => p.key !== placement.key));
             }
-            router.refresh();
+            onRefreshData?.();
         } catch (err) {
             console.error("Failed to delete placement:", err);
         } finally {
