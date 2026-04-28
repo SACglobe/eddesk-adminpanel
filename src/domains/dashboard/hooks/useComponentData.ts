@@ -190,7 +190,13 @@ export function useComponentData({
             console.log(`[useComponentData] Fetching from ${tableName}. Filters:`, filters, "Result count:", data?.length || 0);
             setRecords(data || []);
         } catch (err: any) {
-            console.error(`Error fetching from ${tableName}:`, err);
+            console.error(`Error fetching from ${tableName}:`, {
+                message: err.message,
+                code: err.code,
+                details: err.details,
+                hint: err.hint,
+                fullError: err
+            });
             setError(err.message || "Failed to load data");
         } finally {
             setIsLoading(false);
