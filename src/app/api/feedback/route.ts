@@ -24,12 +24,13 @@ export async function POST(request: Request) {
     const schoolDomain = (adminUser?.schools as any)?.customdomain || (adminUser?.schools as any)?.slug || "No domain";
 
     // Send email to support@eddesk.in
-    await sendSubscriptionEmail("support@eddesk.in", "SUPPORT_REQUEST", {
+    await sendSubscriptionEmail("support@eddesk.in", "FEEDBACK", {
       schoolName,
-      planName: `Feedback: ${rating}/5 Stars`,
-      amount: rating,
-      customerDomain: `Feedback from ${schoolName} (${schoolDomain}).\n\nRating: ${rating}/5\nContact: ${contactEmail || 'Not provided'}\n\nMessage:\n${feedback}`,
-      date: new Date().toLocaleDateString("en-IN")
+      rating,
+      supportMessage: feedback,
+      customerDomain: schoolDomain,
+      date: new Date().toLocaleDateString("en-IN"),
+      ...({ replyTo: contactEmail || user.email } as any)
     });
 
     return NextResponse.json({ success: true });

@@ -24,11 +24,11 @@ export async function POST(request: Request) {
     const schoolDomain = (adminUser?.schools as any)?.customdomain || (adminUser?.schools as any)?.slug || "No domain";
 
     // Send email to support@eddesk.in
-    await sendSubscriptionEmail("support@eddesk.in", "SUPPORT_REQUEST", {
+    await sendSubscriptionEmail("support@eddesk.in", "HELP_REQUEST", {
       schoolName,
-      planName: `Help Request: ${subject}`,
-      amount: 0,
-      customerDomain: `Support request from ${schoolName} (${schoolDomain}).\n\nSubject: ${subject}\nContact: ${contactEmail || user.email}\n\nMessage:\n${message}`,
+      supportSubject: subject,
+      supportMessage: message,
+      customerDomain: schoolDomain,
       date: new Date().toLocaleDateString("en-IN"),
       // Custom replyTo so support can reply directly
       ...({ replyTo: contactEmail || user.email } as any)

@@ -13,6 +13,8 @@ export type EmailType =
   | 'LAPSED_NOTICE' 
   | 'SUPPORT_ESCALATION'
   | 'SUPPORT_REQUEST'
+  | 'HELP_REQUEST'
+  | 'FEEDBACK'
   | 'ADMIN_INVITE';
 
 export interface EmailData {
@@ -27,6 +29,9 @@ export interface EmailData {
   role?: string;
   inviteLink?: string;
   replyTo?: string;
+  supportSubject?: string;
+  supportMessage?: string;
+  rating?: number;
 }
 
 export async function sendSubscriptionEmail(to: string, type: EmailType, data: EmailData) {
@@ -120,6 +125,24 @@ export async function sendSubscriptionEmail(to: string, type: EmailType, data: E
       sender = "EdDesk Admin <admin@eddesk.in>";
       break;
 
+    case 'HELP_REQUEST':
+      subject = `Help Request: ${data.supportSubject} - ${data.schoolName}`;
+      badge = "Support Ticket";
+      title = "New Help Request";
+      message = `A new support ticket has been raised from the admin panel. Please review the details below.`;
+      headerBg = "#2563eb"; // Blue
+      sender = "EdDesk Admin <admin@eddesk.in>";
+      break;
+
+    case 'FEEDBACK':
+      subject = `User Feedback: ${data.rating}/5 - ${data.schoolName}`;
+      badge = "User Feedback";
+      title = "Platform Feedback";
+      message = `A user has submitted feedback regarding their experience with the platform.`;
+      headerBg = "#8b5cf6"; // Violet
+      sender = "EdDesk Admin <admin@eddesk.in>";
+      break;
+
     case 'ADMIN_INVITE':
       subject = `Invitation to join ${data.schoolName} on EdDesk`;
       badge = "New Invitation";
@@ -210,6 +233,27 @@ export async function sendSubscriptionEmail(to: string, type: EmailType, data: E
                       </tr>
                       ` : ''}
 
+                      ${(type === 'HELP_REQUEST' || type === 'FEEDBACK') && data.supportMessage ? `
+                      <tr>
+                        <td style="padding: 30px 0 30px 0;">
+                          <table border="0" cellpadding="24" cellspacing="0" width="100%" style="background-color: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;">
+                            <tr>
+                              <td>
+                                ${type === 'HELP_REQUEST' ? `<p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Subject</p>
+                                <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px; font-weight: 700;">${data.supportSubject}</h3>` : ''}
+                                
+                                ${type === 'FEEDBACK' ? `<p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Rating</p>
+                                <h3 style="margin: 0 0 20px 0; color: #8b5cf6; font-size: 24px; font-weight: 900;">${data.rating}/5 Stars</h3>` : ''}
+
+                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Message Content</p>
+                                <div style="color: #334155; font-size: 15px; line-height: 26px; white-space: pre-wrap; background-color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9;">${data.supportMessage}</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      ` : ''}
+
                       <tr>
                         <td>
                           <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #f1f5f9; padding-top: 20px;">
@@ -281,7 +325,9 @@ export async function sendSubscriptionEmail(to: string, type: EmailType, data: E
                     <p style="margin: 0; color: #94a3b8; font-size: 11px;">
                       &copy; ${new Date().getFullYear()} EdDesk &bull; Professional EdTech Solutions
                     </p>
+                    ${type !== 'HELP_REQUEST' && type !== 'FEEDBACK' ? `
                     <p style="margin: 10px 0 0 0; color: #cbd5e1; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Secure Payments via Razorpay</p>
+                    ` : ''}
                   </td>
                 </tr>
 
