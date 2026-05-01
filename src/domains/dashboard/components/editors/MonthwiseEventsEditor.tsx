@@ -7,6 +7,7 @@ import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/ac
 import { uploadFile } from "@/lib/supabase/storage";
 import { generateId } from "@/lib/generateId";
 import MediaUpload from "@/components/ui/MediaUpload";
+import Select from "@/components/ui/Select";
 import { 
     Calendar, 
     ChevronLeft, 
@@ -514,18 +515,19 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Event Category</label>
-                                            <select
-                                                value={editingItem.category || ""}
-                                                onChange={e => setEditingItem({ ...editingItem, category: e.target.value })}
-                                                className="w-full px-7 py-5 bg-neutral-50/80 border-2 border-transparent focus:bg-white focus:border-[#F54927] rounded-[24px] transition-all text-[14px] font-bold outline-none shadow-sm appearance-none cursor-pointer"
-                                            >
-                                                <option value="General">General</option>
-                                                <option value="Academic">Academic</option>
-                                                <option value="Arts">Arts & Culture</option>
-                                                <option value="Sports">Sports</option>
-                                                <option value="Holiday">Holiday</option>
-                                                <option value="Workshop">Workshop</option>
-                                            </select>
+                                        <Select
+                                            value={editingItem.category || "General"}
+                                            onChange={(v) => setEditingItem({ ...editingItem, category: v })}
+                                            options={[
+                                                { value: "General", label: "General" },
+                                                { value: "Academic", label: "Academic" },
+                                                { value: "Arts", label: "Arts & Culture" },
+                                                { value: "Sports", label: "Sports" },
+                                                { value: "Holiday", label: "Holiday" },
+                                                { value: "Workshop", label: "Workshop" },
+                                            ]}
+                                            className="w-full"
+                                        />
                                         </div>
                                     </div>
 
@@ -569,8 +571,10 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                             category="events"
                                             label="Event Banner"
                                             description="Upload a photo for this event"
+                                            allowVideo={false}
+                                            allowImage={true}
                                             aspectRatio="video"
-                                            showPlaceholderCheckbox={false}
+                                            showPlaceholderCheckbox={true}
                                             isPlaceholderActive={!!editingItem._usePlaceholder}
                                             onPlaceholderToggle={(active) => setEditingItem({ ...editingItem, _usePlaceholder: active, imageurl: active ? "" : editingItem.imageurl })}
                                         />

@@ -11,6 +11,7 @@ import { upsertComponentData, deleteComponentData } from "@/domains/dashboard/ac
 import type { TemplateComponent, TemplateScreen, ComponentPlacement } from "@/domains/auth/types";
 import { Check, X } from "lucide-react";
 import MediaUpload from "@/components/ui/MediaUpload";
+import Select from "@/components/ui/Select";
 
 interface HeroEditorProps {
     component: TemplateComponent;
@@ -516,26 +517,20 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                 onChange={e => setEditingSlide({ ...editingSlide, primarybuttontext: e.target.value })}
                                 className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-[13px] font-bold outline-none"
                             />
-                            <div className="relative">
-                                <select
-                                    value={(() => {
-                                        const url = editingSlide.primarybuttonurl || "";
-                                        if (url.includes(customDomain) && customDomain) {
-                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
-                                            return slug === "" ? "home" : slug;
-                                        }
-                                        return url;
-                                    })()}
-                                    onChange={e => setEditingSlide({ ...editingSlide, primarybuttonurl: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer"
-                                >
-                                    <option value="">Select screen...</option>
-                                    {allScreens.map(scr => (
-                                        <option key={scr.key} value={scr.screenslug ?? ''}>{scr.screenname ?? scr.screenslug}</option>
-                                    ))}
-                                </select>
-                                <svg className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
+                            <Select
+                                id="mobile-primary"
+                                value={(() => {
+                                    const url = editingSlide.primarybuttonurl || "";
+                                    if (url.includes(customDomain) && customDomain) {
+                                        const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                        return slug === "" ? "home" : slug;
+                                    }
+                                    return url;
+                                })()}
+                                onChange={v => setEditingSlide({ ...editingSlide, primarybuttonurl: v })}
+                                options={allScreens.map(scr => ({ value: scr.screenslug ?? '', label: scr.screenname ?? scr.screenslug ?? '' }))}
+                                placeholder="Select action screen…"
+                            />
 
                             <div className="flex items-center gap-2 mb-2 pt-4">
                                 <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
@@ -548,26 +543,20 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                 onChange={e => setEditingSlide({ ...editingSlide, secondarybuttontext: e.target.value })}
                                 className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-[13px] font-bold outline-none"
                             />
-                            <div className="relative">
-                                <select
-                                    value={(() => {
-                                        const url = editingSlide.secondarybuttonurl || "";
-                                        if (url.includes(customDomain) && customDomain) {
-                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
-                                            return slug === "" ? "home" : slug;
-                                        }
-                                        return url;
-                                    })()}
-                                    onChange={e => setEditingSlide({ ...editingSlide, secondarybuttonurl: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer"
-                                >
-                                    <option value="">Select screen...</option>
-                                    {allScreens.map(scr => (
-                                        <option key={scr.key} value={scr.screenslug ?? ''}>{scr.screenname ?? scr.screenslug}</option>
-                                    ))}
-                                </select>
-                                <svg className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </div>
+                            <Select
+                                id="mobile-secondary"
+                                value={(() => {
+                                    const url = editingSlide.secondarybuttonurl || "";
+                                    if (url.includes(customDomain) && customDomain) {
+                                        const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                        return slug === "" ? "home" : slug;
+                                    }
+                                    return url;
+                                })()}
+                                onChange={v => setEditingSlide({ ...editingSlide, secondarybuttonurl: v })}
+                                options={allScreens.map(scr => ({ value: scr.screenslug ?? '', label: scr.screenname ?? scr.screenslug ?? '' }))}
+                                placeholder="Select action screen…"
+                            />
                         </div>
                     </div>
 
@@ -848,26 +837,20 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                                 onChange={e => setEditingSlide({ ...editingSlide, primarybuttontext: e.target.value })}
                                                 className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-[13px] font-bold outline-none"
                                             />
-                                            <div className="relative">
-                                                <select
-                                                    value={(() => {
-                                                        const url = editingSlide.primarybuttonurl || "";
-                                                        if (url.includes(customDomain) && customDomain) {
-                                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
-                                                            return slug === "" ? "home" : slug;
-                                                        }
-                                                        return url;
-                                                    })()}
-                                                    onChange={e => setEditingSlide({ ...editingSlide, primarybuttonurl: e.target.value })}
-                                                    className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer focus:border-red-100 focus:ring-1 focus:ring-red-100 transition-all"
-                                                >
-                                                    <option value="">Select action screen...</option>
-                                                    {allScreens.map(scr => (
-                                                        <option key={scr.key} value={scr.screenslug ?? ''}>{scr.screenname ?? scr.screenslug}</option>
-                                                    ))}
-                                                </select>
-                                                <svg className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
+                                            <Select
+                                                id="desktop-primary"
+                                                value={(() => {
+                                                    const url = editingSlide.primarybuttonurl || "";
+                                                    if (url.includes(customDomain) && customDomain) {
+                                                        const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                                        return slug === "" ? "home" : slug;
+                                                    }
+                                                    return url;
+                                                })()}
+                                                onChange={v => setEditingSlide({ ...editingSlide, primarybuttonurl: v })}
+                                                options={allScreens.map(scr => ({ value: scr.screenslug ?? '', label: scr.screenname ?? scr.screenslug ?? '' }))}
+                                                placeholder="Select action screen…"
+                                            />
                                         </div>
                                         <div className="bg-gray-50 p-5 rounded-[24px] space-y-4">
                                             <p className="text-[11px] font-black text-gray-900 uppercase tracking-wider mb-2">Secondary CTA</p>
@@ -878,26 +861,20 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
                                                 onChange={e => setEditingSlide({ ...editingSlide, secondarybuttontext: e.target.value })}
                                                 className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-[13px] font-bold outline-none"
                                             />
-                                            <div className="relative">
-                                                <select
-                                                    value={(() => {
-                                                        const url = editingSlide.secondarybuttonurl || "";
-                                                        if (url.includes(customDomain) && customDomain) {
-                                                            const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
-                                                            return slug === "" ? "home" : slug;
-                                                        }
-                                                        return url;
-                                                    })()}
-                                                    onChange={e => setEditingSlide({ ...editingSlide, secondarybuttonurl: e.target.value })}
-                                                    className="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-[12px] font-medium text-gray-700 outline-none appearance-none pr-10 cursor-pointer focus:border-red-100 focus:ring-1 focus:ring-red-100 transition-all"
-                                                >
-                                                    <option value="">Select action screen...</option>
-                                                    {allScreens.map(scr => (
-                                                        <option key={scr.key} value={scr.screenslug ?? ''}>{scr.screenname ?? scr.screenslug}</option>
-                                                    ))}
-                                                </select>
-                                                <svg className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                            </div>
+                                            <Select
+                                                id="desktop-secondary"
+                                                value={(() => {
+                                                    const url = editingSlide.secondarybuttonurl || "";
+                                                    if (url.includes(customDomain) && customDomain) {
+                                                        const slug = url.replace(customDomain, '').replace(/^\//, '') || "";
+                                                        return slug === "" ? "home" : slug;
+                                                    }
+                                                    return url;
+                                                })()}
+                                                onChange={v => setEditingSlide({ ...editingSlide, secondarybuttonurl: v })}
+                                                options={allScreens.map(scr => ({ value: scr.screenslug ?? '', label: scr.screenname ?? scr.screenslug ?? '' }))}
+                                                placeholder="Select action screen…"
+                                            />
                                         </div>
                                     </div>
 

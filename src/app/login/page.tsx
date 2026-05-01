@@ -53,11 +53,17 @@ function LoginContent() {
             }
         };
 
-        // 1. Initial session check
-        supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
-            if (session) {
+        // 1. Initial session check — use getUser() (server-validated) instead of getSession()
+        //    to avoid acting on stale/invalid refresh tokens stored in localStorage.
+        supabase.auth.getUser().then(({ data: { user }, error: userError }: { data: { user: any }, error: any }) => {
+            if (userError) {
+                // Stale token in storage — clear it so Supabase stops trying to refresh it
+                supabase.auth.signOut();
+                return;
+            }
+            if (user) {
                 setHasSession(true);
-                checkUserStatus(session.user);
+                checkUserStatus(user);
             }
         });
 
@@ -71,7 +77,7 @@ function LoginContent() {
             setIsSettingPassword(true);
 
             // If tokens are present but session is not yet active, activate it automatically
-            if (accessToken && refreshToken && !hasSession) {
+            if (accessToken && refreshToken) {
                 console.log("Automating sign-in process...");
                 supabase.auth.setSession({
                     access_token: accessToken,
@@ -104,7 +110,9 @@ function LoginContent() {
         });
 
         return () => subscription.unsubscribe();
-    }, [hasSession, router]); // Dependencies ensure re-run if local session state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [router]); // ⚠️ hasSession intentionally removed — adding it causes infinite re-runs
+                  // that thrash the Supabase refresh token cycle
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
@@ -164,19 +172,6 @@ function LoginContent() {
                     pointerEvents: 'none',
                 }}
             />
-
-            {/* Invite Button */}
-            <div className="absolute top-6 right-6 z-10">
-                <button
-                    onClick={() => router.push("/invite")}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-500 hover:text-[#F54927] hover:border-[#F54927]/30 hover:bg-red-50 transition-all shadow-sm"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                    Invite New Admin
-                </button>
-            </div>
 
             {/* Login Card */}
             <div
