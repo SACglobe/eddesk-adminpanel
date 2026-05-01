@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSchools, createAdminInvite } from "@/domains/invite/queries";
 import { SchoolOption, AdminInviteParams } from "@/domains/invite/types";
+import Select from "@/components/ui/Select";
 
 export default function InvitePage() {
     const router = useRouter();
@@ -200,33 +201,27 @@ export default function InvitePage() {
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 px-0.5">
                                     Role
                                 </label>
-                                <select
+                                <Select
                                     value={formData.prole}
-                                    onChange={(e) => setFormData({ ...formData, prole: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[14px] text-gray-900 focus:ring-2 focus:ring-[#EF4444] focus:border-transparent transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207L10%2012L15%207%22%20stroke%3D%22%236B7280%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px] bg-[right_12px_center] bg-no-repeat"
-                                >
-                                    <option value="admin">Admin</option>
-                                    <option value="editor">Editor</option>
-                                    <option value="viewer">Viewer</option>
-                                </select>
+                                    onChange={(v) => setFormData({ ...formData, prole: v })}
+                                    options={[
+                                        { value: "admin", label: "Admin" },
+                                        { value: "editor", label: "Editor" },
+                                        { value: "viewer", label: "Viewer" },
+                                    ]}
+                                />
                             </div>
 
                             <div className="col-span-2">
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 px-0.5">
                                     School Selection
                                 </label>
-                                <select
-                                    required
+                                <Select
                                     value={formData.pschoolkey}
-                                    onChange={(e) => setFormData({ ...formData, pschoolkey: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[14px] text-gray-900 focus:ring-2 focus:ring-[#EF4444] focus:border-transparent transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207L10%2012L15%207%22%20stroke%3D%22%236B7280%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px] bg-[right_12px_center] bg-no-repeat"
-                                >
-                                    {schools.map((school) => (
-                                        <option key={school.key} value={school.key}>
-                                            {school.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(v) => setFormData({ ...formData, pschoolkey: v })}
+                                    options={schools.map((school) => ({ value: school.key, label: school.name ?? school.key }))}
+                                    placeholder="Select a school…"
+                                />
                             </div>
                         </div>
 

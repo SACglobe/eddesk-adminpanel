@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdminInitialData } from "@/domains/auth/types";
 
 interface AccountDetailsEditorProps {
@@ -8,6 +9,7 @@ interface AccountDetailsEditorProps {
 }
 
 export default function AccountDetailsEditor({ adminData }: AccountDetailsEditorProps) {
+    const router = useRouter();
     const admin = adminData?.adminusers as any;
     const school = adminData?.schools as any;
 
@@ -97,6 +99,43 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
                     </div>
                 )}
             </div>
+
+            {/* 3. Team & Access Section — visible to super admins only */}
+            {admin?.issuperadmin && (
+            <div className="bg-white border border-gray-100 rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
+                <div className="px-8 lg:px-12 py-8 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-gray-50/50 to-white">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-[#F54927]/10 border border-[#F54927]/15 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-[#F54927]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-gray-900 tracking-tight">Team &amp; Access</h2>
+                            <p className="text-[13px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Admin Members &amp; Invitations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-8 lg:p-12 flex items-center justify-between gap-6">
+                    <div className="max-w-md">
+                        <p className="text-[15px] font-bold text-gray-900">Invite a New Administrator</p>
+                        <p className="text-[13px] text-gray-400 mt-1 leading-relaxed">
+                            Send an invitation email to add a new admin to manage this school&apos;s EdDesk panel.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => router.push("/invite")}
+                        className="flex-shrink-0 flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#F54927] to-[#ff6b52] text-white text-[13px] font-bold rounded-xl shadow-lg shadow-[#F54927]/20 hover:opacity-90 transition-all duration-150"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        Invite New Admin
+                    </button>
+                </div>
+            </div>
+            )}
 
             <div className="flex justify-center pb-8">
                 <p className="text-[12px] text-gray-400 font-medium flex items-center gap-2">

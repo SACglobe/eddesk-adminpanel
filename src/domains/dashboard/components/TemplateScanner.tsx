@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { AdminInitialData, TemplateScreen, TemplateComponent } from "@/domains/auth/types";
 import { getEnrichedConfig } from "../utils/componentUtils";
 import { createClient } from "@/lib/supabase/client";
@@ -71,6 +71,20 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedScreenFilter, setSelectedScreenFilter] = useState<string>("all");
     const [selectedBlueprint, setSelectedBlueprint] = useState<ScanResult | null>(null);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
+
+    // Close filter dropdown on outside click
+    useEffect(() => {
+        if (!filterOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+                setFilterOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [filterOpen]);
 
     const screens = useMemo(() => {
         return adminData.templatescreens.sort((a, b) => (a.displayorder ?? 0) - (b.displayorder ?? 0));
@@ -783,6 +797,7 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
     };
 
     if (!isOpen) return (
+        (adminData.adminusers as any)?.issuperadmin ? (
         <button 
             onClick={() => setIsOpen(true)}
             className="fixed bottom-6 right-6 z-[100] bg-gray-900 hover:bg-black text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm transition-all active:scale-95 border border-white/10 backdrop-blur-md group"
@@ -790,6 +805,7 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border-2 border-emerald-500/30" />
             <span className="tracking-tight uppercase text-[11px] font-black">Architecture Scan</span>
         </button>
+        ) : null
     );
 
     return (
@@ -835,18 +851,58 @@ export default function TemplateScanner({ adminData }: TemplateScannerProps) {
                         />
                     </div>
                     
-                    <div className="w-64 relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none group-focus-within:text-red-500 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
-                        </div>
-                        <select 
-                            value={selectedScreenFilter}
-                            onChange={(e) => setSelectedScreenFilter(e.target.value)}
-                            className="w-full appearance-none pl-11 pr-10 py-3 bg-white/5 border border-white/10 hover:border-white/20 rounded-xl text-[13px] font-black text-white/70 uppercase tracking-widest outline-none cursor-pointer"
-                        >
-                            <option value="all" className="bg-[#0f172a]">Global Workspace</option>
-                            {screens.map(s => <option key={s.key} value={s.key} className="bg-[#0f172a]">{s.screenname ?? s.screenslug}</option>)}
-                        </select>
+                    <div ref={filterRef} className="w-64 relative">
+                        {/* Dark-themed custom select for TemplateScanner header */}
+                        {(() => {
+                            const currentScreen = screens.find(s => s.key === selectedScreenFilter);
+                            const label = selectedScreenFilter === 'all' ? 'Global Workspace' : (currentScreen?.screenname ?? currentScreen?.screenslug ?? 'Select Screen');
+                            return (
+                                <div className="relative" id="scanner-screen-filter">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFilterOpen(prev => !prev)}
+                                        className="w-full flex items-center justify-between pl-4 pr-4 py-3 bg-white/5 border border-white/10 hover:border-white/20 rounded-xl text-[13px] font-black text-white/70 uppercase tracking-widest outline-none cursor-pointer transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <svg className="w-4 h-4 text-white/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                                            <span className="truncate">{label}</span>
+                                        </div>
+                                        <svg className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${filterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                    </button>
+
+                                    {filterOpen && (
+                                        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[999] bg-[#1e293b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                                            <div className="py-1.5 max-h-60 overflow-y-auto no-scrollbar">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setSelectedScreenFilter('all'); setFilterOpen(false); }}
+                                                    className={`w-full flex items-center justify-between px-4 py-2.5 text-[12px] font-bold text-left transition-colors ${
+                                                        selectedScreenFilter === 'all' ? 'bg-white/10 text-white' : 'text-white/50 hover:bg-white/5'
+                                                    }`}
+                                                >
+                                                    Global Workspace
+                                                    {selectedScreenFilter === 'all' && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>}
+                                                </button>
+                                                <div className="h-px bg-white/10 mx-3 my-1" />
+                                                {screens.map(s => (
+                                                    <button
+                                                        key={s.key}
+                                                        type="button"
+                                                        onClick={() => { setSelectedScreenFilter(s.key); setFilterOpen(false); }}
+                                                        className={`w-full flex items-center justify-between px-4 py-2.5 text-[13px] font-bold text-left uppercase tracking-widest transition-colors ${
+                                                            selectedScreenFilter === s.key ? 'bg-white/10 text-white' : 'text-white/50 hover:bg-white/5'
+                                                        }`}
+                                                    >
+                                                        <span>{s.screenname ?? s.screenslug}</span>
+                                                        {selectedScreenFilter === s.key && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

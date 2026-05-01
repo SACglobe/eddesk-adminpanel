@@ -17,6 +17,13 @@ export default function HelpEditor({ adminData }: HelpEditorProps) {
     const [message, setMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [isSent, setIsSent] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopyPhone = () => {
+        navigator.clipboard.writeText("+91 8122333929");
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
     // Auto-set subject options
     const subjectSuggestions = [
@@ -246,6 +253,53 @@ export default function HelpEditor({ adminData }: HelpEditorProps) {
                         <h4 className="text-[14px] font-bold text-gray-900 mb-1">Encrypted</h4>
                         <p className="text-[12px] text-gray-500 leading-normal">Your communication is secure and private.</p>
                     </div>
+                </div>
+            </div>
+
+            {/* Contact Us Banner */}
+            <div className="mt-4 bg-white border border-gray-100 rounded-2xl px-6 py-4 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-orange-50 text-[#F54927] rounded-lg flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span className="text-[13px] font-bold text-gray-900">Prefer to talk?</span>
+                        <span className="text-[12px] text-gray-400 ml-2">Reach us directly during working hours.</span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-gray-800 tracking-wide">+91 8122333929</span>
+
+                    {/* Call */}
+                    <a
+                        href="tel:+918122333929"
+                        title="Call now"
+                        className="w-8 h-8 rounded-lg bg-[#F54927]/8 hover:bg-[#F54927]/15 text-[#F54927] flex items-center justify-center transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                    </a>
+
+                    {/* Copy */}
+                    <button
+                        type="button"
+                        onClick={handleCopyPhone}
+                        title={isCopied ? "Copied!" : "Copy number"}
+                        className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors"
+                    >
+                        {isCopied ? (
+                            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                        ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        )}
+                    </button>
                 </div>
             </div>
         </div>
