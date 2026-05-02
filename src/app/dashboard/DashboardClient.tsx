@@ -15,6 +15,7 @@ import TemplateScanner from "@/domains/dashboard/components/TemplateScanner";
 import PlansModal from "@/domains/dashboard/components/subscription/PlansModal";
 import type { Plan } from "@/app/dashboard/page";
 import LegalFooter from "@/components/LegalFooter";
+import IdleTimeoutProvider from "@/providers/IdleTimeoutProvider";
 
 interface DashboardClientProps {
     initialData: AdminInitialData;
@@ -356,6 +357,7 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
 
     return (
         <LoadingProvider>
+            <IdleTimeoutProvider onLogout={handleLogout}>
             <div className="h-screen flex flex-col bg-white overflow-hidden text-gray-900 font-sans selection:bg-red-100 selection:text-red-900">
                 <LoadingOverlay />
                 {/* Header */}
@@ -836,9 +838,9 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
                     </div>
                 </div>
             )}
-        {/* Template Scanner FAB */}
         <TemplateScanner adminData={adminData} />
         </div>
+        </IdleTimeoutProvider>
         </LoadingProvider>
     );
 }

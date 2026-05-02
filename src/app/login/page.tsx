@@ -162,7 +162,7 @@ function LoginContent() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 relative overflow-hidden pb-16">
 
             {/* Subtle background decoration */}
             <div
@@ -191,7 +191,7 @@ function LoginContent() {
                     <p className="text-sm font-semibold text-gray-900 tracking-tight">
                         {isSettingPassword
                             ? "Set your password to activate your account"
-                            : "Sign in"}
+                            : "Login"}
                     </p>
                 </div>
 
@@ -307,9 +307,9 @@ function LoginContent() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                {isSettingPassword ? "Submitting…" : "Submitting…"}
+                                {isSettingPassword ? "Saving…" : "Logging in…"}
                             </>
-                        ) : "Submit"}
+                        ) : isSettingPassword ? "Set Password" : "Login"}
                     </button>
 
                     {isSettingPassword && !hasSession && (
@@ -320,10 +320,37 @@ function LoginContent() {
                     )}
                 </form>
 
-                {/* Footer */}
-                <p className="text-center text-xs text-gray-300 mt-8">
-                    Powered by EdDesk
-                </p>
+                {/* T&C Notice — shown only on sign-in form */}
+                {!isSettingPassword && (
+                    <p className="text-center text-[11px] text-gray-400 mt-5 leading-relaxed px-2">
+                        By logging in, you confirm that you have read and agree to our{" "}
+                        <a
+                            href="https://www.eddesk.in/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#F54927] font-semibold hover:underline underline-offset-2 transition-all"
+                        >
+                            Terms &amp; Conditions
+                        </a>
+                        .
+                    </p>
+                )}
+
+            </div>
+
+            {/* Bottom Page Footer — outside the card */}
+            <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-100 bg-gray-50/80 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 py-3 px-4 text-center">
+                    <span className="text-[11px] font-semibold text-gray-400 tracking-tight">
+                        <span className="text-gray-500 font-bold">EdDesk</span>
+                        {" "}· Powered by{" "}
+                        <span className="text-gray-500 font-bold">SAC Globe Tech</span>
+                    </span>
+                    <span className="hidden sm:inline text-gray-300 text-[11px]">·</span>
+                    <span className="text-[11px] text-gray-400">
+                        &copy; 2026 SAC Globe Tech. All rights reserved.
+                    </span>
+                </div>
             </div>
         </div>
     );

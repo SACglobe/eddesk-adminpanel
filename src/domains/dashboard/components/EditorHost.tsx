@@ -404,6 +404,21 @@ export default function EditorHost({
                         </div>
                     )}
                 </div>
+
+                {/* Workspace Footer */}
+                <div className="flex-shrink-0 border-t border-gray-100 bg-[#f9fafb] px-6 pt-3 pb-20 lg:pb-3">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-center">
+                        <span className="text-[11px] font-semibold text-gray-400 tracking-tight">
+                            <span className="text-gray-500 font-bold">EdDesk</span>
+                            {" "}·{" "}Powered by{" "}
+                            <span className="text-gray-500 font-bold">SAC Globe Tech</span>
+                        </span>
+                        <span className="hidden sm:inline text-gray-300 text-[11px]">·</span>
+                        <span className="text-[11px] text-gray-400">
+                            &copy; 2026 SAC Globe Tech. All rights reserved.
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     );
