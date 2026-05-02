@@ -96,7 +96,6 @@ export const LEGAL_ITEMS = [
     { name: 'Contact Us', href: 'https://www.eddesk.in/contact' },
     { name: 'Terms & Conditions', href: 'https://www.eddesk.in/terms' },
     { name: 'Privacy Policy', href: 'https://www.eddesk.in/privacy' },
-    { name: 'Refund & Cancellation', href: 'https://www.eddesk.in/refund-cancellation' },
 ];
 
 export default function NavigationRail({
