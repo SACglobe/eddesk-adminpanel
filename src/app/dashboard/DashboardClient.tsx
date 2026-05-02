@@ -249,8 +249,14 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
     }, [isMobileComponentListOpen, selectedComponentKey]);
 
     async function handleLogout() {
-        await signOut();
-        window.location.href = "/login";
+        try {
+            await signOut();
+        } catch (err) {
+            // Ignore signOut errors — always redirect to login
+            console.warn("signOut error (ignored):", err);
+        } finally {
+            window.location.replace("/login");
+        }
     }
 
     const school = adminData?.schools;
@@ -422,7 +428,7 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
                                         Edit Profile
                                     </button>
                                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-bold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all">
-                                        Log out
+                                        Log Out
                                     </button>
                                 </div>
                             </div>
@@ -679,7 +685,7 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                                         </svg>
                                                     </div>
-                                                    Sign Out
+                                                    Log Out
                                                 </button>
                                             </div>
                                         </div>
