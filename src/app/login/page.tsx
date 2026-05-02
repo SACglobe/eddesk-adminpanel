@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signInWithEmail } from "@/domains/auth/queries";
+import { signInWithEmail, signOut } from "@/domains/auth/queries";
 import { activateAccountAction } from "@/domains/auth/actions";
 import { createClient } from "@/lib/supabase/client";
 import BrandLogo from "@/components/BrandLogo";
@@ -118,6 +118,12 @@ function LoginContent() {
         e.preventDefault();
         setError(null);
         setLoading(true);
+
+        // Always clear any stale cached session before signing in.
+        // This prevents the race condition where an old invalid refresh token
+        // (from a previous session) gets cleaned up AFTER the new session is created,
+        // which would wipe the fresh session and cause a silent login failure.
+        await signOut();
 
         const { error } = await signInWithEmail(email, password);
 
