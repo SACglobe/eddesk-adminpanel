@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signInWithEmail, signOut } from "@/domains/auth/queries";
+import { signInWithEmail } from "@/domains/auth/queries";
 import { activateAccountAction } from "@/domains/auth/actions";
 import { createClient } from "@/lib/supabase/client";
 import BrandLogo from "@/components/BrandLogo";
@@ -28,34 +28,45 @@ function LoginContent() {
 
     useEffect(() => {
         const supabase = createClient();
+        let isMounted = true;
 
         const checkUserStatus = async (user: any) => {
-            if (!user) return;
-            
-            const { data, error: statusError } = await supabase
-                .from("adminusers")
-                .select("status")
-                .eq("authuserid", user.id)
-                .single();
+            if (!user || !isMounted) return;
 
-            if (statusError) {
-                console.error("Error fetching user status:", statusError);
-                return;
-            }
+            try {
+                const { data, error: statusError } = await supabase
+                    .from("adminusers")
+                    .select("status")
+                    .eq("authuserid", user.id)
+                    .single();
 
-            if (data?.status === "pending") {
-                // Force password setup view if user hasn't completed activation
-                setIsSettingPassword(true);
-            } else if (data?.status === "confirmed") {
-                // Already activated, move to dashboard
-                router.push("/dashboard");
-                router.refresh();
+                // Guard: if navigation already happened, don't update state
+                if (!isMounted) return;
+
+                if (statusError) {
+                    console.error("Error fetching user status:", statusError);
+                    return;
+                }
+
+                if (data?.status === "pending") {
+                    // Force password setup view if user hasn't completed activation
+                    setIsSettingPassword(true);
+                } else if (data?.status === "confirmed") {
+                    // Already activated, move to dashboard
+                    router.push("/dashboard");
+                    router.refresh();
+                }
+            } catch (err: any) {
+                // Silently ignore fetch errors caused by navigation/unmount
+                if (!isMounted) return;
+                console.error("Error fetching user status:", err);
             }
         };
 
         // 1. Initial session check — use getUser() (server-validated) instead of getSession()
         //    to avoid acting on stale/invalid refresh tokens stored in localStorage.
         supabase.auth.getUser().then(({ data: { user }, error: userError }: { data: { user: any }, error: any }) => {
+            if (!isMounted) return;
             if (userError) {
                 // Stale token in storage — clear it so Supabase stops trying to refresh it
                 supabase.auth.signOut();
@@ -83,6 +94,7 @@ function LoginContent() {
                     access_token: accessToken,
                     refresh_token: refreshToken
                 }).then(({ data, error: sessionError }: { data: any, error: any }) => {
+                    if (!isMounted) return;
                     if (data.session) {
                         setHasSession(true);
                         checkUserStatus(data.session.user);
@@ -94,6 +106,7 @@ function LoginContent() {
 
         // 3. Listen for session arrival
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+            if (!isMounted) return;
             if (session) {
                 setHasSession(true);
                 checkUserStatus(session.user);
@@ -109,7 +122,10 @@ function LoginContent() {
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router]); // ⚠️ hasSession intentionally removed — adding it causes infinite re-runs
                   // that thrash the Supabase refresh token cycle
@@ -119,12 +135,11 @@ function LoginContent() {
         setError(null);
         setLoading(true);
 
-        // Always clear any stale cached session before signing in.
-        // This prevents the race condition where an old invalid refresh token
-        // (from a previous session) gets cleaned up AFTER the new session is created,
-        // which would wipe the fresh session and cause a silent login failure.
-        await signOut();
-
+        // Note: We do NOT call signOut() here before signing in.
+        // Doing so causes ERR_CONNECTION_CLOSED because the signOut network
+        // request races with the immediate re-login, and it also fires the
+        // onAuthStateChange listener mid-flow. Stale tokens are already
+        // handled by getUser() in the useEffect above (server-validated).
         const { error } = await signInWithEmail(email, password);
 
         if (error) {
