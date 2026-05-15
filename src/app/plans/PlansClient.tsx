@@ -208,7 +208,7 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
           {plans.map((plan, index) => (
             <div 
               key={plan.id}
-              className={`relative group bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border 
+              className={`relative group bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border flex flex-col h-full
                 ${plan.isPopular ? 'border-purple-500/50 dark:border-purple-500/50' : 'border-slate-200 dark:border-slate-800'}
                 animate-in slide-in-from-bottom-${8 + index * 4} fade-in duration-700 fill-mode-both
               `}
@@ -274,7 +274,7 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
               <button
                 onClick={() => handlePayment(plan)}
                 disabled={isProcessing}
-                className={`w-full py-4 rounded-xl font-bold text-white transition-all duration-300 
+                className={`w-full py-4 mt-auto rounded-xl font-bold text-white transition-all duration-300 
                   bg-gradient-to-r ${plan.color} hover:opacity-90 active:scale-95 shadow-lg relative overflow-hidden
                   ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
