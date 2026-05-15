@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { sendSubscriptionEmail } from "@/lib/email";
+import { calculatePlanPrice } from "@/lib/utils/pricing";
 
 export async function POST(request: Request) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planKey } = await request.json();
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planKey, amount } = await request.json();
 
     const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
     // Step 2: Compare with the signature returned from Razorpay
     if (generated_signature === razorpay_signature) {
       const supabase = await createClient();
+      const { getSupabaseAdmin } = await import("@/lib/supabaseAdmin");
+      const supabaseAdmin = getSupabaseAdmin();
 
       // Get user session to find schoolkey
       const { data: { user } } = await supabase.auth.getUser();
@@ -56,44 +59,56 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Plan details not found" }, { status: 404 });
       }
 
-      // Record in payments table
-      await supabase.from("payments").insert({
+      // Record in payments table using admin client to bypass RLS if needed
+      await supabaseAdmin.from("payments").insert({
         payment_id: razorpay_payment_id,
         merchant_id: razorpay_order_id,
         status: "captured",
         plankey: planKey,
         schoolkey: schoolKey,
-        amount: plan.price,
+        amount: amount || plan.price,
         time: new Date().toISOString(),
         metadata: { source: "verify_api" }
       });
 
       // Fetch existing subscription to check for renewal
-      const { data: existingSub } = await supabase
+      const { data: existingSub } = await supabaseAdmin
         .from("subscriptions")
         .select("enddate, status, isactive")
         .eq("schoolkey", schoolKey)
         .single();
 
-      // Calculate dates
+      // Calculate dates using centralized pricing utility
+      const { getProratedPricing } = await import("@/lib/utils/pricing");
+      
+      // Fetch monthly plan for comparison if needed
+      const { data: monthlyPlan } = await supabaseAdmin
+        .from("plans")
+        .select("price")
+        .eq("code", "monthly")
+        .single();
+        
+      const pricing = getProratedPricing(plan, monthlyPlan ? Number(monthlyPlan.price) : undefined);
+
       let startDate = new Date();
-      let endDate = new Date();
+      let endDate = pricing.nextBillDate;
       const now = new Date();
 
       // If subscription is still active and not expired, append time to existing enddate
+      // Note: Proration typically only applies to new/expired subscriptions. 
+      // If renewing early, we usually append a full cycle.
       if (existingSub?.status === "active" && existingSub.enddate && new Date(existingSub.enddate) > now) {
         startDate = new Date(existingSub.enddate);
         endDate = new Date(existingSub.enddate);
+        if (planKey === "yearly") {
+            endDate.setFullYear(endDate.getFullYear() + 1);
+        } else {
+            endDate.setMonth(endDate.getMonth() + 1);
+        }
       }
 
-      if (planKey === "yearly") {
-        endDate.setFullYear(endDate.getFullYear() + 1);
-      } else {
-        endDate.setMonth(endDate.getMonth() + 1);
-      }
-
-      // Update/Upsert subscription
-      const { error: subError } = await supabase.from("subscriptions").upsert({
+      // Update/Upsert subscription using admin client
+      const { error: subError } = await supabaseAdmin.from("subscriptions").upsert({
         schoolkey: schoolKey,
         plankey: plan.key, // Use the UUID instead of the code
         status: "active",
@@ -117,10 +132,21 @@ export async function POST(request: Request) {
           .single();
 
         if (school?.email) {
+          // Fetch monthly plan for comparison
+          const { data: monthlyPlan } = await supabase
+            .from("plans")
+            .select("price")
+            .eq("code", "monthly")
+            .single();
+
+          const { originalPrice, totalSavings } = calculatePlanPrice(plan, monthlyPlan ? Number(monthlyPlan.price) : undefined);
+          const paidAmount = amount || plan.price || 0;
+
           await sendSubscriptionEmail(school.email, 'RECEIPT', {
             schoolName: school.name ?? "School",
             planName: plan.name ?? "Premium Plan",
-            amount: plan.price ?? 0,
+            amount: paidAmount,
+            savings: totalSavings,
             paymentId: razorpay_payment_id,
             orderId: razorpay_order_id,
             customerDomain: school.customdomain || undefined,
@@ -131,6 +157,7 @@ export async function POST(request: Request) {
             })
           });
         }
+
       } catch (emailErr) {
         console.error("Failed to send receipt email:", emailErr);
       }

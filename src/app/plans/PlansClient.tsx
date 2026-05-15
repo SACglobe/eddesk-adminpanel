@@ -13,6 +13,8 @@ declare global {
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import type { Plan } from "./page";
+import { calculatePlanPrice } from "@/lib/utils/pricing";
+
 
 interface PlansClientProps {
   initialPlans: Plan[];
@@ -24,33 +26,53 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
   const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
   const router = useRouter();
 
+
+
+  // Get monthly price for yearly savings comparison
+  const monthlyPlan = initialPlans.find(p => p.code === 'monthly');
+  const monthlyPrice = monthlyPlan ? Number(monthlyPlan.price) : undefined;
+
   // Merge database plans with frontend styling
   const plans = initialPlans.map((dbPlan) => {
     const isYearly = dbPlan.code === 'yearly';
+    const { finalPrice, savingsLabel, badge, showStrikethrough, originalPrice, totalSavings, planOffer } = calculatePlanPrice(dbPlan, monthlyPrice);
+
+    
+    const features = Array.isArray(dbPlan.features) 
+      ? dbPlan.features 
+      : (isYearly ? [
+          "Everything in Monthly",
+          "Priority 24/7 Support",
+          "Advanced SEO Tools",
+          "Custom Domain Setup",
+        ] : [
+          "Full Admin Panel Access",
+          "Website Template Management",
+          "Basic Analytics",
+          "Email Support",
+        ]);
+
     return {
       id: dbPlan.key,
       code: dbPlan.code,
       name: dbPlan.name || (isYearly ? "Yearly Plan" : "Monthly Plan"),
-      price: (dbPlan.price || 0).toLocaleString(),
-      amount: (dbPlan.price || 0) * 100, // Razorpay takes amounts in paise
+      price: finalPrice.toLocaleString(),
+      amount: finalPrice * 100, // Razorpay takes amounts in paise
       duration: isYearly ? "per year" : "per month",
       description: dbPlan.description || (isYearly ? "Best value for long-term growth." : "Perfect for getting started."),
       icon: isYearly ? <Crown className="w-10 h-10 text-purple-500 mb-4" /> : <Zap className="w-10 h-10 text-blue-500 mb-4" />,
-      features: isYearly ? [
-        "Everything in Monthly",
-        "Priority 24/7 Support",
-        "Advanced SEO Tools",
-        "Custom Domain Setup",
-      ] : [
-        "Full Admin Panel Access",
-        "Website Template Management",
-        "Basic Analytics",
-        "Email Support",
-      ],
+      features,
       color: isYearly ? "from-purple-500 to-pink-500" : "from-blue-500 to-cyan-400",
       isPopular: isYearly,
+      savingsLabel,
+      badge,
+      showStrikethrough,
+      originalPrice: originalPrice.toLocaleString(),
+      totalSavings,
+      planOffer,
     };
   });
+
 
   const handlePayment = async (plan: typeof plans[0]) => {
     if (!isRazorpayLoaded) {
@@ -62,7 +84,7 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
 
     try {
       // Step 1: Create an Order on our backend
-      const orderResponse = await fetch("/plans/api/order", {
+      const orderResponse = await fetch("/api/subscription/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -89,7 +111,7 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
         handler: async function (response: any) {
           try {
             // Step 3: Verify the payment on our backend
-            const verifyResponse = await fetch("/plans/api/verify", {
+            const verifyResponse = await fetch("/api/subscription/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -97,6 +119,7 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 planKey: plan.code, // Pass the plan code for DB update
+                amount: plan.amount / 100, // Pass the actual amount paid in rupees
               }),
             });
 
@@ -191,7 +214,13 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
               `}
               style={{ animationDelay: `${index * 150}ms` }}
             >
-              {plan.isPopular && (
+              {plan.badge ? (
+                <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                  <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                    {plan.badge}
+                  </span>
+                </div>
+              ) : plan.isPopular && (
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
                   <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg animate-pulse">
                     Best Value
@@ -206,10 +235,31 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
               </div>
 
               <div className="mb-8">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-slate-900 dark:text-white">₹{plan.price}</span>
-                  <span className="text-slate-500 dark:text-slate-400">{plan.duration}</span>
+                {plan.planOffer && (
+                  <div className="mb-3">
+                    <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest shadow-sm">
+                      <Zap className="w-3 h-3 fill-current" />
+                      {plan.planOffer}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  {plan.showStrikethrough && (
+                    <span className="text-2xl text-slate-400 line-through decoration-red-500/50 mr-1">₹{plan.originalPrice}</span>
+                  )}
+                  <div className="flex flex-col">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-extrabold text-slate-900 dark:text-white">₹{plan.price}</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-sm">{plan.duration}</span>
+                    </div>
+                  </div>
                 </div>
+                {plan.savingsLabel && (
+                  <div className="mt-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800/50 w-full justify-center group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {plan.savingsLabel}
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-4 mb-8">

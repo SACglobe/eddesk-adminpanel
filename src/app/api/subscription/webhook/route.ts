@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { sendSubscriptionEmail } from "@/lib/email";
+import { calculatePlanPrice } from "@/lib/utils/pricing";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -55,33 +56,43 @@ export async function POST(request: Request) {
       // Fetch plan UUID to use as foreign key in subscriptions
       const { data: plan } = await supabaseAdmin
         .from("plans")
-        .select("key, name")
+        .select("key, name, price")
         .eq("code", planKey)
         .single();
 
       if (plan) {
-        // Fetch existing subscription to check for renewal
+        // ... (subscription update logic)
         const { data: existingSub } = await supabaseAdmin
           .from("subscriptions")
           .select("enddate, isactive")
           .eq("schoolkey", schoolKey)
           .single();
 
-        // Update Subscription
+        // Calculate dates using centralized pricing utility
+        const { getProratedPricing } = await import("@/lib/utils/pricing");
+        
+        // Fetch monthly plan for comparison if needed
+        const { data: monthlyPlan } = await supabaseAdmin
+          .from("plans")
+          .select("price")
+          .eq("code", "monthly")
+          .single();
+          
+        const pricing = getProratedPricing(plan, monthlyPlan ? Number(monthlyPlan.price) : undefined);
+
         let startDate = new Date();
-        let endDate = new Date();
+        let endDate = pricing.nextBillDate;
         const now = new Date();
 
         // If subscription is still active and not expired, append time to existing enddate
         if (existingSub?.isactive && existingSub.enddate && new Date(existingSub.enddate) > now) {
           startDate = new Date(existingSub.enddate);
           endDate = new Date(existingSub.enddate);
-        }
-
-        if (planKey === 'yearly') {
-          endDate.setFullYear(endDate.getFullYear() + 1);
-        } else {
-          endDate.setMonth(endDate.getMonth() + 1);
+          if (planKey === 'yearly') {
+            endDate.setFullYear(endDate.getFullYear() + 1);
+          } else {
+            endDate.setMonth(endDate.getMonth() + 1);
+          }
         }
 
         await supabaseAdmin.from("subscriptions").upsert({
@@ -103,10 +114,21 @@ export async function POST(request: Request) {
             .single();
 
           if (school?.email) {
+            // Fetch monthly plan for comparison
+            const { data: monthlyPlan } = await supabaseAdmin
+              .from("plans")
+              .select("price")
+              .eq("code", "monthly")
+              .single();
+
+            const { totalSavings } = calculatePlanPrice(plan, monthlyPlan ? Number(monthlyPlan.price) : undefined);
+            const paidAmount = amount;
+
             await sendSubscriptionEmail(school.email, 'RECEIPT', {
-              schoolName: school.name,
-              planName: plan.name,
-              amount: amount,
+              schoolName: school.name ?? "School",
+              planName: plan.name ?? "Premium Plan",
+              amount: paidAmount,
+              savings: totalSavings,
               paymentId: payment.id,
               orderId: orderId,
               customerDomain: school.customdomain || undefined,
@@ -117,6 +139,7 @@ export async function POST(request: Request) {
               })
             });
           }
+
         } catch (emailErr) {
           console.error("Webhook failed to send receipt email:", emailErr);
         }

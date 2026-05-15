@@ -32,6 +32,7 @@ export interface EmailData {
   supportSubject?: string;
   supportMessage?: string;
   rating?: number;
+  savings?: number;
 }
 
 export async function sendSubscriptionEmail(to: string, type: EmailType, data: EmailData) {
@@ -204,9 +205,13 @@ export async function sendSubscriptionEmail(to: string, type: EmailType, data: E
                         <td style="padding: 30px 0 30px 0;">
                           <table border="0" cellpadding="20" cellspacing="0" width="100%" style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <tr>
-                              <td align="center">
+                              <td align="center" width="50%" style="border-right: 1px solid #e2e8f0;">
                                 <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase;">Amount Paid</p>
-                                <h2 style="margin: 8px 0 0 0; color: #0f172a; font-size: 36px; font-weight: 900;">₹${(data.amount || 0).toLocaleString('en-IN')}</h2>
+                                <h2 style="margin: 8px 0 0 0; color: #0f172a; font-size: 28px; font-weight: 900;">₹${(data.amount || 0).toLocaleString('en-IN')}</h2>
+                              </td>
+                              <td align="center" width="50%">
+                                <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase;">You Saved</p>
+                                <h2 style="margin: 8px 0 0 0; color: #059669; font-size: 28px; font-weight: 900;">₹${(data.savings || 0).toLocaleString('en-IN')}</h2>
                               </td>
                             </tr>
                           </table>

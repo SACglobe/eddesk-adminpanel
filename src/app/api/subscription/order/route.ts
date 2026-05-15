@@ -34,6 +34,31 @@ export async function POST(request: Request) {
     }
 
     const schoolKey = adminUser.schoolkey;
+    const now = new Date();
+
+    // 1. Fetch Plan Details from DB
+    const { data: plans } = await supabase
+      .from("plans")
+      .select("*")
+      .order('price', { ascending: true });
+
+    if (!plans || plans.length === 0) {
+      return NextResponse.json({ error: "No plans found in database" }, { status: 404 });
+    }
+
+    const targetPlan = plans.find(p => p.code === planKey);
+    if (!targetPlan) {
+      return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
+    }
+
+    const monthlyPlan = plans.find(p => p.code === 'monthly');
+    const monthlyPrice = monthlyPlan ? Number(monthlyPlan.price) : undefined;
+
+    // 2. Recalculate Price on Server (Harden against client manipulation)
+    const { getProratedPricing } = await import("@/lib/utils/pricing");
+    const { finalPrice } = getProratedPricing(targetPlan, monthlyPrice);
+    
+    const calculatedAmount = finalPrice * 100; // to paise
 
     // Razorpay basic auth: base64(key_id:key_secret)
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
@@ -45,11 +70,11 @@ export async function POST(request: Request) {
         Authorization: `Basic ${auth}`,
       },
       body: JSON.stringify({
-        amount, // in paise
+        amount: calculatedAmount, 
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
         notes: {
-          planName,
+          planName: targetPlan.name || planName,
           planKey,
           schoolKey
         },
@@ -64,6 +89,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(order);
+
   } catch (error: any) {
     console.error("Order API Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

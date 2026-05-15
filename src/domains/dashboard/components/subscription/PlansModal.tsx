@@ -5,6 +5,8 @@ import Script from "next/script";
 import { CheckCircle2, Zap, Crown, AlertCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Database } from "@/lib/supabase/database.types";
+import { calculatePlanPrice, getProratedPricing } from "@/lib/utils/pricing";
+
 
 declare global {
   interface Window {
@@ -31,80 +33,69 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
   const now = new Date();
   const isExpired = currentSubscription?.enddate ? new Date(currentSubscription.enddate) < now : true;
 
-  // Helper to compute prorated price for monthly plans
+  const monthlyPlan = initialPlans.find(p => p.code === 'monthly');
+  const monthlyPrice = monthlyPlan ? Number(monthlyPlan.price) : undefined;
+
+  // Helper to compute prorated price for monthly plans with discounts
   const computePlanPrice = (dbPlan: Plan) => {
-    const isYearly = dbPlan.code === 'yearly';
-    
-    // Logic: If user already HAS this plan and it's ACTIVE and NOT expired, we don't prorate (and we'll disable the button)
+    // 1. Logic: If user already HAS this plan and it's ACTIVE and NOT expired, we don't prorate (and we'll disable the button)
     const isUserPlan = dbPlan.key === currentPlanKey;
     const isPlanActive = isUserPlan && isCurrentlyActive && !isExpired;
 
-    if (isYearly) {
-        return {
-            amountStr: (dbPlan.price || 0).toLocaleString(),
-            amount: (dbPlan.price || 0) * 100,
-            isProrated: false,
-            daysRemaining: 365,
-            isCurrent: isPlanActive
-        };
-    }
+    // 2. Use the centralized utility for pricing (including discounts and proration)
+    const pricing = getProratedPricing(dbPlan, monthlyPrice);
 
     if (isPlanActive) {
         return {
-            amountStr: (dbPlan.price || 0).toLocaleString(),
-            amount: (dbPlan.price || 0) * 100,
+            amountStr: Math.ceil(pricing.finalPrice).toLocaleString(),
+            amount: Math.ceil(pricing.finalPrice) * 100,
             isProrated: false,
-            daysRemaining: 30,
-            isCurrent: true
-        };
-    }
-
-    const currentDay = now.getDate();
-    const billDay = dbPlan.billgenerationdate || 1;
-    const gracePeriod = dbPlan.graceperiod || 0;
-
-    let prevBillDate = new Date(now.getFullYear(), now.getMonth(), billDay);
-    if (currentDay < billDay) {
-        prevBillDate.setMonth(prevBillDate.getMonth() - 1);
-    }
-    
-    let nextBillDate = new Date(prevBillDate);
-    nextBillDate.setMonth(nextBillDate.getMonth() + 1);
-
-    const endOfGracePeriod = new Date(prevBillDate);
-    endOfGracePeriod.setDate(endOfGracePeriod.getDate() + gracePeriod);
-    endOfGracePeriod.setHours(23, 59, 59, 999);
-
-    if (now > endOfGracePeriod) {
-        const daysInCycle = Math.round((nextBillDate.getTime() - prevBillDate.getTime()) / (1000 * 60 * 60 * 24));
-        const daysRemaining = Math.max(1, Math.ceil((nextBillDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-        
-        const pricePerDay = (dbPlan.price || 0) / daysInCycle;
-        const proratedPrice = Math.ceil(pricePerDay * daysRemaining);
-        
-        return {
-            amountStr: proratedPrice.toLocaleString(),
-            amount: proratedPrice * 100,
-            isProrated: true,
-            daysRemaining,
-            isCurrent: false
+            daysRemaining: dbPlan.code === 'yearly' ? 365 : 30,
+            isCurrent: true,
+            savingsLabel: pricing.savingsLabel,
+            badge: pricing.badge,
+            showStrikethrough: pricing.showStrikethrough,
+            originalPrice: pricing.originalPrice.toLocaleString(),
+            totalSavings: pricing.totalSavings,
+            planOffer: pricing.planOffer
         };
     }
 
     return {
-        amountStr: (dbPlan.price || 0).toLocaleString(),
-        amount: (dbPlan.price || 0) * 100,
-        isProrated: false,
-        daysRemaining: 30,
-        isCurrent: false
+        amountStr: pricing.finalPrice.toLocaleString(),
+        amount: pricing.finalPrice * 100,
+        isProrated: pricing.isProrated,
+        daysRemaining: pricing.daysRemaining,
+        isCurrent: false,
+        savingsLabel: pricing.savingsLabel,
+        badge: pricing.badge,
+        showStrikethrough: pricing.showStrikethrough,
+        originalPrice: pricing.originalPrice.toLocaleString(),
+        totalSavings: pricing.totalSavings,
+        planOffer: pricing.planOffer
     };
   };
+
 
   // Merge database plans with frontend styling
   const plans = initialPlans.map((dbPlan) => {
     const isYearly = dbPlan.code === 'yearly';
     const computed = computePlanPrice(dbPlan);
     
+    const features = Array.isArray(dbPlan.features) 
+      ? dbPlan.features 
+      : (isYearly ? [
+          "Everything in Monthly",
+          "Priority 24/7 Support",
+          "Advanced SEO Tools",
+          "Custom Domain Setup",
+        ] : [
+          "Full Admin Panel Access",
+          "Website Template Management",
+          "Basic Analytics",
+          "Email Support",
+        ]);
+
     return {
       id: dbPlan.key,
       code: dbPlan.code,
@@ -114,22 +105,17 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
       duration: isYearly ? "per year" : (computed.isProrated ? `for ${computed.daysRemaining} days` : "per month"),
       description: dbPlan.description || (isYearly ? "Best value for long-term growth." : "Perfect for getting started."),
       icon: isYearly ? <Crown className="w-10 h-10 text-purple-500 mb-4" /> : <Zap className="w-10 h-10 text-blue-500 mb-4" />,
-      features: isYearly ? [
-        "Everything in Monthly",
-        "Priority 24/7 Support",
-        "Advanced SEO Tools",
-        "Custom Domain Setup",
-      ] : [
-        "Full Admin Panel Access",
-        "Website Template Management",
-        "Basic Analytics",
-        "Email Support",
-      ],
+      features,
       color: isYearly ? "from-purple-500 to-pink-500" : "from-blue-500 to-cyan-400",
       isPopular: isYearly,
       isProrated: computed.isProrated,
       isCurrent: computed.isCurrent,
-      originalPrice: (dbPlan.price || 0).toLocaleString()
+      originalPrice: computed.originalPrice,
+      savingsLabel: computed.savingsLabel,
+      badge: computed.badge,
+      showStrikethrough: computed.showStrikethrough,
+      totalSavings: computed.totalSavings,
+      planOffer: computed.planOffer,
     };
   });
 
@@ -176,6 +162,7 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 planKey: plan.code,
+                amount: plan.amount / 100, // Pass the actual amount paid in rupees
               }),
             });
 
@@ -281,7 +268,13 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
               `}
               style={{ animationDelay: `${index * 150}ms` }}
             >
-              {plan.isPopular && (
+              {plan.badge ? (
+                <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                  <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                    {plan.badge}
+                  </span>
+                </div>
+              ) : plan.isPopular && (
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
                   <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg animate-pulse">
                     Best Value
@@ -301,15 +294,34 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
               </div>
 
               <div className="mb-8">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-slate-900">₹{plan.price}</span>
-                  <span className="text-slate-500 text-sm whitespace-nowrap">{plan.duration}</span>
+                {plan.planOffer && (
+                  <div className="mb-3">
+                    <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest shadow-sm">
+                      <Zap className="w-3 h-3 fill-current" />
+                      {plan.planOffer}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  {plan.showStrikethrough && (
+                    <span className="text-2xl text-slate-400 line-through decoration-red-500/50 mr-1">₹{plan.originalPrice}</span>
+                  )}
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-5xl font-extrabold text-slate-900">₹{plan.price}</span>
+                    <span className="text-slate-500 text-sm whitespace-nowrap">{plan.duration}</span>
+                  </div>
                 </div>
+                {plan.savingsLabel && (
+                  <div className="mt-4 flex items-center gap-2 text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100 w-full justify-center group-hover:bg-emerald-100 transition-colors">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {plan.savingsLabel}
+                  </div>
+                )}
                 {plan.isProrated && !plan.isCurrent && (
                   <div className="mt-2 inline-flex border border-amber-200 bg-amber-50 rounded-lg px-3 py-1.5 align-middle items-center">
                     <AlertCircle className="w-4 h-4 text-amber-500 mr-2" />
                     <p className="text-amber-700 text-xs font-semibold">
-                      Prorated pricing applied. Normal price is ₹{plan.originalPrice}/month.
+                      Prorated pricing applied. Normal price is ₹{plan.originalPrice}{plan.code === 'yearly' ? '/year' : '/month'}.
                     </p>
                   </div>
                 )}
