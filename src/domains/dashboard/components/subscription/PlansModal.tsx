@@ -83,7 +83,7 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
     const computed = computePlanPrice(dbPlan);
     
     const features = Array.isArray(dbPlan.features) 
-      ? dbPlan.features 
+      ? (dbPlan.features as string[]) 
       : (isYearly ? [
           "Everything in Monthly",
           "Priority 24/7 Support",

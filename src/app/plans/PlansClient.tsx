@@ -39,7 +39,7 @@ export default function PlansClient({ initialPlans, status }: PlansClientProps) 
 
     
     const features = Array.isArray(dbPlan.features) 
-      ? dbPlan.features 
+      ? (dbPlan.features as string[]) 
       : (isYearly ? [
           "Everything in Monthly",
           "Priority 24/7 Support",

@@ -49,7 +49,8 @@ export const calculatePlanPrice = (plan: any, monthlyPrice?: number): PricingRes
       case 'free_months': {
         if (isYearly) {
           const freeMonths = Number(plan.discount_free_months) || 0;
-          discountSavings = (basePrice / 12) * freeMonths;
+          // Calculate savings based on the yearly price divided by 12, floored as per user example
+          discountSavings = Math.floor(basePrice / 12) * freeMonths;
           finalPrice = Math.max(0, basePrice - discountSavings);
           badge = `${freeMonths} ${freeMonths > 1 ? 'Months' : 'Month'} Free`;
           planOffer = `${freeMonths} ${freeMonths > 1 ? 'Months' : 'Month'} Free`;
@@ -66,11 +67,9 @@ export const calculatePlanPrice = (plan: any, monthlyPrice?: number): PricingRes
     const comparablePrice = monthlyPrice * 12;
     planSavings = Math.max(0, comparablePrice - basePrice);
     
-    // If no active discount is applied, use the comparable price as the original (strikethrough) price
-    if (!isDiscountValid && planSavings > 0) {
-      originalPrice = comparablePrice;
-      showStrikethrough = true;
-    }
+    // We used to show comparablePrice as originalPrice here, but it confused the user.
+    // Now we only use basePrice as originalPrice when a discount is active.
+    // The "yearly savings" will still be shown in the savingsLabel.
   }
 
   const totalSavings = Math.round(isDiscountValid ? discountSavings : planSavings);
@@ -90,7 +89,7 @@ export const calculatePlanPrice = (plan: any, monthlyPrice?: number): PricingRes
   }
 
   return {
-    finalPrice: Math.ceil(finalPrice),
+    finalPrice: Math.round(finalPrice),
     originalPrice,
     savingsLabel,
     planOffer,

@@ -3,6 +3,8 @@ import type { AdminInitialData } from "@/domains/auth/types";
 import { Calendar, ArrowRight, CheckCircle2, Zap, Crown, Loader2 } from "lucide-react";
 import Script from "next/script";
 import type { Plan } from "@/app/dashboard/page";
+import { calculatePlanPrice } from "@/lib/utils/pricing";
+
 
 declare global {
   interface Window {
@@ -70,7 +72,7 @@ export default function PlanDetailsEditor({ adminData, availablePlans = [] }: Pl
         }
     }, [subscription, currentPlan]);
 
-    const handleUpgrade = async () => {
+    const handleUpgradeWithPrice = async (price: number, planName: string) => {
         if (!yearlyPlan || !isRazorpayLoaded || isProcessing) return;
         
         setIsProcessing(true);
@@ -80,8 +82,8 @@ export default function PlanDetailsEditor({ adminData, availablePlans = [] }: Pl
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    amount: (yearlyPlan.price || 0) * 100,
-                    planName: yearlyPlan.name || "Yearly Plan",
+                    amount: price * 100,
+                    planName: planName,
                     planKey: yearlyPlan.code,
                 }),
             });
@@ -97,7 +99,7 @@ export default function PlanDetailsEditor({ adminData, availablePlans = [] }: Pl
                 amount: orderData.amount,
                 currency: orderData.currency,
                 name: "EdDesk Platform",
-                description: `Upgrade to ${yearlyPlan.name}`,
+                description: `Upgrade to ${planName}`,
                 order_id: orderData.id,
                 handler: async function (response: any) {
                     try {
@@ -144,6 +146,7 @@ export default function PlanDetailsEditor({ adminData, availablePlans = [] }: Pl
             setIsProcessing(false);
         }
     };
+
 
     if (!subscription) {
         return (
@@ -253,29 +256,50 @@ export default function PlanDetailsEditor({ adminData, availablePlans = [] }: Pl
                             
                             <div className="lg:w-80 p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center">
                                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Yearly Premium</p>
-                                <div className="flex items-baseline gap-1 mb-1">
-                                    <span className="text-[14px] font-bold text-gray-900">₹</span>
-                                    <span className="text-4xl font-black text-gray-900">{(yearlyPlan.price || 0).toLocaleString()}</span>
-                                </div>
-                                <p className="text-[12px] text-gray-500 font-medium mb-6">/ year (Inc. taxes)</p>
                                 
-                                <button 
-                                    onClick={handleUpgrade}
-                                    disabled={isProcessing || !isRazorpayLoaded}
-                                    className="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-gray-200"
-                                >
-                                    {isProcessing ? (
+                                {(() => {
+                                    const { finalPrice, originalPrice, showStrikethrough, planOffer } = calculatePlanPrice(yearlyPlan);
+                                    return (
                                         <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Processing...
+                                            {planOffer && (
+                                                <div className="mb-2">
+                                                    <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest shadow-sm">
+                                                        <Zap className="w-3 h-3 fill-current" />
+                                                        {planOffer}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-baseline gap-2 mb-1">
+                                                {showStrikethrough && (
+                                                    <span className="text-[16px] text-gray-400 line-through decoration-red-500/50">₹{originalPrice.toLocaleString()}</span>
+                                                )}
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-[14px] font-bold text-gray-900">₹</span>
+                                                    <span className="text-4xl font-black text-gray-900">{finalPrice.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-[12px] text-gray-500 font-medium mb-6">/ year (Inc. taxes)</p>
+                                            
+                                            <button 
+                                                onClick={() => handleUpgradeWithPrice(finalPrice, yearlyPlan.name || "Yearly Plan")}
+                                                disabled={isProcessing || !isRazorpayLoaded}
+                                                className="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-gray-200"
+                                            >
+                                                {isProcessing ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Processing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        Secure Yearly Plan
+                                                        <ArrowRight className="w-4 h-4" />
+                                                    </>
+                                                )}
+                                            </button>
                                         </>
-                                    ) : (
-                                        <>
-                                            Secure Yearly Plan
-                                            <ArrowRight className="w-4 h-4" />
-                                        </>
-                                    )}
-                                </button>
+                                    );
+                                })()}
                                 
                                 {nextYearDate && (
                                     <p className="mt-4 text-[11px] text-gray-400 font-medium italic leading-tight">

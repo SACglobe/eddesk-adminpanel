@@ -144,6 +144,8 @@ export interface Database {
           discount_label: string | null;
           discount_active: boolean | null;
           discount_expires_at: string | null;
+          features: Json | null;
+          notes: string | null;
         };
         Insert: {
           key?: string;
@@ -165,6 +167,8 @@ export interface Database {
           discount_label?: string | null;
           discount_active?: boolean | null;
           discount_expires_at?: string | null;
+          features?: Json | null;
+          notes?: string | null;
         };
         Update: {
           key?: string;
@@ -186,6 +190,8 @@ export interface Database {
           discount_label?: string | null;
           discount_active?: boolean | null;
           discount_expires_at?: string | null;
+          features?: Json | null;
+          notes?: string | null;
         };
         Relationships: [];
       };
