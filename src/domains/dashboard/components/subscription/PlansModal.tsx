@@ -261,7 +261,7 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
           {plans.map((plan, index) => (
             <div 
               key={plan.id}
-              className={`relative group bg-white rounded-3xl p-8 shadow-sm hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border 
+              className={`relative group bg-white rounded-3xl p-8 shadow-sm hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border flex flex-col h-full
                 ${plan.isPopular ? 'border-purple-500/50' : 'border-slate-200'}
                 animate-in slide-in-from-bottom-${8 + index * 4} fade-in duration-700 fill-mode-both
                 ${plan.isCurrent ? 'opacity-80' : ''}
@@ -339,7 +339,7 @@ export default function PlansModal({ initialPlans, status, onClose, currentSubsc
               <button
                 onClick={() => handlePayment(plan)}
                 disabled={isProcessing || plan.isCurrent}
-                className={`w-full py-4 rounded-xl font-bold text-white transition-all duration-300 relative overflow-hidden
+                className={`w-full mt-auto py-4 rounded-xl font-bold text-white transition-all duration-300 relative overflow-hidden
                   ${plan.isCurrent 
                     ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300' 
                     : `bg-gradient-to-r ${plan.color} hover:opacity-90 active:scale-95 shadow-lg shadow-blue-500/20`}
