@@ -32,6 +32,7 @@ import FeedbackEditor from "./editors/FeedbackEditor";
 import AccountDetailsEditor from "./editors/AccountDetailsEditor";
 import PlanDetailsEditor from "./editors/PlanDetailsEditor";
 import SchoolDetailsEditor from "./editors/SchoolDetailsEditor";
+import ContactUsScreen from "./editors/ContactUsScreen";
 import { getEnrichedConfig } from "../utils/componentUtils";
 import type { Plan } from "@/app/dashboard/page";
 
@@ -159,6 +160,8 @@ export default function EditorHost({
                                     adminData={adminData} 
                                     availablePlans={availablePlans} 
                                 />
+                            ) : generalItem.key === 'contact-us' ? (
+                                <ContactUsScreen />
                             ) : (
                                 <div className="bg-white border border-[#f1f1f1] rounded-lg overflow-hidden shadow-sm mx-0 lg:mx-0">
                                     <div className="border-b border-[#f1f1f1] bg-[#f9fafb] px-4 lg:px-6 py-3">
@@ -411,7 +414,7 @@ export default function EditorHost({
                         <span className="text-[11px] font-semibold text-gray-400 tracking-tight">
                             <span className="text-gray-500 font-bold">EdDesk</span>
                             {" "}·{" "}Powered by{" "}
-                            <span className="text-gray-500 font-bold">SAC Globe Tech</span>
+                            <span className="text-gray-500 font-bold">SAC Globe Tech ( V: 1.0.1 )</span>
                         </span>
                         <span className="hidden sm:inline text-gray-300 text-[11px]">·</span>
                         <span className="text-[11px] text-gray-400">

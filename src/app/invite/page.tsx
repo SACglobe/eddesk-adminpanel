@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getSchools, createAdminInvite } from "@/domains/invite/queries";
+import { getSchools, createAdminInvite, getReferenceData } from "@/domains/invite/queries";
 import { SchoolOption, AdminInviteParams } from "@/domains/invite/types";
 import Select from "@/components/ui/Select";
 
@@ -16,7 +16,6 @@ export default function InvitePage() {
     const [emailSent, setEmailSent] = useState(true);
     const [inviteLink, setInviteLink] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
-
     const [formData, setFormData] = useState<AdminInviteParams>({
         pemail: "",
         pfullname: "",
@@ -24,17 +23,25 @@ export default function InvitePage() {
         prole: "admin",
         pschoolkey: "",
     });
+    const [roles, setRoles] = useState<{ value: string; label: string }[]>([]);
 
     useEffect(() => {
-        async function loadSchools() {
+        async function loadSchoolsAndRoles() {
             const data = await getSchools();
             setSchools(data);
             if (data.length > 0) {
                 setFormData((prev) => ({ ...prev, pschoolkey: data[0].key }));
             }
+            
+            // Load roles dynamically from referencedata
+            const dbRoles = await getReferenceData("adminusers");
+            if (dbRoles && dbRoles.length > 0) {
+                setRoles(dbRoles.map(r => ({ value: r.value || "", label: r.label || "" })));
+            }
+
             setLoading(false);
         }
-        loadSchools();
+        loadSchoolsAndRoles();
     }, []);
 
     async function handleSubmit(e: React.FormEvent) {
@@ -204,11 +211,7 @@ export default function InvitePage() {
                                 <Select
                                     value={formData.prole}
                                     onChange={(v) => setFormData({ ...formData, prole: v })}
-                                    options={[
-                                        { value: "admin", label: "Admin" },
-                                        { value: "editor", label: "Editor" },
-                                        { value: "viewer", label: "Viewer" },
-                                    ]}
+                                    options={roles}
                                 />
                             </div>
 
