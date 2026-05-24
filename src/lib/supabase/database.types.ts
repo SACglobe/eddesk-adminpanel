@@ -489,6 +489,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      referencedata: {
+        Row: {
+          key: string;
+          created_at: string;
+          label: string | null;
+          tablename: string | null;
+          tags: string | null;
+          value: string | null;
+          isactive: boolean | null;
+        };
+        Insert: {
+          key?: string;
+          created_at?: string;
+          label?: string | null;
+          tablename?: string | null;
+          tags?: string | null;
+          value?: string | null;
+          isactive?: boolean | null;
+        };
+        Update: {
+          key?: string;
+          created_at?: string;
+          label?: string | null;
+          tablename?: string | null;
+          tags?: string | null;
+          value?: string | null;
+          isactive?: boolean | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -41,3 +41,19 @@ export async function createAdminInvite(params: AdminInviteParams) {
 
     return result;
 }
+
+export async function getReferenceData(tablename: string) {
+    const supabase = createClient<Database>();
+    const { data, error } = await supabase
+        .from("referencedata")
+        .select("value, label, tags")
+        .eq("tablename", tablename)
+        .eq("isactive", true);
+
+    if (error) {
+        console.error(`Error fetching reference data for ${tablename}:`, error.message);
+        return [];
+    }
+    return data || [];
+}
+

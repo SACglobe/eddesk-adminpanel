@@ -365,7 +365,7 @@ function LoginContent() {
                     <span className="text-[11px] font-semibold text-gray-400 tracking-tight">
                         <span className="text-gray-500 font-bold">EdDesk</span>
                         {" "}· Powered by{" "}
-                        <span className="text-gray-500 font-bold">SAC Globe Tech</span>
+                        <span className="text-gray-500 font-bold">SAC Globe Tech ( V: 1.0.1 )</span>
                     </span>
                     <span className="hidden sm:inline text-gray-300 text-[11px]">·</span>
                     <span className="text-[11px] text-gray-400">

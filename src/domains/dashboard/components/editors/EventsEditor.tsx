@@ -350,7 +350,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                         </div>
                                         <div className="text-left flex-1">
                                             <h4 className="text-[14px] font-black text-gray-900">{item.title}</h4>
-                                            <p className="text-[11px] font-bold text-gray-400 mt-0.5">{new Date(item.eventdate).toLocaleDateString()} • {item.location}</p>
+                                            <p className="text-[11px] font-bold text-gray-400 mt-0.5">{new Date(item.eventdate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • {item.location}</p>
                                         </div>
                                         {placements.some((p: ComponentPlacement) => p.contentkey === item.key) && (
                                             <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">

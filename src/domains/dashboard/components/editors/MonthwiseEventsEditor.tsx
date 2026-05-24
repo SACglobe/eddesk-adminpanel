@@ -8,6 +8,7 @@ import { uploadFile } from "@/lib/supabase/storage";
 import { generateId } from "@/lib/generateId";
 import MediaUpload from "@/components/ui/MediaUpload";
 import Select from "@/components/ui/Select";
+import { getReferenceData } from "@/domains/invite/queries";
 import { 
     Calendar, 
     ChevronLeft, 
@@ -66,6 +67,19 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
     useEffect(() => {
         setSelectedDayIso(null);
     }, [selectedMonthStr]);
+
+    // Event Categories State and dynamic fetching
+    const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+
+    useEffect(() => {
+        async function loadCategories() {
+            const dbCategories = await getReferenceData("events");
+            if (dbCategories && dbCategories.length > 0) {
+                setCategories(dbCategories.map(c => ({ value: c.value || "", label: c.label || "" })));
+            }
+        }
+        loadCategories();
+    }, []);
 
     // 2. Data Fetching with Range Filter
     const filters = useMemo(() => {
@@ -518,14 +532,7 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                         <Select
                                             value={editingItem.category || "General"}
                                             onChange={(v) => setEditingItem({ ...editingItem, category: v })}
-                                            options={[
-                                                { value: "General", label: "General" },
-                                                { value: "Academic", label: "Academic" },
-                                                { value: "Arts", label: "Arts & Culture" },
-                                                { value: "Sports", label: "Sports" },
-                                                { value: "Holiday", label: "Holiday" },
-                                                { value: "Workshop", label: "Workshop" },
-                                            ]}
+                                            options={categories}
                                             className="w-full"
                                         />
                                         </div>

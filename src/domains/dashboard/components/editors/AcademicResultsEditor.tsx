@@ -87,6 +87,18 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
 
     const [editingResult, setEditingResult] = useState<any>(null);
 
+    const isInvalidPercentage = useMemo(() => {
+        if (!editingResult) return false;
+        const pass = editingResult.passpercentage;
+        const tenth = editingResult.tenthpasspercentage;
+        const plustwo = editingResult.plustwopasspercentage;
+        return (
+            (pass !== "" && pass !== null && pass !== undefined && (parseFloat(pass) < 0 || parseFloat(pass) > 100)) ||
+            (tenth !== "" && tenth !== null && tenth !== undefined && (parseFloat(tenth) < 0 || parseFloat(tenth) > 100)) ||
+            (plustwo !== "" && plustwo !== null && plustwo !== undefined && (parseFloat(plustwo) < 0 || parseFloat(plustwo) > 100))
+        );
+    }, [editingResult]);
+
     const handleSelectRecord = async (recordKey: string) => {
         if (pickingForIndex === null) return;
         setIsUpdating(true);
@@ -134,6 +146,8 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
             ...getInitialValuesFromFilters(filters),
             year: currentYear,
             passpercentage: 100,
+            tenthpasspercentage: 100,
+            plustwopasspercentage: 100,
             distinctions: 0,
             firstclass: 0,
             legacyquote: "",
@@ -223,16 +237,16 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                                     
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex items-center justify-between border-b border-gray-50 pb-1">
-                                            <span className="text-[12px] text-gray-500 uppercase font-bold tracking-wider">Passes</span>
+                                            <span className="text-[12px] text-gray-500 uppercase font-bold tracking-wider">Overall Pass</span>
                                             <span className="text-[15px] font-black text-gray-900">{result.passpercentage}%</span>
                                         </div>
                                         <div className="flex items-center justify-between border-b border-gray-50 pb-1">
-                                            <span className="text-[12px] text-gray-500 uppercase font-bold tracking-wider">Distinctions</span>
-                                            <span className="text-[15px] font-black text-gray-900">{result.distinctions}</span>
+                                            <span className="text-[12px] text-gray-500 uppercase font-bold tracking-wider">10th Pass</span>
+                                            <span className="text-[15px] font-black text-gray-900">{result.tenthpasspercentage ?? 0}%</span>
                                         </div>
                                         <div className="flex items-center justify-between pt-1">
-                                            <span className="text-[12px] text-gray-500 uppercase font-bold tracking-wider">1st Class</span>
-                                            <span className="text-[15px] font-black text-gray-900">{result.firstclass}</span>
+                                            <span className="text-[12px] text-gray-500 uppercase font-bold tracking-wider">12th Pass</span>
+                                            <span className="text-[15px] font-black text-gray-900">{result.plustwopasspercentage ?? 0}%</span>
                                         </div>
                                     </div>
 
@@ -276,41 +290,65 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                                     />
                                 </div>
 
+                                <div className="space-y-2 relative">
+                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Over All Pass Percentage</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            value={editingResult.passpercentage !== undefined && editingResult.passpercentage !== null ? editingResult.passpercentage : ""}
+                                            onChange={e => setEditingResult({ ...editingResult, passpercentage: e.target.value === "" ? "" : parseFloat(e.target.value) })}
+                                            className="w-full px-4 py-3 pr-8 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-red-400 focus:ring-4 focus:ring-red-500/10 transition-all text-[14px] font-bold outline-none shadow-inner"
+                                            placeholder="e.g. 98"
+                                        />
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                                    </div>
+                                    {editingResult.passpercentage !== "" && editingResult.passpercentage !== null && editingResult.passpercentage !== undefined && parseFloat(editingResult.passpercentage) > 100 && (
+                                        <p className="text-[10px] text-red-500 font-bold mt-1">Must not exceed 100%</p>
+                                    )}
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2 relative">
-                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Pass %</label>
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">10th Pass Percentage</label>
                                         <div className="relative">
                                             <input
                                                 type="number"
-                                                value={editingResult.passpercentage || ""}
-                                                onChange={e => setEditingResult({ ...editingResult, passpercentage: parseFloat(e.target.value) || "" })}
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={editingResult.tenthpasspercentage !== undefined && editingResult.tenthpasspercentage !== null ? editingResult.tenthpasspercentage : ""}
+                                                onChange={e => setEditingResult({ ...editingResult, tenthpasspercentage: e.target.value === "" ? "" : parseFloat(e.target.value) })}
                                                 className="w-full px-4 py-3 pr-8 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-red-400 focus:ring-4 focus:ring-red-500/10 transition-all text-[14px] font-bold outline-none shadow-inner"
-                                                placeholder="e.g. 98"
+                                                placeholder="e.g. 95"
                                             />
                                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
                                         </div>
+                                        {editingResult.tenthpasspercentage !== "" && editingResult.tenthpasspercentage !== null && editingResult.tenthpasspercentage !== undefined && parseFloat(editingResult.tenthpasspercentage) > 100 && (
+                                            <p className="text-[10px] text-red-500 font-bold mt-1">Must not exceed 100%</p>
+                                        )}
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Distinctions</label>
-                                        <input
-                                            type="number"
-                                            value={editingResult.distinctions || ""}
-                                            onChange={e => setEditingResult({ ...editingResult, distinctions: parseInt(e.target.value) || "" })}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-red-400 focus:ring-4 focus:ring-red-500/10 transition-all text-[14px] font-bold outline-none shadow-inner"
-                                            placeholder="e.g. 45"
-                                        />
+                                    <div className="space-y-2 relative">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">12th Pass Percentage</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={editingResult.plustwopasspercentage !== undefined && editingResult.plustwopasspercentage !== null ? editingResult.plustwopasspercentage : ""}
+                                                onChange={e => setEditingResult({ ...editingResult, plustwopasspercentage: e.target.value === "" ? "" : parseFloat(e.target.value) })}
+                                                className="w-full px-4 py-3 pr-8 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-red-400 focus:ring-4 focus:ring-red-500/10 transition-all text-[14px] font-bold outline-none shadow-inner"
+                                                placeholder="e.g. 96"
+                                            />
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                                        </div>
+                                        {editingResult.plustwopasspercentage !== "" && editingResult.plustwopasspercentage !== null && editingResult.plustwopasspercentage !== undefined && parseFloat(editingResult.plustwopasspercentage) > 100 && (
+                                            <p className="text-[10px] text-red-500 font-bold mt-1">Must not exceed 100%</p>
+                                        )}
                                     </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">First Class / Honours</label>
-                                    <input
-                                        type="number"
-                                        value={editingResult.firstclass || ""}
-                                        onChange={e => setEditingResult({ ...editingResult, firstclass: parseInt(e.target.value) || "" })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:border-red-400 focus:ring-4 focus:ring-red-500/10 transition-all text-[14px] font-bold outline-none shadow-inner"
-                                        placeholder="e.g. 120"
-                                    />
                                 </div>
 
                                 <div className="space-y-2">
@@ -345,8 +383,18 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                                         Cancel
                                     </button>
                                     <button
-                                        disabled={isSaving}
-                                        onClick={() => { saveRecord(editingResult); setEditingResult(null); }}
+                                        disabled={isSaving || isInvalidPercentage}
+                                        onClick={() => {
+                                            if (isInvalidPercentage) return;
+                                            const sanitizedResult = {
+                                                ...editingResult,
+                                                passpercentage: Math.min(100, Math.max(0, parseFloat(editingResult.passpercentage) || 0)),
+                                                tenthpasspercentage: Math.min(100, Math.max(0, parseFloat(editingResult.tenthpasspercentage) || 0)),
+                                                plustwopasspercentage: Math.min(100, Math.max(0, parseFloat(editingResult.plustwopasspercentage) || 0))
+                                            };
+                                            saveRecord(sanitizedResult);
+                                            setEditingResult(null);
+                                        }}
                                         className="px-8 py-3 bg-gradient-to-r from-gray-900 to-black text-white text-[13px] font-black rounded-xl hover:shadow-lg hover:shadow-black/20 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
                                     >
                                         {isSaving ? "Saving..." : "Save Changes"}
@@ -381,7 +429,7 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                                             <div className="flex items-center gap-4">
                                                 <span className="text-[18px] font-black text-gray-900">{rec.year}</span>
                                                 <div className="text-[12px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-lg">
-                                                    {rec.passpercentage}% pass rate
+                                                    {rec.passpercentage}% overall pass
                                                 </div>
                                             </div>
                                             {placements.some((p: ComponentPlacement) => p.contentkey === rec.key) && (

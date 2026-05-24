@@ -44,8 +44,8 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
                     <DetailItem label="Billing Frequency" value={(adminData?.plans as any)?.billingcycle} isEditing={false} />
                     <DetailItem label="Investment" value={`${(adminData?.plans as any)?.price} ${(adminData?.plans as any)?.currency || 'INR'}`} isEditing={false} />
                     <DetailItem label="Subscription Status" value={(adminData?.subscriptions as any)?.status} isEditing={false} badge="Active" color="emerald" />
-                    <DetailItem label="Last Payment" value={adminData?.subscriptions?.startdate ? new Date(adminData.subscriptions.startdate).toLocaleDateString() : 'N/A'} isEditing={false} />
-                    <DetailItem label="Renewal Date" value={adminData?.subscriptions?.enddate ? new Date(adminData.subscriptions.enddate).toLocaleDateString() : 'N/A'} isEditing={false} color="blue" />
+                    <DetailItem label="Last Payment" value={adminData?.subscriptions?.startdate ? new Date(adminData.subscriptions.startdate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'} isEditing={false} />
+                    <DetailItem label="Renewal Date" value={adminData?.subscriptions?.enddate ? new Date(adminData.subscriptions.enddate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'} isEditing={false} color="blue" />
                 </div>
             </div>
 
@@ -78,7 +78,7 @@ export default function AccountDetailsEditor({ adminData }: AccountDetailsEditor
                     <DetailItem label="Phone Number" value={admin?.phone} isEditing={isEditingProfile} />
                     <DetailItem label="Designation" value={admin?.role} isEditing={false} badge="Admin" />
                     <DetailItem label="Account Status" value={admin?.status} isEditing={false} badge="Active" color="emerald" />
-                    <DetailItem label="Member Since" value={admin?.createdat ? new Date(admin.createdat).toLocaleDateString() : 'N/A'} isEditing={false} />
+                    <DetailItem label="Member Since" value={admin?.createdat ? new Date(admin.createdat).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'} isEditing={false} />
                 </div>
 
                 {isEditingProfile && (
