@@ -272,7 +272,7 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey, o
 
                     return (
                         <div
-                            key={item.key}
+                            key={`slot-${item.key}-${index}`}
                             onClick={() => isEditable ? handleEditItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
                             className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-500 flex flex-col items-center p-12 text-center min-h-[500px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
                         >
@@ -342,21 +342,36 @@ export default function PrincipalMessageEditor({ component, screen, schoolKey, o
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-8 space-y-4 no-scrollbar">
-                            {leadership.map((item: any) => (
-                                <button
-                                    key={item.key}
-                                    onClick={() => handleSelectRecord(item.key)}
-                                    className={`w-full p-6 flex items-center gap-6 rounded-3xl border-2 transition-all text-left ${slots.some((s: any) => !s.isSkeleton && s.key === item.key) ? "border-[#F54927] bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white"}`}
-                                >
-                                    <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 border border-gray-100">
-                                        {item.imageurl ? <img src={item.imageurl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-50" />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[16px] font-black text-gray-900 truncate">{item.name}</p>
-                                        <p className="text-[12px] font-bold text-[#F54927] uppercase tracking-widest mt-1">{item.designation}</p>
-                                    </div>
-                                </button>
-                            ))}
+                             {leadership.map((item: any) => {
+                                const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                const isAssigned = !!assignedPlacement;
+
+                                return (
+                                    <button
+                                        key={item.key}
+                                        disabled={isAssigned}
+                                        onClick={() => handleSelectRecord(item.key)}
+                                        className={`w-full p-6 flex items-center gap-6 rounded-3xl border-2 transition-all text-left ${
+                                            isAssigned 
+                                                ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                : "border-gray-50 hover:border-red-100 bg-white"
+                                        }`}
+                                    >
+                                        <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 border border-gray-100">
+                                            {item.imageurl ? <img src={item.imageurl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-50" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[16px] font-black text-gray-900 truncate">{item.name}</p>
+                                            <p className="text-[12px] font-bold text-[#F54927] uppercase tracking-widest mt-1">{item.designation}</p>
+                                        </div>
+                                        {isAssigned && (
+                                            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                Already in Slot {assignedPlacement?.displayorder}
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

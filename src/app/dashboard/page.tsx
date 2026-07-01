@@ -9,14 +9,23 @@ export type Plan = Database['public']['Tables']['plans']['Row'];
 export default async function DashboardPage() {
     const supabase = await createClient();
 
-    // 1. Check Session
+    // 1. Check Session — must come first to guard the page
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
         redirect("/login");
     }
 
-    // 2. Load admin initial data via RPC
-    const { data, error } = await supabase.rpc("get_admin_initial_data");
+    // 2. Load admin data + plans in parallel to avoid sequential waterfall
+    const [rpcResult, plansResult] = await Promise.all([
+        supabase.rpc("get_admin_initial_data"),
+        supabase
+            .from("plans")
+            .select("*")
+            .eq("isactive", true)
+            .order("price", { ascending: true }),
+    ]);
+
+    const { data, error } = rpcResult;
 
     if (error) {
         // Handle specific errors from RPC
@@ -51,14 +60,7 @@ export default async function DashboardPage() {
     const now = new Date();
     const isExpired = sub?.enddate ? new Date(sub.enddate) < now : true;
 
-    // Always fetch plans to support both required and voluntary (upgrade) modal scenarios
-    const { data: plans } = await supabase
-        .from("plans")
-        .select("*")
-        .eq("isactive", true)
-        .order("price", { ascending: true });
-    
-    let availablePlans: Plan[] = plans || [];
+    let availablePlans: Plan[] = plansResult.data || [];
 
     // 3. Deduplicate 
     // We deduplicate screens by slug to avoid redundant sidebar entries, 

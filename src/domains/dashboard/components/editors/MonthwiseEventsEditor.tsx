@@ -26,6 +26,29 @@ import {
 import { useRouter } from "next/navigation";
 import { getEnrichedConfig } from "../../utils/componentUtils";
 
+const formatTimeForInput = (timeStr: string) => {
+    if (!timeStr) return "";
+    
+    // Check if format is HH:MM or HH:MM:SS
+    const match = timeStr.match(/^(\d{2}):(\d{2})/);
+    if (match) {
+        return `${match[1]}:${match[2]}`;
+    }
+    
+    // Check if format is AM/PM, e.g. "10:00 AM" or "09:30 PM"
+    const ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)$/i);
+    if (ampmMatch) {
+        let hours = parseInt(ampmMatch[1], 10);
+        const minutes = ampmMatch[2];
+        const ampm = ampmMatch[3].toUpperCase();
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+        return `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+    
+    return timeStr;
+};
+
 interface MonthwiseEventsEditorProps {
     component: any;
     schoolKey: string;
@@ -535,11 +558,11 @@ export default function MonthwiseEventsEditor({ component, schoolKey }: Monthwis
                                         <div className="space-y-2">
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1">Start Time</label>
                                             <input
-                                                type="text"
-                                                value={editingItem.starttime}
+                                                type="time"
+                                                value={formatTimeForInput(editingItem.starttime || "")}
                                                 onChange={e => setEditingItem({ ...editingItem, starttime: e.target.value })}
+                                                onClick={(e) => (e.target as any).showPicker?.()}
                                                 className="w-full px-7 py-5 bg-neutral-50/80 border-2 border-transparent focus:bg-white focus:border-[#F54927] rounded-[24px] transition-all text-[14px] font-bold outline-none shadow-sm text-center"
-                                                placeholder="e.g. 09:00 AM"
                                             />
                                         </div>
                                         <div className="space-y-2">

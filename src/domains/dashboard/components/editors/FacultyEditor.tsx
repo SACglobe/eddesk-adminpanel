@@ -189,7 +189,32 @@ export default function FacultyEditor({ component, schoolKey, onRefreshData }: F
                 }
             }
 
+            const isNew = !faculty.some((f: any) => f.key === finalItem.key);
             await saveRecord(finalItem);
+
+            // For new records, also create the componentplacement entry
+            // so the faculty member appears in the correct slot immediately
+            if (isNew && finalItem.displayorder) {
+                const existingPlacement = placements.find(
+                    (p: ComponentPlacement) => p.displayorder === finalItem.displayorder
+                );
+                try {
+                    await upsertComponentData('componentplacement', {
+                        key: existingPlacement?.key || undefined,
+                        schoolkey: schoolKey,
+                        templatecomponentkey: component.key,
+                        componentcode: component.componentcode || 'faculty',
+                        contenttable: tableName,
+                        contentkey: finalItem.key,
+                        displayorder: finalItem.displayorder,
+                        isactive: true
+                    }, schoolKey);
+                    onRefreshData?.();
+                } catch (placementErr) {
+                    console.error("Failed to create component placement:", placementErr);
+                }
+            }
+
             handleCloseModal();
         } catch (err) {
             console.error("Failed to save faculty member:", err);
@@ -266,7 +291,7 @@ export default function FacultyEditor({ component, schoolKey, onRefreshData }: F
 
                     return (
                         <div
-                            key={item.key}
+                            key={`slot-${item.key}-${index}`}
                             onClick={() => isEditable ? setEditingItem(item) : (config?.selectionmethod === "manual" ? setPickingForIndex(index) : undefined)}
                             className={`group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col items-center p-6 pb-8 text-center min-h-[280px] ${isEditable || config?.selectionmethod === "manual" ? "cursor-pointer" : ""}`}
                         >
@@ -345,26 +370,36 @@ export default function FacultyEditor({ component, schoolKey, onRefreshData }: F
                             ) : (
                                 faculty
                                     .filter((item: any) => !item.contenttype || item.contenttype === effectiveMediaType)
-                                    .map((item: any) => (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleSelectRecord(item.key)}
-                                        className={`w-full p-4 flex items-center gap-4 rounded-[24px] border-2 transition-all ${slots.some((s: any) => !s.isSkeleton && s.key === item.key) ? "border-red-500 bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white"}`}
-                                    >
-                                        <div className="w-14 h-14 rounded-full bg-gray-50 overflow-hidden shrink-0">
-                                            <img src={item.imageurl} alt="" className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="text-left flex-1">
-                                            <h4 className="text-[14px] font-black text-gray-900">{item.name}</h4>
-                                            <p className="text-[11px] font-bold text-gray-400 mt-0.5">{item.designation} • {item.qualification}</p>
-                                        </div>
-                                        {slots.some((s: any) => !s.isSkeleton && s.key === item.key) && (
-                                            <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                            </div>
-                                        )}
-                                    </button>
-                                ))
+                                    .map((item: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(item.key)}
+                                                className={`w-full p-4 flex items-center gap-4 rounded-[24px] border-2 transition-all ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-red-100 bg-white"
+                                                }`}
+                                            >
+                                                <div className="w-14 h-14 rounded-full bg-gray-50 overflow-hidden shrink-0">
+                                                    <img src={item.imageurl} alt="" className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="text-left flex-1">
+                                                    <h4 className="text-[14px] font-black text-gray-900">{item.name}</h4>
+                                                    <p className="text-[11px] font-bold text-gray-400 mt-0.5">{item.designation} • {item.qualification}</p>
+                                                </div>
+                                                {isAssigned && (
+                                                    <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                        Already in Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })
                             )}
                         </div>
                     </div>

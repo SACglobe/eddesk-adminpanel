@@ -292,7 +292,7 @@ export default function InfrastructureEditor({ component, schoolKey, onRefreshDa
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col text-left min-h-[400px]">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col text-left min-h-[400px]">
                             {/* Card Image / Header Area */}
                             {item.imageurl ? (
                                 <div className="relative h-[200px] w-full overflow-hidden shrink-0">
@@ -395,30 +395,40 @@ export default function InfrastructureEditor({ component, schoolKey, onRefreshDa
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {facilities
                                     .filter((item: any) => item.contenttype === effectiveMediaType)
-                                    .map((item: any) => (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleSelectRecord(item.key)}
-                                        className={`w-full text-left rounded-[24px] border-2 transition-all overflow-hidden ${slots.some((s: any) => !s.isSkeleton && s.key === item.key) ? "border-red-500 bg-red-50/20" : "border-gray-100 hover:border-red-200 bg-white"}`}
-                                    >
-                                        <div className="w-full bg-gray-50/50 rounded-xl overflow-hidden mb-4 p-5 flex items-start gap-4 relative">
-                                            <div className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 shadow-sm transition-colors" style={{ backgroundColor: item.tag || '#2563eb' }}>
-                                                <DynamicIcon name={item.icon} size={24} className="text-white" />
-                                            </div>
-                                            <div className="flex-1 min-w-0 pt-1">
-                                                <h4 className="text-[15px] font-black text-gray-900 truncate mb-1 border-b-2 border-amber-400 inline-block pb-0.5">{item.title}</h4>
-                                                <p className="text-[11px] text-gray-500 mt-2 line-clamp-2">
-                                                    {((item.bulletintextlist as any[]) || []).sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0))[0]?.text || item.description || "No highlights"}
-                                                </p>
-                                            </div>
-                                            {slots.some((s: any) => !s.isSkeleton && s.key === item.key) && (
-                                                <div className="absolute top-4 right-4 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    .map((item: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(item.key)}
+                                                className={`w-full text-left rounded-[24px] border-2 transition-all overflow-hidden ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-100 hover:border-red-200 bg-white"
+                                                }`}
+                                            >
+                                                <div className="w-full bg-gray-50/50 rounded-xl overflow-hidden mb-4 p-5 flex items-start gap-4 relative">
+                                                    <div className="w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 shadow-sm transition-colors" style={{ backgroundColor: item.tag || '#2563eb' }}>
+                                                        <DynamicIcon name={item.icon} size={24} className="text-white" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 pt-1">
+                                                        <h4 className="text-[15px] font-black text-gray-900 truncate mb-1 border-b-2 border-amber-400 inline-block pb-0.5">{item.title}</h4>
+                                                        <p className="text-[11px] text-gray-500 mt-2 line-clamp-2">
+                                                            {((item.bulletintextlist as any[]) || []).sort((a, b) => (a.displayorder || 0) - (b.displayorder || 0))[0]?.text || item.description || "No highlights"}
+                                                        </p>
+                                                    </div>
+                                                    {isAssigned && (
+                                                        <div className="absolute top-4 right-4 px-2 py-1 bg-gray-200 text-gray-600 rounded text-[9px] font-black uppercase tracking-wider">
+                                                            Slot {assignedPlacement?.displayorder}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </button>
-                                ))}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

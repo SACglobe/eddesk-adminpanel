@@ -72,16 +72,21 @@ export function useComponentData({
         };
     }, [isLoading, isSaving, setGlobalLoading]);
 
+    const serializedFilters = JSON.stringify(filters);
+    const memoizedFilters = useMemo(() => {
+        return serializedFilters ? JSON.parse(serializedFilters) : undefined;
+    }, [serializedFilters]);
+
     // Client-side filtering logic to maintain consistency after upserts
     const filteredRecords = useMemo(() => {
         return records.filter(r => {
             if (r.schoolkey !== schoolKey) return false;
             
-            if (!filters) return true;
+            if (!memoizedFilters) return true;
 
             // Handle new complex filter structure
-            if (typeof filters === 'object' && 'logic' in filters && 'conditions' in filters) {
-                const results = (filters as FilterConfig).conditions.map(c => {
+            if (typeof memoizedFilters === 'object' && 'logic' in memoizedFilters && 'conditions' in memoizedFilters) {
+                const results = (memoizedFilters as FilterConfig).conditions.map(c => {
                     const rowVal = r[c.field];
                     const filterVal = c.value;
 
@@ -96,19 +101,19 @@ export function useComponentData({
                     }
                 });
 
-                return (filters as FilterConfig).logic === 'OR' 
+                return (memoizedFilters as FilterConfig).logic === 'OR' 
                     ? results.some(res => res) 
                     : results.every(res => res);
             }
 
             // Handle legacy flat-object filters (Implicit AND Equality)
-            for (const [key, value] of Object.entries(filters)) {
+            for (const [key, value] of Object.entries(memoizedFilters)) {
                 if (value !== undefined && value !== null && r[key] !== value) return false;
             }
             
             return true;
         });
-    }, [records, schoolKey, filters]);
+    }, [records, schoolKey, memoizedFilters]);
 
     /**
      * Fetch records from the table
@@ -125,9 +130,9 @@ export function useComponentData({
                 .eq("schoolkey", schoolKey);
 
             // Apply additional filters
-            if (filters) {
-                if (typeof filters === 'object' && 'logic' in filters && 'conditions' in filters) {
-                    const { logic, conditions } = filters as FilterConfig;
+            if (memoizedFilters) {
+                if (typeof memoizedFilters === 'object' && 'logic' in memoizedFilters && 'conditions' in memoizedFilters) {
+                    const { logic, conditions } = memoizedFilters as FilterConfig;
                     
                     if (logic === 'AND') {
                         let filteredQuery = query;
@@ -171,7 +176,7 @@ export function useComponentData({
                 } else {
                     // Legacy Flat Filters
                     let filteredQuery = query as any;
-                    Object.entries(filters).forEach(([key, value]) => {
+                    Object.entries(memoizedFilters).forEach(([key, value]) => {
                         if (value !== undefined && value !== null) {
                             filteredQuery = filteredQuery.eq(key, value);
                         }
@@ -187,7 +192,7 @@ export function useComponentData({
             const { data, error: fetchError } = await query;
             if (fetchError) throw fetchError;
             
-            console.log(`[useComponentData] Fetching from ${tableName}. Filters:`, filters, "Result count:", data?.length || 0);
+            console.log(`[useComponentData] Fetching from ${tableName}. Filters:`, memoizedFilters, "Result count:", data?.length || 0);
             setRecords(data || []);
         } catch (err: any) {
             console.error(`Error fetching from ${tableName}:`, {
@@ -201,16 +206,16 @@ export function useComponentData({
         } finally {
             setIsLoading(false);
         }
-    }, [tableName, schoolKey, orderBy, filters]);
+    }, [tableName, schoolKey, orderBy, memoizedFilters]);
 
     // Auto-fetch if filters are provided or initialRecords is empty
     useEffect(() => {
         // We always fetch on mount if filters are provided to ensure correct data
         // Or if initialRecords is empty
-        if (filters || initialRecords.length === 0) {
+        if (memoizedFilters || initialRecords.length === 0) {
             fetchRecords();
         }
-    }, [fetchRecords]); // fetchRecords already depends on filters, initialRecords length not needed here
+    }, [fetchRecords, memoizedFilters, initialRecords.length]); // fetchRecords already depends on filters, initialRecords length not needed here
 
     /**
      * Save/Update a record

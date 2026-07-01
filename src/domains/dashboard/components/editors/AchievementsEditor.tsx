@@ -405,26 +405,36 @@ export default function AchievementsEditor({ component, screen, schoolKey, onRef
                             ) : (
                                 allAchievements
                                     .filter((rec: any) => (rec.contenttype || 'image') === effectiveMediaType)
-                                    .map((rec: any) => (
-                                    <button
-                                        key={rec.key}
-                                        onClick={() => handleSelectRecord(rec.key)}
-                                        className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${placements.some((p: ComponentPlacement) => p.contentkey === rec.key) ? "border-blue-500 bg-blue-50/50" : "border-gray-50 hover:border-gray-100 bg-white"}`}
-                                    >
-                                        <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
-                                            {rec.imageurl && <img src={rec.imageurl} alt="" className="w-full h-full object-cover" />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-[14px] font-black text-gray-900 line-clamp-1">{rec.title}</p>
-                                            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">{rec.year} • {rec.awardlevel || 'No Category'}</p>
-                                        </div>
-                                        {placements.some((p: ComponentPlacement) => p.contentkey === rec.key) && (
-                                            <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                            </div>
-                                        )}
-                                    </button>
-                                ))
+                                    .map((rec: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === rec.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={rec.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(rec.key)}
+                                                className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-gray-100 bg-white"
+                                                }`}
+                                            >
+                                                <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                                                    {rec.imageurl && <img src={rec.imageurl} alt="" className="w-full h-full object-cover" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[14px] font-black text-gray-900 line-clamp-1">{rec.title}</p>
+                                                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">{rec.year} • {rec.awardlevel || 'No Category'}</p>
+                                                </div>
+                                                {isAssigned && (
+                                                    <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                        Already in Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })
                             )}
                         </div>
                     </div>

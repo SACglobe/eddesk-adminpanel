@@ -36,8 +36,15 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
 
     // Determine the effective contenttype for this component:
     // Priority: config.filters.contenttype > config.variant > allowedMediaType > 'image'
+    // Video is ONLY allowed on the Home screen — all other screens force image-only.
+    const isHomeScreen = screen.screenslug?.toLowerCase() === 'home';
     const effectiveContentType: string = (() => {
-        if (config?.filters?.contenttype) return config.filters.contenttype;
+        if (config?.filters?.contenttype) {
+            // Non-home screens: override any 'video' filter to 'image'
+            if (!isHomeScreen && config.filters.contenttype === 'video') return 'image';
+            return config.filters.contenttype;
+        }
+        if (!isHomeScreen) return 'image';
         if (config?.variant === 'video') return 'video';
         if (config?.variant === 'image') return 'image';
         if (allowedMediaType === 'video') return 'video';
@@ -352,7 +359,7 @@ export default function HeroEditor({ component, screen, schoolKey, allScreens, a
         }
     }
 
-    const showMediaTypeToggle = activeComponentData?.isGroup && (activeComponentData?.allComponents || activeComponentData?.components)?.length > 1;
+    const showMediaTypeToggle = isHomeScreen && activeComponentData?.isGroup && (activeComponentData?.allComponents || activeComponentData?.components)?.length > 1;
 
     const MediaTypeToggle = () => (
         <div className="flex p-1 bg-gray-100 rounded-xl gap-1">

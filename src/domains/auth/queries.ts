@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/client";
 
 export async function signInWithEmail(email: string, password: string) {
+    console.log("signInWithEmail called with email:", email);
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
     });
+    console.log("signInWithEmail result:", { data, error });
     return { data, error };
 }
 

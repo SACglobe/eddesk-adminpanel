@@ -368,15 +368,28 @@ export default function DashboardClient({ initialData, requiresSubscription = fa
                 <LoadingOverlay />
                 {/* Header */}
                 <header className="h-16 border-b border-[#f1f1f1] flex items-center justify-between px-4 lg:px-6 flex-shrink-0 z-50 bg-white w-full">
-                <div className="flex items-center gap-4 text-[14px] font-medium text-gray-500 overflow-hidden">
+                <div className="flex items-center gap-3 lg:gap-4 text-[14px] font-medium text-gray-500 overflow-hidden">
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        className="lg:hidden p-1.5 hover:bg-gray-50 rounded-lg text-gray-500 hover:text-gray-900 transition-colors shrink-0"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                     <div className="hidden lg:block">
                         <BrandLogo variant="full" size="md" />
                     </div>
                     <div className="lg:hidden flex items-center">
                         <BrandLogo variant="icon" size="sm" />
                     </div>
-                    <div className="flex items-center gap-1 lg:gap-2 hover:text-black cursor-pointer transition-colors px-1 lg:px-2 py-1 rounded hover:bg-[#f9fafb]" onClick={() => setIsMobileMenuOpen(true)}>
-                        <span className="font-bold text-gray-900 text-[14px] lg:text-[16px] tracking-tight truncate max-w-[250px] lg:max-w-[200px]">{school?.name ?? "School"}</span>
+                    <div className="flex flex-col hover:text-black cursor-pointer transition-colors px-1 lg:px-2 py-0.5 rounded hover:bg-[#f9fafb] justify-center" onClick={() => handleSelectScreen('school-details')}>
+                        <span className="font-bold text-gray-900 text-[13px] lg:text-[15px] tracking-tight truncate max-w-[250px] lg:max-w-[200px] leading-tight">{school?.name ?? "School"}</span>
+                        {adminData?.templates?.name && (
+                            <span className="text-[10.5px] font-medium text-gray-400 tracking-tight leading-none mt-0.5">
+                                {adminData.templates.name}
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center px-2 py-0.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-full shrink-0">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
