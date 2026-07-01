@@ -226,7 +226,7 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col p-6">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col p-6">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="w-12 h-12 rounded-full bg-gray-50 overflow-hidden border border-gray-100 shrink-0">
                                     {item.photo_url ? (
@@ -319,27 +319,37 @@ export default function TestimonialEditor({ component, schoolKey }: TestimonialE
                             ) : (
                                 testimonials
                                     .filter((item: any) => item.contenttype === effectiveMediaType)
-                                    .map((item: any) => (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleSelectRecord(item.key)}
-                                        className={`w-full p-5 flex items-start gap-4 rounded-[24px] border-2 transition-all ${placements.some((p: ComponentPlacement) => p.contentkey === item.key) ? "border-red-500 bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white"}`}
-                                    >
-                                        <div className="w-12 h-12 rounded-full bg-gray-50 overflow-hidden shrink-0">
-                                            <img src={item.photo_url} alt="" className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="text-left flex-1 min-w-0">
-                                            <h4 className="text-[14px] font-black text-gray-900 truncate">{item.authorname}</h4>
-                                            <p className="text-[11px] font-bold text-gray-400 mb-2 truncate">{item.designation}</p>
-                                            <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed italic">"{item.message}"</p>
-                                        </div>
-                                        {placements.some((p: ComponentPlacement) => p.contentkey === item.key) && (
-                                            <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg shrink-0">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                            </div>
-                                        )}
-                                    </button>
-                                ))
+                                    .map((item: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(item.key)}
+                                                className={`w-full p-5 flex items-start gap-4 rounded-[24px] border-2 transition-all ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-red-100 bg-white"
+                                                }`}
+                                            >
+                                                <div className="w-12 h-12 rounded-full bg-gray-50 overflow-hidden shrink-0">
+                                                    <img src={item.photo_url} alt="" className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="text-left flex-1 min-w-0">
+                                                    <h4 className="text-[14px] font-black text-gray-900 truncate">{item.authorname}</h4>
+                                                    <p className="text-[11px] font-bold text-gray-400 mb-2 truncate">{item.designation}</p>
+                                                    <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed italic">"{item.message}"</p>
+                                                </div>
+                                                {isAssigned && (
+                                                    <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                        Already in Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })
                             )}
                         </div>
                     </div>

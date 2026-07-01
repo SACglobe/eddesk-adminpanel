@@ -295,7 +295,7 @@ export default function HighlightedActivitiesEditor({ component, schoolKey, onRe
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[48px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-700 flex flex-col md:flex-row min-h-[450px]">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[48px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-700 flex flex-col md:flex-row min-h-[450px]">
                             {/* Image Section */}
                             <div className="w-full md:w-[45%] relative overflow-hidden bg-neutral-100 shrink-0">
                                 {item.imageurl ? (
@@ -391,23 +391,33 @@ export default function HighlightedActivitiesEditor({ component, schoolKey, onRe
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {academics.map((item: any) => (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleSelectRecord(item.key)}
-                                        className={`w-full text-left rounded-[40px] border-2 transition-all p-8 relative flex flex-col gap-4 group ${placements.some((s: any) => s.contentkey === item.key) ? "border-[#F54927] bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white shadow-sm hover:shadow-xl hover:shadow-red-500/10"}`}
-                                    >
-                                        <h4 className={`text-[18px] font-black transition-colors ${placements.some((s: any) => s.contentkey === item.key) ? "text-[#F54927]" : "text-gray-900 group-hover:text-[#F54927]"} truncate pr-6`}>{item.title}</h4>
-                                        <p className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">{item.subtitle}</p>
-                                        <p className="text-[14px] text-gray-500 line-clamp-2 leading-relaxed font-medium">{item.description}</p>
-                                        
-                                        {placements.some((s: any) => s.contentkey === item.key) && (
-                                            <div className="absolute top-6 right-6 w-8 h-8 bg-[#F54927] text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
-                                                <Check className="w-5 h-5" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
+                                    {academics.map((item: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(item.key)}
+                                                className={`w-full text-left rounded-[40px] border-2 transition-all p-8 relative flex flex-col gap-4 group ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-red-100 bg-white shadow-sm hover:shadow-xl hover:shadow-red-500/10"
+                                                }`}
+                                            >
+                                                <h4 className={`text-[18px] font-black transition-colors ${isAssigned ? "text-gray-400" : "text-gray-900 group-hover:text-[#F54927]"} truncate pr-6`}>{item.title}</h4>
+                                                <p className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">{item.subtitle}</p>
+                                                <p className="text-[14px] text-gray-500 line-clamp-2 leading-relaxed font-medium">{item.description}</p>
+                                                
+                                                {isAssigned && (
+                                                    <div className="absolute top-6 right-6 px-2.5 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                                                        Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

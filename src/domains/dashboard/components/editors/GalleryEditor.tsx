@@ -376,7 +376,7 @@ export default function GalleryEditor({ component, schoolKey, onRefreshData }: G
                     }
 
                     return (
-                        <div key={item.key} className="group relative aspect-square rounded-[32px] overflow-hidden bg-gray-100 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300">
+                        <div key={`slot-${item.key}-${index}`} className="group relative aspect-square rounded-[32px] overflow-hidden bg-gray-100 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300">
                             {item.url ? (
                                 item.contenttype === 'video' ? (
                                     <div className="relative w-full h-full">

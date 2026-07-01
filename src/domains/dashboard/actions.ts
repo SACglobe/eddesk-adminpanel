@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
 
 /**
  * Generic Upsert for Component Data
@@ -56,8 +55,6 @@ export async function upsertComponentData(
         return { success: false, error: error.message };
     }
 
-    // 4. Cache bust
-    revalidatePath("/dashboard");
     return { success: true, data: result };
 }
 
@@ -87,8 +84,6 @@ export async function deleteComponentData(
         return { success: false, error: error.message };
     }
 
-    // 3. Cache bust
-    revalidatePath("/dashboard");
     return { success: true };
 }
 
@@ -122,7 +117,6 @@ export async function updateComponentOrder(
         return { success: false, error: firstError.error?.message };
     }
 
-    revalidatePath("/dashboard");
     return { success: true };
 }
 
@@ -153,8 +147,6 @@ export async function updateComponentConfig(
         return { success: false, error: error.message };
     }
 
-    // 3. Cache bust
-    revalidatePath("/dashboard");
     return { success: true, data: result };
 }
 
@@ -187,7 +179,5 @@ export async function updateSchoolDetails(
         return { success: false, error: error.message };
     }
 
-    // 3. Cache bust
-    revalidatePath("/dashboard");
     return { success: true, data: result };
 }

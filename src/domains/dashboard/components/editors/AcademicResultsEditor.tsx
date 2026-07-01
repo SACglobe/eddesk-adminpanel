@@ -420,25 +420,35 @@ export default function AcademicResultsEditor({ component, screen, schoolKey }: 
                                 {results.length === 0 ? (
                                     <div className="text-center py-10 text-gray-400">No academic results found.</div>
                                 ) : (
-                                    results.map((rec: any) => (
-                                        <button
-                                            key={rec.key}
-                                            onClick={() => handleSelectRecord(rec.key)}
-                                            className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between ${placements.some((p: ComponentPlacement) => p.contentkey === rec.key) ? "border-red-500 bg-red-50/30" : "border-gray-50 hover:border-gray-100 bg-white"}`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-[18px] font-black text-gray-900">{rec.year}</span>
-                                                <div className="text-[12px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-lg">
-                                                    {rec.passpercentage}% overall pass
+                                    results.map((rec: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === rec.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={rec.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(rec.key)}
+                                                className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-gray-100 bg-white"
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-[18px] font-black text-gray-900">{rec.year}</span>
+                                                    <div className="text-[12px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-lg">
+                                                        {rec.passpercentage}% overall pass
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            {placements.some((p: ComponentPlacement) => p.contentkey === rec.key) && (
-                                                <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))
+                                                {isAssigned && (
+                                                    <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                        Already in Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>

@@ -11,6 +11,29 @@ import { Check, X } from "lucide-react";
 import { useEffect } from "react";
 import { uploadFile } from "@/lib/supabase/storage";
 
+const formatTimeForInput = (timeStr: string) => {
+    if (!timeStr) return "";
+    
+    // Check if format is HH:MM or HH:MM:SS
+    const match = timeStr.match(/^(\d{2}):(\d{2})/);
+    if (match) {
+        return `${match[1]}:${match[2]}`;
+    }
+    
+    // Check if format is AM/PM, e.g. "10:00 AM" or "09:30 PM"
+    const ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)$/i);
+    if (ampmMatch) {
+        let hours = parseInt(ampmMatch[1], 10);
+        const minutes = ampmMatch[2];
+        const ampm = ampmMatch[3].toUpperCase();
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+        return `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+    
+    return timeStr;
+};
+
 interface EventsEditorProps {
     component: TemplateComponent;
     schoolKey: string;
@@ -249,7 +272,7 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col">
                             <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
                                 {item.imageurl ? (
                                     item.contenttype === 'video' ? (
@@ -339,26 +362,36 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                             ) : (
                                 events
                                     .filter((item: any) => item.contenttype === effectiveMediaType)
-                                    .map((item: any) => (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleSelectRecord(item.key)}
-                                        className={`w-full p-4 flex items-center gap-4 rounded-[24px] border-2 transition-all ${placements.some((p: ComponentPlacement) => p.contentkey === item.key) ? "border-red-500 bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white"}`}
-                                    >
-                                        <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0">
-                                            <img src={item.imageurl} alt="" className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="text-left flex-1">
-                                            <h4 className="text-[14px] font-black text-gray-900">{item.title}</h4>
-                                            <p className="text-[11px] font-bold text-gray-400 mt-0.5">{new Date(item.eventdate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • {item.location}</p>
-                                        </div>
-                                        {placements.some((p: ComponentPlacement) => p.contentkey === item.key) && (
-                                            <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                            </div>
-                                        )}
-                                    </button>
-                                ))
+                                    .map((item: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(item.key)}
+                                                className={`w-full p-4 flex items-center gap-4 rounded-[24px] border-2 transition-all ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-red-100 bg-white"
+                                                }`}
+                                            >
+                                                <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0">
+                                                    <img src={item.imageurl} alt="" className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="text-left flex-1 min-w-0">
+                                                    <h4 className="text-[14px] font-black text-gray-900 truncate">{item.title}</h4>
+                                                    <p className="text-[11px] font-bold text-gray-400 mt-0.5">{new Date(item.eventdate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • {item.location}</p>
+                                                </div>
+                                                {isAssigned && (
+                                                    <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0">
+                                                        Already in Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })
                             )}
                         </div>
                     </div>
@@ -407,11 +440,11 @@ export default function EventsEditor({ component, schoolKey }: EventsEditorProps
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Event Time</label>
                                     <input
-                                        type="text"
-                                        value={editingItem.starttime}
+                                        type="time"
+                                        value={formatTimeForInput(editingItem.starttime || "")}
                                         onChange={e => setEditingItem({ ...editingItem, starttime: e.target.value })}
+                                        onClick={(e) => (e.target as any).showPicker?.()}
                                         className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[20px] focus:bg-white focus:border-red-200 transition-all text-[14px] font-bold outline-none"
-                                        placeholder="e.g. 10:00 AM - 4:00 PM"
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-2">

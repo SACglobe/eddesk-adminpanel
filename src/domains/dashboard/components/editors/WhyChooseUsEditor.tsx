@@ -120,7 +120,7 @@ export default function WhyChooseUsEditor({ component, screen, schoolKey }: WhyC
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col p-8 items-center text-center justify-center min-h-[220px]">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col p-8 items-center text-center justify-center min-h-[220px]">
                             {isEditable && (
                                 <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button

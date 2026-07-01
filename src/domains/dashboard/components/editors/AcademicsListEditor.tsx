@@ -253,7 +253,7 @@ export default function AcademicsListEditor({ component, schoolKey }: AcademicsL
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[40px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col p-8 text-left min-h-[300px]">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[40px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col p-8 text-left min-h-[300px]">
                             <div className="flex-1 flex flex-col min-w-0 w-full relative z-10">
                                 <div className="mb-6 inline-block shrink-0 self-start">
                                     <div className="flex items-center gap-2 mb-2">
@@ -319,23 +319,33 @@ export default function AcademicsListEditor({ component, schoolKey }: AcademicsL
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {academics.map((item: any) => (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleSelectRecord(item.key)}
-                                        className={`w-full text-left rounded-[28px] border-2 transition-all p-6 relative flex flex-col gap-3 ${placements.some((s: any) => s.contentkey === item.key) ? "border-[#F54927] bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white"}`}
-                                    >
-                                        <h4 className="text-[16px] font-black text-gray-900 truncate pr-4">{item.title}</h4>
-                                        <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest">{item.subtitle}</p>
-                                        <p className="text-[13px] text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
-                                        
-                                        {placements.some((s: any) => s.contentkey === item.key) && (
-                                            <div className="absolute top-4 right-4 w-6 h-6 bg-[#F54927] text-white rounded-full flex items-center justify-center shadow-lg">
-                                                <Check className="w-4 h-4" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
+                                {academics.map((item: any) => {
+                                    const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                    const isAssigned = !!assignedPlacement;
+
+                                    return (
+                                        <button
+                                            key={item.key}
+                                            disabled={isAssigned}
+                                            onClick={() => handleSelectRecord(item.key)}
+                                            className={`w-full text-left rounded-[28px] border-2 transition-all p-6 relative flex flex-col gap-3 ${
+                                                isAssigned 
+                                                    ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                    : "border-gray-50 hover:border-red-100 bg-white"
+                                            }`}
+                                        >
+                                            <h4 className="text-[16px] font-black text-gray-900 truncate pr-4">{item.title}</h4>
+                                            <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest">{item.subtitle}</p>
+                                            <p className="text-[13px] text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
+                                            
+                                            {isAssigned && (
+                                                <div className="absolute top-4 right-4 px-2 py-1 bg-gray-100 text-gray-500 rounded text-[9px] font-black uppercase tracking-wider">
+                                                    Slot {assignedPlacement?.displayorder}
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                                 </div>
                             )}
                         </div>

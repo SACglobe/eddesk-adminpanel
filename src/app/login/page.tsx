@@ -134,22 +134,27 @@ function LoginContent() {
         e.preventDefault();
         setError(null);
         setLoading(true);
+        console.log("handleLogin started with email:", email);
 
-        // Note: We do NOT call signOut() here before signing in.
-        // Doing so causes ERR_CONNECTION_CLOSED because the signOut network
-        // request races with the immediate re-login, and it also fires the
-        // onAuthStateChange listener mid-flow. Stale tokens are already
-        // handled by getUser() in the useEffect above (server-validated).
-        const { error } = await signInWithEmail(email, password);
+        try {
+            const { error } = await signInWithEmail(email, password);
+            console.log("handleLogin signInWithEmail completed. Error:", error);
 
-        if (error) {
-            setError("Invalid email or password. Please try again.");
+            if (error) {
+                console.error("Login failed with error:", error);
+                setError(error.message || "Invalid email or password. Please try again.");
+                setLoading(false);
+                return;
+            }
+
+            console.log("Login successful, redirecting to dashboard...");
+            router.push("/dashboard");
+            router.refresh();
+        } catch (err: any) {
+            console.error("Exception in handleLogin:", err);
+            setError(err.message || "An unexpected error occurred. Please try again.");
             setLoading(false);
-            return;
         }
-
-        router.push("/dashboard");
-        router.refresh();
     }
 
     async function handleSetPassword(e: React.FormEvent) {

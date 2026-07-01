@@ -236,7 +236,7 @@ export default function HighlightedInfrastructureEditor({ component, schoolKey }
                     }
 
                     return (
-                        <div key={item.key} className="group relative bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-500 flex flex-col items-center text-center justify-center h-full min-h-[320px]">
+                        <div key={`slot-${item.key}-${index}`} className="group relative bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-500 flex flex-col items-center text-center justify-center h-full min-h-[320px]">
                             {/* Actions Overlay */}
                             <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                 <button

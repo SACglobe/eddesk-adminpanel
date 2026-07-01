@@ -286,24 +286,34 @@ export default function StatsEditor({ component, screen, schoolKey, onRefreshDat
                                 {stats.length === 0 ? (
                                     <div className="py-20 text-center text-gray-400 font-bold">No statistics records found.</div>
                                 ) : (
-                                    stats.map((item: any) => (
-                                        <button
-                                            key={item.key}
-                                            onClick={() => handleSelectRecord(item.key)}
-                                            className={`w-full p-6 flex flex-col text-center items-center justify-center gap-2 rounded-[24px] border-2 transition-all ${slots.some((s: any) => !s.isSkeleton && s.key === item.key) ? "border-red-500 bg-red-50/20" : "border-gray-50 hover:border-red-100 bg-white"}`}
-                                        >
-                                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mb-1">
-                                                <DynamicIcon name={item.icon} size={20} className="text-gray-400" />
-                                            </div>
-                                            <span className="text-[28px] font-black text-gray-900 leading-none">{item.value}</span>
-                                            <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">{item.label}</p>
-                                            {slots.some((s: any) => !s.isSkeleton && s.key === item.key) && (
-                                                <div className="absolute top-4 right-4 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    stats.map((item: any) => {
+                                        const assignedPlacement = placements.find((p: ComponentPlacement) => p.contentkey === item.key);
+                                        const isAssigned = !!assignedPlacement;
+
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                disabled={isAssigned}
+                                                onClick={() => handleSelectRecord(item.key)}
+                                                className={`w-full p-6 flex flex-col text-center items-center justify-center gap-2 rounded-[24px] border-2 transition-all relative ${
+                                                    isAssigned 
+                                                        ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed" 
+                                                        : "border-gray-50 hover:border-red-100 bg-white"
+                                                }`}
+                                            >
+                                                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mb-1">
+                                                    <DynamicIcon name={item.icon} size={20} className="text-gray-400" />
                                                 </div>
-                                            )}
-                                        </button>
-                                    ))
+                                                <span className="text-[28px] font-black text-gray-900 leading-none">{item.value}</span>
+                                                <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">{item.label}</p>
+                                                {isAssigned && (
+                                                    <div className="absolute top-4 right-4 px-2.5 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                                                        Already in Slot {assignedPlacement?.displayorder}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>

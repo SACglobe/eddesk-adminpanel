@@ -111,7 +111,7 @@ export default function AdmissionInstructionEditor({ component, schoolKey }: Adm
                     }
 
                     return (
-                        <div key={item.key} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col p-8 min-h-[200px]">
+                        <div key={`slot-${item.key}-${index}`} className="group relative rounded-[32px] overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col p-8 min-h-[200px]">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-[18px] font-black text-gray-400 group-hover:text-[#F54927] transition-colors">
                                     {displayOrder}

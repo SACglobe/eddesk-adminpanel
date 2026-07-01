@@ -166,6 +166,7 @@ export default function SchoolDetailsEditor({ adminData, onRefreshData, onSchool
                         <DetailItem label="Contact Email" value={formData?.email} isEditing={isEditingSchool} onChange={(val) => setFormData({ ...formData, email: val })} />
                         <DetailItem label="Contact Phone" value={formData?.phone} isEditing={isEditingSchool} onChange={(val) => setFormData({ ...formData, phone: val })} />
                         <DetailItem label="Website Status" value="Online" isEditing={false} badge="Published" color="emerald" />
+                        <DetailItem label="Selected Template" value={adminData?.templates?.name} isEditing={false} />
                     </div>
 
                     <div className="h-[1px] bg-gray-50 w-full" />
